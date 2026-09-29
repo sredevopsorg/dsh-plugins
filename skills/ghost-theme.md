@@ -40,7 +40,7 @@ server-rendered Handlebars contract. Use it whenever the task is *how the assets
 
 ```bash
 # Scaffold a Vite + Tailwind + React-islands theme
-node .dsh/skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs \
+node ~/.dsh/dsh-plugins/skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs \
   --name my-theme --out ./themes --react
 
 cd themes/my-theme
@@ -49,7 +49,7 @@ npm run build
 npm test                      # build + GScan
 
 # Or run the fuller pre-flight (build → GScan → zip → archive assertions)
-bash /home/ngeorger/ghost-themes-skills/.dsh/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh .
+bash ~/.dsh/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh .
 ```
 
 `scaffold-theme.mjs --help` documents the flags (`--no-tailwind`, `--react`, `--out`,
@@ -63,16 +63,16 @@ load from any other project:
 
 ```bash
 ls -l ~/.dsh/skills/ghost-theme-*
-# ghost-theme-development      -> /home/ngeorger/ghost-themes-skills/.dsh/skills/ghost-theme-development
-# ghost-theme-modern-frontend  -> /home/ngeorger/ghost-themes-skills/.dsh/skills/ghost-theme-modern-frontend
+# ghost-theme-development      -> ~/dsh-plugins/skills/ghost-theme-development
+# ghost-theme-modern-frontend  -> ~/dsh-plugins/skills/ghost-theme-modern-frontend
 ```
 
 To reproduce on another machine:
 
 ```bash
 mkdir -p ~/.dsh/skills
-ln -s /home/ngeorger/ghost-themes-skills/.dsh/skills/ghost-theme-development ~/.dsh/skills/
-ln -s /home/ngeorger/ghost-themes-skills/.dsh/skills/ghost-theme-modern-frontend ~/.dsh/skills/
+ln -s ~/dsh-plugins/skills/ghost-theme-development ~/.dsh/skills/
+ln -s ~/dsh-plugins/skills/ghost-theme-modern-frontend ~/.dsh/skills/
 ```
 
 ## Provenance
