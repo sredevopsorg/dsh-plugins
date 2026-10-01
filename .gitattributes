@@ -1,0 +1,18 @@
+# Normalize line endings on checkout; keep scripts runnable everywhere.
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.mjs  text eol=lf
+*.js   text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Never let Windows rewrite these.
+*.png binary
+*.jpg binary
+*.webp binary
+
+# Makes `git diff` readable for the release notes and generated files.
+dist/** linguist-generated=true

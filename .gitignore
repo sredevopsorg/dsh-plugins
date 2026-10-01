@@ -1,0 +1,26 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Build output and packaging
+dist/
+build/
+*.tgz
+*.zip
+
+# Ghost theming scratch work
+.gscan-*
+themes/
+
+# Local DSH state. `.dsh/*` + a negation is required for the re-include to work:
+# git never descends into an excluded directory.
+.dsh/*
+!.dsh/skills/

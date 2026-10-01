@@ -1,0 +1,5 @@
+# ShellCheck configuration for this repository.
+#
+# Fail on real bugs (warnings and errors), not style preferences such as
+# SC2292 (`[[ ]]` vs `[ ]`): script portability matters more here than idiom.
+severity=warning

@@ -3,9 +3,9 @@
 Two agent skills for building and editing Ghost themes with modern frontend tooling
 (Tailwind CSS, Vite, React and other islands).
 
-They live in `.dsh/skills/`, which is the project-scoped skill root this harness scans
-(`<projectRoot>/.dsh/skills`). To make them available from every session, see
-[Installing globally](#installing-globally).
+They live in this repository's [`skills/`](../skills/) directory. That directory is **not** one
+of DSH's scanned skill roots, so they are not discovered by a bare clone — run
+[`install.sh`](../install.sh) or see [Installing](#installing) below.
 
 ## Skills
 
@@ -40,7 +40,7 @@ server-rendered Handlebars contract. Use it whenever the task is *how the assets
 
 ```bash
 # Scaffold a Vite + Tailwind + React-islands theme
-node ~/.dsh/dsh-plugins/skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs \
+node skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs \
   --name my-theme --out ./themes --react
 
 cd themes/my-theme
@@ -49,31 +49,32 @@ npm run build
 npm test                      # build + GScan
 
 # Or run the fuller pre-flight (build → GScan → zip → archive assertions)
-bash ~/.dsh/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh .
+bash "$OLDPWD/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh" .
 ```
 
 `scaffold-theme.mjs --help` documents the flags (`--no-tailwind`, `--react`, `--out`,
 `--force`).
 
-## Installing globally
+## Installing
 
-The skills are discovered automatically while the working directory is inside this workspace,
-and they are **already symlinked into the user skill root** in this environment, so they also
-load from any other project:
-
-```bash
-ls -l ~/.dsh/skills/ghost-theme-*
-# ghost-theme-development      -> ~/dsh-plugins/skills/ghost-theme-development
-# ghost-theme-modern-frontend  -> ~/dsh-plugins/skills/ghost-theme-modern-frontend
-```
-
-To reproduce on another machine:
+Skill discovery only sees DSH's roots — `<projectRoot>/.dsh/skills`,
+`<projectRoot>/.agents/skills`, `customSkillDirs`, `~/.dsh/skills`, `~/.agents/skills` —
+never this repository's `skills/`. Link the two Ghost skills into the root you want:
 
 ```bash
-mkdir -p ~/.dsh/skills
-ln -s ~/dsh-plugins/skills/ghost-theme-development ~/.dsh/skills/
-ln -s ~/dsh-plugins/skills/ghost-theme-modern-frontend ~/.dsh/skills/
+# user scope, available from every project
+./install.sh ghost-theme-development ghost-theme-modern-frontend
+
+# or project scope
+./install.sh --project /path/to/your/ghost/project \
+  ghost-theme-development ghost-theme-modern-frontend
+
+# preview without changing anything
+./install.sh --dry-run
 ```
+
+`install.sh` creates per-skill symlinks, skips real files, and only ever removes links that
+point back into this repository. Re-run it with `--uninstall` to detach.
 
 ## Provenance
 
