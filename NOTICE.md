@@ -11,6 +11,7 @@ reproduced below. Full license texts ship with the upstream projects.
 | [`skills/supabase`](skills/supabase/SKILL.md) | Supabase agent skills — https://github.com/supabase/agent-skills | MIT |
 | [`skills/supabase-postgres-best-practices`](skills/supabase-postgres-best-practices/SKILL.md) | Supabase agent skills (Postgres best practices, v1.1.1) — https://github.com/supabase/agent-skills | MIT |
 | [`skills/ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | Guidance grounded in the MIT-licensed community theme https://github.com/christopher-b/vapour and the official docs at https://docs.ghost.org | MIT |
+| [`skills/helm-chart-development`](skills/helm-chart-development/SKILL.md) | Guidance grounded in the official Helm docs — https://helm.sh/docs/chart_template_guide/ (source: https://github.com/helm/helm-www) | CC-BY-4.0 |
 
 Each derived `SKILL.md` preserves its upstream `metadata` (author, version,
 organization). The Supabase skills carry fields authored by Supabase; they are
