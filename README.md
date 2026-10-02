@@ -26,6 +26,7 @@ DSH loads three kinds of extension:
 | [`supabase-postgres-best-practices`](skills/supabase-postgres-best-practices/SKILL.md) | model + user | Postgres schema, migrations, RLS, indexes, locking, query plans — load *before* touching a database |
 | [`ghost-theme-development`](skills/ghost-theme-development/SKILL.md) | model + user | Authoring Ghost Handlebars themes: templates, contexts, helpers, settings, routing, GScan |
 | [`ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | model + user | Wiring a Ghost theme to Vite, Tailwind CSS, and React/Vue/Svelte islands |
+| [`helm-chart-development`](skills/helm-chart-development/SKILL.md) | model + user | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
 
 ### Plugins and tools
 
@@ -62,10 +63,14 @@ No plugin or tool packages are published from this repository yet. The intended 
     ├── ghost-theme-development/
     │   ├── SKILL.md
     │   └── references/
-    └── ghost-theme-modern-frontend/
+    ├── ghost-theme-modern-frontend/
+    │   ├── SKILL.md
+    │   ├── references/
+    │   └── scripts/                       # scaffold-theme.mjs, verify-theme.sh
+    └── helm-chart-development/
         ├── SKILL.md
-        ├── references/
-        └── scripts/                       # scaffold-theme.mjs, verify-theme.sh
+        ├── references/                    # template-language, chart-structure, functions, debugging
+        └── scripts/                       # verify-chart.mjs
 ```
 
 A skill directory may carry any supporting files — `references/`, `scripts/`, `assets/` — because the whole directory is the skill's resource base.
@@ -75,8 +80,10 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
 ## Requirements
 
 - **DSH** — `npx @deepseek-ai/dsh …`, or a global `dsh` install (`@deepseek-ai/dsh`).
-- **Node.js ≥ 18** and **npm/npx** — for the Ghost toolchain scripts and for `npx gscan`.
+- **Node.js ≥ 18** and **npm/npx** — for the Ghost and Helm toolchain scripts and for `npx gscan`.
 - **Ghost 6.x + `gscan`** — only for the two Ghost theme skills.
+- **Helm 3+** — only for `helm-chart-development`. No cluster or network needed;
+  `scripts/verify-chart.mjs` shells out to `helm lint` and `helm template`.
 - **`pnpm`** — only when installing DSH plugin packages (`dsh plugin …` forwards to pnpm).
 
 ---
@@ -298,3 +305,4 @@ Released under the [MIT License](LICENSE). Third-party attribution is listed in
 
 - `supabase` and `supabase-postgres-best-practices` are derived from Supabase's published agent skills (MIT). Metadata is preserved in each `SKILL.md`.
 - `ghost-theme-development` and `ghost-theme-modern-frontend` are grounded in the official `docs.ghost.org` documentation and the MIT-licensed community reference theme [christopher-b/vapour](https://github.com/christopher-b/vapour).
+- `helm-chart-development` is grounded in the official Helm documentation — the [Chart Template Developer's Guide](https://helm.sh/docs/chart_template_guide/), [Charts](https://helm.sh/docs/topics/charts/), [Best Practices](https://helm.sh/docs/chart_best_practices/) and [Hooks](https://helm.sh/docs/topics/charts_hooks/) — which is published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Examples and function signatures were verified against Helm 4.3.
