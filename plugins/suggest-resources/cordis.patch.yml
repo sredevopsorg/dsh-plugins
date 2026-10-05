@@ -1,0 +1,4 @@
+- insert:
+    - id: suggest-resources
+      name: '@sredevopsorg/dsh-suggest-resources'
+      config: {}
