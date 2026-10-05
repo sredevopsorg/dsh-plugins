@@ -7,8 +7,8 @@ DSH loads three kinds of extension:
 | Kind | What it is | Where it lives here |
 |---|---|---|
 | **Skill** | A `SKILL.md` (or flat `<name>.md`) instruction bundle discovered from a skills root and loaded on demand by the model or with `/name`. | [`skills/`](skills/) |
-| **Plugin** | A Cordis plugin package loaded into a DSH profile (`dsh plugin …`). | `plugins/` — *none yet* |
-| **Tool** | A model-facing tool registered by a plugin via `ctx.tools`. Usually shipped inside a plugin package. | `plugins/<name>/` — *none yet* |
+| **Plugin** | A Cordis plugin package loaded into a DSH profile (`dsh plugin …`). | [`plugins/`](plugins/) |
+| **Tool** | A model-facing tool registered by a plugin via `ctx.tools`. Usually shipped inside a plugin package. | [`plugins/<name>/`](plugins/suggest-resources/) |
 
 > Verified against `@deepseek-ai/dsh` **0.2.x** (`0.2.0-rc.2`). The CLI version gate is strict, so check `dsh --version` before reporting plugin issues.
 
@@ -30,7 +30,9 @@ DSH loads three kinds of extension:
 
 ### Plugins and tools
 
-No plugin or tool packages are published from this repository yet. The intended layout is described in [Plugins and tools](#plugins-and-tools).
+| Plugin | Kind | Use it for |
+|---|---|---|
+| [`suggest-resources`](plugins/suggest-resources/README.md) | bundle + tool | Ranking the available tools, plugins, MCP servers, and skills against a task |
 
 ---
 
@@ -48,29 +50,38 @@ No plugin or tool packages are published from this repository yet. The intended 
 ├── .github/workflows/ci.yml
 ├── docs/
 │   └── ghost-themes.md                    # repo doc — NOT a skill
-└── skills/
-    ├── software-architecture/
-    │   └── SKILL.md
-    ├── fullstack-development/
-    │   └── SKILL.md
-    ├── supabase/
-    │   ├── SKILL.md
-    │   ├── references/
-    │   └── assets/
-    ├── supabase-postgres-best-practices/
-    │   ├── SKILL.md
-    │   └── references/                    # one file per rule + _sections/_template/_contributing
-    ├── ghost-theme-development/
-    │   ├── SKILL.md
-    │   └── references/
-    ├── ghost-theme-modern-frontend/
-    │   ├── SKILL.md
-    │   ├── references/
-    │   └── scripts/                       # scaffold-theme.mjs, verify-theme.sh
-    └── helm-chart-development/
-        ├── SKILL.md
-        ├── references/                    # template-language, chart-structure, functions, debugging
-        └── scripts/                       # verify-chart.mjs
+├── skills/
+│   ├── software-architecture/
+│   │   └── SKILL.md
+│   ├── fullstack-development/
+│   │   └── SKILL.md
+│   ├── supabase/
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   └── assets/
+│   ├── supabase-postgres-best-practices/
+│   │   ├── SKILL.md
+│   │   └── references/                    # one file per rule + _sections/_template/_contributing
+│   ├── ghost-theme-development/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   ├── ghost-theme-modern-frontend/
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   └── scripts/                       # scaffold-theme.mjs, verify-theme.sh
+│   └── helm-chart-development/
+│       ├── SKILL.md
+│       ├── references/                    # template-language, chart-structure, functions, debugging
+│       └── scripts/                       # verify-chart.mjs
+└── plugins/
+    └── suggest-resources/
+        ├── package.json                   # name, license, exports, dsh.bundle.patch
+        ├── cordis.patch.yml               # the plugin row
+        ├── index.js                       # suggest_resources tool + capability discovery
+        ├── catalog.js                     # MCP server catalogue + plugin seeds
+        ├── locale/en.json                 # display title/description
+        ├── icon.svg
+        └── README.md                      # configuration table + observable behavior
 ```
 
 A skill directory may carry any supporting files — `references/`, `scripts/`, `assets/` — because the whole directory is the skill's resource base.
@@ -235,7 +246,7 @@ A DSH plugin is an npm package that Cordis loads; a **bundle** additionally decl
 {
   "name": "@sredevopsorg/dsh-<name>",
   "type": "module",
-  "main": "lib/index.js",
+  "exports": { ".": "./index.js" },
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" }
   }
@@ -250,15 +261,24 @@ dsh plugin --profile web list
 dsh --profile web --dump-config                   # inspect the composed tree, no boot
 ```
 
-Conventions this repository will follow once plugins land:
+Conventions this repository follows:
 
 ```
 plugins/<name>/
-├── package.json          # dsh.bundle.patch when it is a bundle
+├── package.json          # name, license, exports, dsh.bundle.patch
 ├── cordis.patch.yml      # plugin rows / config
-├── src/index.ts
+├── index.js              # plugin entry: export apply() / inject / (optional) Config
+├── <support>.js          # plain-ESM support modules, imported relatively
+├── locale/en.json        # display title + description for management surfaces
+├── icon.svg              # optional, referenced by package.json "icon"
 └── README.md             # configuration table + observable behavior
 ```
+
+The first plugin here, [`suggest-resources`](plugins/suggest-resources/README.md), ships plain ESM
+with **no dependencies and no build step**. That is deliberate: a workspace-linked plugin cannot
+resolve bare `@deepseek-ai/*` specifiers unless its manifest declares them as `peerDependencies`, so
+a dependency-free package keeps `dsh plugin add` free of both a toolchain and install-script
+approval. Add a build only when a plugin genuinely needs one.
 
 Model-facing tools are registered from a plugin via `ctx.tools`; they should declare a JSON-schema input, fail with actionable messages, and never leak stack traces.
 
@@ -283,6 +303,7 @@ Beyond the validator:
 - Start a session and confirm the skill appears in the catalog (`/` in the composer lists user-invocable skills).
 - Load it once by exact name to confirm the body parses and the resource paths resolve.
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
+- For the plugin in this repository: install it with `dsh plugin --profile <name> add plugins/suggest-resources`, confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it disappears — that proves the registration belongs to the plugin's context.
 - For Ghost themes: `bash skills/ghost-theme-modern-frontend/scripts/verify-theme.sh <theme-dir>`.
 
 ---
