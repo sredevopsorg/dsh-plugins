@@ -1,0 +1,8 @@
+{
+  "name": "@sredevopsorg/dsh-architect-dev-preset",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Architect Dev agent preset: senior software architect and fullstack developer assistant.",
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}
