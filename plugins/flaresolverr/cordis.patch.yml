@@ -1,0 +1,18 @@
+- insert:
+    - id: flaresolverr
+      name: '@sredevopsorg/dsh-flaresolverr'
+      config:
+        image: 'ghcr.io/flaresolverr/flaresolverr:latest'
+        defaultMaxTimeoutMs: 60000
+        startupTimeoutMs: 60000
+        healthIntervalMs: 1000
+        pullTimeoutMs: 600000
+        shmSize: '2g'
+        memory: '1g'
+        cpus: '2'
+        requestTimeoutSlackMs: 15000
+        maxOutputChars: 12000
+        stopGraceSeconds: 10
+        logTailLines: 40
+        logLevel: info
+        promptSection: true

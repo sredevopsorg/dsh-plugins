@@ -12,11 +12,23 @@ reproduced below. Full license texts ship with the upstream projects.
 | [`skills/supabase-postgres-best-practices`](skills/supabase-postgres-best-practices/SKILL.md) | Supabase agent skills (Postgres best practices, v1.1.1) — https://github.com/supabase/agent-skills | MIT |
 | [`skills/ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | Guidance grounded in the MIT-licensed community theme https://github.com/christopher-b/vapour and the official docs at https://docs.ghost.org | MIT |
 | [`skills/helm-chart-development`](skills/helm-chart-development/SKILL.md) | Guidance grounded in the official Helm docs — https://helm.sh/docs/chart_template_guide/ (source: https://github.com/helm/helm-www) | CC-BY-4.0 |
+| [`skills/flaresolverr-workspace`](skills/flaresolverr-workspace/SKILL.md) | Guidance grounded in the FlareSolverr source and documentation — https://github.com/FlareSolverr/FlareSolverr | MIT |
 
 Each derived `SKILL.md` preserves its upstream `metadata` (author, version,
 organization). The Supabase skills carry fields authored by Supabase; they are
 reproduced here unmodified apart from repository-local path handling.
 
+## Plugins
+
+| Path | Upstream | License |
+|---|---|---|
+| [`plugins/flaresolverr`](plugins/flaresolverr/README.md) | Runs the FlareSolverr container image (`ghcr.io/flaresolverr/flaresolverr` / `flaresolverr/flaresolverr`). The plugin is original work; the image is a runtime dependency and is **not** redistributed here. | MIT |
+
+The `flaresolverr` plugin pulls its container image at runtime from the registry
+you configure. FlareSolverr is an unauthenticated proxy: never publish a
+workspace outside the loopback interface, and use it only against targets you are
+authorized to access.
+
 > Copyright for the upstream material remains with its authors. Nothing in this
 > repository's MIT license grants rights to third-party trademarks such as
-> "Supabase", "Ghost", or "DeepSeek".
+> "Supabase", "Ghost", "FlareSolverr", or "DeepSeek".

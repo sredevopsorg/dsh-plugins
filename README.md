@@ -27,12 +27,14 @@ DSH loads three kinds of extension:
 | [`ghost-theme-development`](skills/ghost-theme-development/SKILL.md) | model + user | Authoring Ghost Handlebars themes: templates, contexts, helpers, settings, routing, GScan |
 | [`ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | model + user | Wiring a Ghost theme to Vite, Tailwind CSS, and React/Vue/Svelte islands |
 | [`helm-chart-development`](skills/helm-chart-development/SKILL.md) | model + user | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
+| [`flaresolverr-workspace`](skills/flaresolverr-workspace/SKILL.md) | model + user | Operating a disposable FlareSolverr workspace: the v1 API contract, lifecycle and teardown, the User-Agent trap, and the failure playbook |
 
 ### Plugins and tools
 
 | Plugin | Kind | Use it for |
 |---|---|---|
 | [`suggest-resources`](plugins/suggest-resources/README.md) | bundle + tool | Ranking the available tools, plugins, MCP servers, and skills against a task |
+| [`flaresolverr`](plugins/flaresolverr/README.md) | bundle + tool | Running a disposable, loopback-only FlareSolverr container to solve Cloudflare and DDoS-Guard challenges |
 
 ---
 
@@ -73,15 +75,24 @@ DSH loads three kinds of extension:
 │       ├── SKILL.md
 │       ├── references/                    # template-language, chart-structure, functions, debugging
 │       └── scripts/                       # verify-chart.mjs
-└── plugins/
-    └── suggest-resources/
-        ├── package.json                   # name, license, exports, dsh.bundle.patch
-        ├── cordis.patch.yml               # the plugin row
-        ├── index.js                       # suggest_resources tool + capability discovery
-        ├── catalog.js                     # MCP server catalogue + plugin seeds
-        ├── locale/en.json                 # display title/description
-        ├── icon.svg
-        └── README.md                      # configuration table + observable behavior
+├── plugins/
+│   ├── suggest-resources/
+│   │   ├── package.json                   # name, license, exports, dsh.bundle.patch
+│   │   ├── cordis.patch.yml               # the plugin row
+│   │   ├── index.js                       # suggest_resources tool + capability discovery
+│   │   ├── catalog.js                     # MCP server catalogue + plugin seeds
+│   │   ├── locale/en.json                 # display title/description
+│   │   ├── icon.svg
+│   │   └── README.md                      # configuration table + observable behavior
+│   └── flaresolverr/
+│       ├── package.json                   # name, license, exports, dsh.bundle.patch
+│       ├── cordis.patch.yml               # the plugin row + defaults
+│       ├── index.js                       # flaresolverr tool: policy, ownership, rendering
+│       ├── docker.js                      # Docker CLI adapter (the only module that executes)
+│       ├── flare.js                       # FlareSolverr wire-protocol adapter
+│       ├── locale/en.json
+│       ├── icon.svg
+│       └── README.md
 ```
 
 A skill directory may carry any supporting files — `references/`, `scripts/`, `assets/` — because the whole directory is the skill's resource base.
@@ -95,6 +106,11 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
 - **Ghost 6.x + `gscan`** — only for the two Ghost theme skills.
 - **Helm 3+** — only for `helm-chart-development`. No cluster or network needed;
   `scripts/verify-chart.mjs` shells out to `helm lint` and `helm template`.
+- **Docker Engine** with a reachable daemon — only for the `flaresolverr` plugin and its
+  `flaresolverr-workspace` skill. The plugin creates containers, networks, and loopback-only
+  published ports, so the daemon must be running and the user must be able to reach the socket.
+  Missing CLI, a stopped daemon, and a permission error are each detected and reported with the
+  specific fix.
 - **`pnpm`** — only when installing DSH plugin packages (`dsh plugin …` forwards to pnpm).
 
 ---
@@ -192,6 +208,39 @@ node skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs --help
 ```
 
 Flags: `--name`, `--out`, `--react`, `--no-tailwind`, `--force`.
+
+---
+
+## Quick start — FlareSolverr workspace
+
+`flaresolverr` gives a session a disposable, loopback-only FlareSolverr container. FlareSolverr has
+**no authentication**, so the plugin publishes it on `127.0.0.1` only, on a kernel-assigned port,
+and tears it down with the session.
+
+```bash
+dsh plugin --profile web add plugins/flaresolverr
+dsh --profile web --dump-config          # the flaresolverr row is present
+```
+
+Then in a session:
+
+```
+flaresolverr action=start
+flaresolverr action=request cmd=request.get url="https://protected.example/" disableMedia=true
+flaresolverr action=stop
+```
+
+The result carries `solution.cookies` **and** `solution.userAgent`. A Cloudflare clearance cookie
+only works for the User-Agent that earned it — reuse `solution.userAgent` verbatim downstream, or
+the challenge reappears.
+
+Prove the whole path (Docker, pull, start, `/health`, loopback-only, `request.get`, teardown, and
+the assertion that nothing leaked):
+
+```bash
+bash skills/flaresolverr-workspace/scripts/verify-workspace.sh
+bash skills/flaresolverr-workspace/scripts/verify-workspace.sh --help
+```
 
 ---
 
@@ -304,6 +353,7 @@ Beyond the validator:
 - Load it once by exact name to confirm the body parses and the resource paths resolve.
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
 - For the plugin in this repository: install it with `dsh plugin --profile <name> add plugins/suggest-resources`, confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it disappears — that proves the registration belongs to the plugin's context.
+- For FlareSolverr: `bash skills/flaresolverr-workspace/scripts/verify-workspace.sh` proves the workspace path end to end and asserts no container or network is left behind.
 - For Ghost themes: `bash skills/ghost-theme-modern-frontend/scripts/verify-theme.sh <theme-dir>`.
 
 ---

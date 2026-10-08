@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "FlareSolverr Workspace",
+    "description": "Runs a disposable, loopback-only FlareSolverr container to solve Cloudflare challenges."
+  }
+}
