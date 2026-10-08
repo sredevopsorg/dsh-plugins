@@ -1,0 +1,33 @@
+{
+  "name": "@sredevopsorg/dsh-flaresolverr",
+  "version": "1.0.0",
+  "description": "Disposable loopback-only FlareSolverr workspaces for solving Cloudflare challenges.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "docker.js",
+    "flare.js",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "flaresolverr",
+    "cloudflare",
+    "docker"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
