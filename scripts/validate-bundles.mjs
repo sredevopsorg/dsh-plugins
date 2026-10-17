@@ -188,6 +188,71 @@ function resolveDshRoot(explicit) {
   }
 }
 
+/**
+ * Resolve a DSH package's manifest without assuming a flat node_modules layout.
+ * A globally installed `dsh` keeps its dependencies under `dsh/node_modules`, so
+ * package paths are resolved through the DSH package, then by walking up from
+ * the resolved entry point, and only then by the flat sibling path.
+ */
+function resolvePackageManifest(requireFromDsh, dshRoot, packageName) {
+  const candidates = [];
+  try {
+    candidates.push(requireFromDsh.resolve(`${packageName}/package.json`));
+  } catch {
+    // Packages may not export ./package.json; fall through to entry resolution.
+  }
+  try {
+    let directory = path.dirname(requireFromDsh.resolve(packageName));
+    while (directory !== path.dirname(directory)) {
+      const candidate = path.join(directory, "package.json");
+      if (exists(candidate)) {
+        try {
+          if (readJson(candidate).name === packageName) {
+            candidates.push(candidate);
+            break;
+          }
+        } catch {
+          // Ignore unreadable manifests while walking up.
+        }
+      }
+      directory = path.dirname(directory);
+    }
+  } catch {
+    // Fall through to the flat sibling path.
+  }
+  const bareName = packageName.startsWith("@deepseek-ai/")
+    ? packageName.slice("@deepseek-ai/".length)
+    : packageName;
+  candidates.push(path.join(dshRoot, bareName, "package.json"));
+  return candidates.find((candidate) => exists(candidate));
+}
+
+/**
+ * Package directories visible from the DSH installation: the flat sibling
+ * layout used by npx and some hoisted installs, plus the nested layout used by
+ * a global npm install and pnpm's isolated store.
+ */
+function packageDirectories(dshRoot, dshPackageDir) {
+  const roots = new Set([dshRoot, path.join(dshPackageDir, "node_modules", "@deepseek-ai")]);
+  const directories = new Map();
+  for (const root of roots) {
+    if (!isDirectory(root)) continue;
+    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+      const directory = path.join(root, entry.name);
+      if (!exists(path.join(directory, "package.json"))) continue;
+      let key = directory;
+      try {
+        key = fs.realpathSync(directory);
+      } catch {
+        // Keep the unresolved path as the de-duplication key.
+      }
+      directories.set(key, directory);
+    }
+  }
+  return [...directories.values()];
+}
+
 /** Evaluate a `!!js` scalar the way the Loader would in a profile-less scope. */
 function evaluateExpression(expression) {
   const ctx = { get: () => undefined };
@@ -274,10 +339,12 @@ async function main() {
     );
   }
 
-  const runtimeManifest = path.join(dshRoot, "dsh-app-boot", "package.json");
-  const runtimeVersion = exists(runtimeManifest) ? readJson(runtimeManifest).version : undefined;
+  const dshManifest = resolvePackageManifest(requireFromDsh, dshRoot, "@deepseek-ai/dsh");
+  const dshPackageDir = dshManifest === undefined ? path.join(dshRoot, "dsh") : path.dirname(dshManifest);
+  const runtimeManifest = resolvePackageManifest(requireFromDsh, dshRoot, "@deepseek-ai/dsh-app-boot");
+  const runtimeVersion = runtimeManifest === undefined ? undefined : readJson(runtimeManifest).version;
   if (runtimeVersion === undefined) {
-    throw new Error(`cannot read the DSH runtime version from ${runtimeManifest}`);
+    throw new Error(`cannot read the DSH runtime version via ${path.join(dshRoot, "dsh")}`);
   }
   if (semver.valid(runtimeVersion) === null) {
     throw new Error(`installed DSH runtime version is not semver: ${runtimeVersion}`);
@@ -407,9 +474,10 @@ async function main() {
 
   // ── Subagent providers available in this installation ────────────────────
   const providerNames = new Set();
-  for (const entry of fs.readdirSync(dshRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !entry.name.startsWith("dsh-subagent-")) continue;
-    const file = path.join(dshRoot, entry.name, "lib", "index.js");
+  for (const directory of packageDirectories(dshRoot, dshPackageDir)) {
+    const packageName = path.basename(directory);
+    if (!packageName.startsWith("dsh-subagent-")) continue;
+    const file = path.join(directory, "lib", "index.js");
     if (!exists(file)) continue;
     try {
       const module = await import(pathToFileURL(file).href);
@@ -418,7 +486,7 @@ async function main() {
         if (typeof resolved?.providerName === "string") providerNames.add(resolved.providerName);
       }
     } catch (error) {
-      warn(`cannot inspect subagent provider package ${entry.name}: ${error.message}`);
+      warn(`cannot inspect subagent provider package ${packageName}: ${error.message}`);
     }
   }
   if (providerNames.size === 0) {
@@ -549,7 +617,15 @@ async function main() {
     try {
       standardFile = requireFromDsh.resolve("@deepseek-ai/dsh-web-app/presets/standard.patch.yml");
     } catch {
-      standardFile = path.join(dshRoot, "dsh-web-app", "presets", "standard.patch.yml");
+      const webAppManifest = resolvePackageManifest(
+        requireFromDsh,
+        dshRoot,
+        "@deepseek-ai/dsh-web-app",
+      );
+      standardFile =
+        webAppManifest === undefined
+          ? path.join(dshRoot, "dsh-web-app", "presets", "standard.patch.yml")
+          : path.join(path.dirname(webAppManifest), "presets", "standard.patch.yml");
     }
     if (!exists(standardFile)) {
       fail(`architect-dev: cannot read the shipped standard preset at ${standardFile}`);
