@@ -157,6 +157,11 @@ When DSH ships a new `standard` preset:
 4. If the compatible DSH range changed intentionally, update `engines.dsh` and
    the version, then note it here.
 
+Persona templates may only use prompt variables registered by the installed DSH
+(`{{model}}` and `{{provider}}` in 0.2.1-rc.2). The validator rejects any other
+`{{name}}`; the runtime context already carries the working directory, so do not
+add a `{{cwd}}` placeholder.
+
 CI runs the skills validator and the bundle validator; the weekly compatibility
 canary checks the newest published DSH so upstream preset drift is visible
 early.
