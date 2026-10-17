@@ -1,8 +1,36 @@
 {
-  "name": "@sredevopsorg/dsh-architect-dev-preset",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
+  "name": "@sredevopsorg/dsh-architect-dev-bundle",
+  "version": "1.1.0",
   "description": "Architect Dev agent preset: senior software architect and fullstack developer assistant.",
-  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "dsh",
+    "dsh-bundle",
+    "dsh-agent-preset",
+    "architect",
+    "fullstack",
+    "supabase"
+  ],
+  "icon": "./icon.svg",
+  "exports": {
+    "./package.json": "./package.json",
+    "./icon.svg": "./icon.svg",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
 }

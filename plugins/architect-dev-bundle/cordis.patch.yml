@@ -1,12 +1,23 @@
 # Architect Dev — a user-installed agent-preset bundle for this profile.
 #
 # The preset is an ordinary `@deepseek-ai/dsh-agent-preset` declaration. Its
-# plugin list is the shipped `standard` preset's list, with three changes:
+# plugin list is the shipped `standard` preset's list, with these deliberate
+# deltas:
 #   1. an architect / fullstack-developer persona (prefix + suffix);
-#   2. the Supabase MCP server attached (see the MCP rows at the end);
-#   3. no customSkillDirs — the architecture, fullstack, and Supabase skills
+#   2. the profile-gated `plugin_manager` tool, so a Web session can install,
+#      remove, and select profile bundles from the chat (every call still needs
+#      full access or approval);
+#   3. the MCP rows at the end: Supabase (token-gated, read-only by default)
+#      and an opt-in GitHub example;
+#   4. no customSkillDirs — the architecture, fullstack, and Supabase skills
 #      live under the harness-wide skill root (~/.dsh/skills), which the
-#      default skill-filesystem roots already scan for every preset.
+#      default skill-filesystem roots already scan for every preset. Run
+#      `./install.sh` at the repository root to link them there.
+#
+# KEEP IN SYNC: `scripts/validate-bundles.mjs` compares this list with
+# `@deepseek-ai/dsh-web-app/presets/standard.patch.yml` from the installed DSH
+# and fails when DSH adds or changes a row that this copy has not mirrored.
+# Only `persona`, `tool-plugin-manager`, and the `mcp-*` rows may differ.
 #
 # Installing this bundle puts the preset in the profile, so every workspace
 # using the profile can select "Architect Dev". Edits saved from the Web editor
@@ -40,13 +51,16 @@
                 Your working directory is {{cwd}}.
 
                 Use, discover, and suggest the right tooling for each goal:
-                - Discover before you build: check your skill catalog for a matching skill and load it with the `skill` tool, then check whether a built-in tool already covers the need.
+                - Discover before you build: check your skill catalog for a matching skill and load it with the `skill` tool. The `software-architecture`, `fullstack-development`, `supabase`, and `supabase-postgres-best-practices` skills cover this preset's core work; load `supabase-postgres-best-practices` before changing anything in a Postgres database.
+                - If the `suggest_resources` tool is available, call it to rank the tools, plugins, MCP servers, and skills that fit a task before recommending one; otherwise check a built-in tool before proposing anything new.
                 - Recommend skills, plugins, MCP servers, CLIs, and frameworks concretely, with trade-offs and prerequisites; research current options with web search before naming something specific, and never invent a package or server name.
                 - Delegate independent work to subagents or a workflow; reach for an external MCP server or CLI only for capabilities the harness does not ship.
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
             config:
               maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
           - id: tool-bash
             name: '@deepseek-ai/dsh-tool-bash'
             disabled: !!js process.platform === 'win32'
@@ -61,6 +75,8 @@
               sampleOverCapGlobResults: false
           - id: tool-jobs
             name: '@deepseek-ai/dsh-tool-jobs'
+          - id: tool-schedule
+            name: '@deepseek-ai/dsh-tool-schedule'
           - id: skill-filesystem
             name: '@deepseek-ai/dsh-skill-filesystem'
           - id: tool-skill
@@ -79,7 +95,7 @@
                 name: '@deepseek-ai/dsh-plan-mode'
                 config:
                   section: |
-                    You are in plan mode. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
+                    You are in plan mode. Stay in plan mode until the user approves your plan through exit_plan_mode or switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
 
                     Explore first. Use non-mutating reads, searches, static analysis, and checks to ground the plan in the actual repository. Do not edit or write files, change configuration, run formatters or code generation that rewrites tracked files, commit, or otherwise carry out the plan. Prefer existing functions and patterns over new machinery.
 
@@ -123,41 +139,17 @@
                   provider: spawn
                   toolName: subagent
                   modelSelectionSettings: true
-                  backgroundMode: continuable
               - id: tool-subagent-fork
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
                   provider: fork
                   toolName: subagent_fork
-                  backgroundMode: continuable
-              - id: tool-subagent-codex
-                name: '@deepseek-ai/dsh-tool-subagent'
-                disabled: true
-                config:
-                  provider: codex
-                  toolName: subagent_codex
-                  backgroundMode: one-shot
-                  maxDepth: provider-managed
-              - id: tool-subagent-claude-code
-                name: '@deepseek-ai/dsh-tool-subagent'
-                disabled: true
-                config:
-                  provider: claude-code
-                  toolName: subagent_claude_code
-                  backgroundMode: one-shot
-                  maxDepth: provider-managed
               - id: workflow-ptc
                 name: '@deepseek-ai/dsh-workflow-ptc'
                 config:
                   provider: spawn
               - id: tool-workflow
                 name: '@deepseek-ai/dsh-tool-workflow'
-              - id: tool-ralph
-                name: '@deepseek-ai/dsh-tool-ralph'
-                disabled: true
-                config:
-                  subagentProvider: spawn
-                  maxRounds: 64
           - id: tool-ask-user
             name: '@deepseek-ai/dsh-tool-ask-user'
           - id: tool-todo
@@ -171,66 +163,70 @@
               searchTimeoutMs: 60000
           - id: present
             name: '@deepseek-ai/dsh-tool-present'
+          - id: tool-plugin-manager
+            name: '@deepseek-ai/dsh-plugin-manager/tools'
+            disabled: !!js "!ctx.get('profileContext')"
+          - id: tool-plugin-market
+            name: '@deepseek-ai/dsh-plugin-market/tools'
+            disabled: true
 
           # ── MCP servers ───────────────────────────────────────────────────
           # `@deepseek-ai/dsh-mcp-client` registers each server's tools on the
           # tool registry as `mcp__<serverName>__<tool>`; it provides no
-          # service, so these rows sit loose like the other tool rows.
+          # service, so these rows sit loose like the other tool rows. MCP
+          # servers run outside the DSH filesystem sandbox with their own
+          # credentials, so enable only servers you trust and scope their
+          # credentials to the least access the task needs.
 
           # Supabase MCP — the MCP half of the Supabase Plugin for AI Coding
           # Agents (https://supabase.com/docs/guides/ai-tools/plugins). Its
           # other half, the Supabase agent skills, is installed harness-wide
-          # under ~/.dsh/skills and is reachable from every preset.
+          # under ~/.dsh/skills by `./install.sh` and is reachable from every
+          # preset.
           #
           # PREREQUISITE: a Supabase personal access token in the
           # SUPABASE_ACCESS_TOKEN environment variable
           # (https://supabase.com/dashboard/account/tokens), set before dsh
           # starts. The hosted server also offers browser OAuth, which this MCP
           # client does not implement, so the bearer header is the only route.
+          # Without the token the row is disabled, so no connection is
+          # attempted and the rest of the preset still activates.
           #
           # SECURITY: `read_only=true` keeps the agent from mutating your
           # database by default, per Supabase's own guidance for connecting a
           # real project. Append `&project_ref=<project-ref>` to the URL to
-          # scope the row to one project (that also disables the account
-          # tools). Drop `read_only=true` only to allow migrations, SQL writes,
-          # or Edge Function deploys — and only against a project you can
-          # afford to change.
+          # scope the row to one project. Drop `read_only=true` only to allow
+          # migrations, SQL writes, or Edge Function deploys — and only against
+          # a project you can afford to change.
           #
-          # `failOnStartupError` stays false: an unconfigured or unreachable
-          # token must not fail this preset's activation. The connection error
-          # is logged and the client retries; the tools appear once the token
-          # is set and dsh restarts.
+          # `failOnStartupError: false` is stated explicitly: an unconfigured
+          # or unreachable server must not fail this preset's activation. The
+          # connection error is logged and the client retries; the tools appear
+          # once the server is reachable and dsh reloads the row.
           - id: mcp-supabase
             name: '@deepseek-ai/dsh-mcp-client'
+            disabled: !!js "!process.env.SUPABASE_ACCESS_TOKEN"
             config:
               serverName: supabase
               transport: streamable-http
-              url: https://mcp.supabase.com/mcp?read_only=true&features=docs,account,database,debugging,development,functions
+              url: https://mcp.supabase.com/mcp?read_only=true&features=docs,database,debugging,development,functions,storage
               headers:
                 Authorization: !!js '`Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`'
+              failOnStartupError: false
 
-          # Generic opt-in examples; each needs its upstream installed and its
-          # own credentials.
+          # Opt-in example: the current GitHub MCP server, hosted over
+          # Streamable HTTP. Set GITHUB_TOKEN with a personal access token
+          # (requires access to the repositories you want to expose) to enable
+          # the row; without it the row stays disabled. The retired
+          # `@modelcontextprotocol/server-github` stdio package is no longer
+          # functional.
           - id: mcp-github
             name: '@deepseek-ai/dsh-mcp-client'
-            disabled: true
+            disabled: !!js "!process.env.GITHUB_TOKEN"
             config:
               serverName: github
-              transport: stdio
-              command: npx
-              args: ['-y', '@modelcontextprotocol/server-github']
-              env:
-                GITHUB_TOKEN: !!js process.env.GITHUB_TOKEN
-          - id: mcp-filesystem
-            name: '@deepseek-ai/dsh-mcp-client'
-            disabled: true
-            config:
-              serverName: filesystem
-              transport: stdio
-              command: npx
-              args: ['-y', '@modelcontextprotocol/server-filesystem', !!js process.cwd()]
-
-          # Lets a session install/uninstall profile bundles from the chat.
-          - id: tool-plugin-manager
-            name: '@deepseek-ai/dsh-plugin-manager/tools'
-            disabled: !!js "!ctx.get('profileContext')"
+              transport: streamable-http
+              url: https://api.githubcopilot.com/mcp/
+              headers:
+                Authorization: !!js '`Bearer ${process.env.GITHUB_TOKEN}`'
+              failOnStartupError: false

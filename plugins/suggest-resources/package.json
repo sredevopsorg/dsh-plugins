@@ -1,6 +1,6 @@
 {
   "name": "@sredevopsorg/dsh-suggest-resources",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Suggest tools, plugins, MCP servers, and skills for a task.",
   "license": "MIT",
   "type": "module",
@@ -13,11 +13,16 @@
   "files": [
     "index.js",
     "catalog.js",
+    "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
     "README.md"
   ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

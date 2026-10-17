@@ -125,12 +125,14 @@ is never mistaken for a complete one.
 
 ## The MCP catalogue is a snapshot
 
-`catalog.js` lists the official reference MCP servers from
-<https://modelcontextprotocol.io/examples>. It is hand-maintained and will go
-stale; treat the URL as the authority and verify a server before connecting it.
-Servers the MCP project has archived are marked `archived: true` rather than
-presented as current. `envHint` names a credential *environment variable* only
-— never put a secret value in configuration or in conversation text.
+`catalog.js` lists a curated set of MCP servers: the official reference servers
+from <https://modelcontextprotocol.io/examples> plus the official GitHub MCP
+Server from <https://github.com/github/github-mcp-server>. It is hand-maintained
+and will go stale; treat the source URLs as the authority and verify a server
+before connecting it. Servers the MCP project has archived are marked
+`archived: true` rather than presented as current. `envHint` names a credential
+*environment variable* only — never put a secret value in configuration or in
+conversation text.
 
 ## Verifying
 
