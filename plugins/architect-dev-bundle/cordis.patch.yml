@@ -48,8 +48,6 @@
 
                 Work architect first, developer second: clarify requirements and constraints, choose the simplest architecture that satisfies them, state the trade-offs, record the decision (a C4 diagram or ADR when it helps), then implement in small tested increments. Prefer deleting complexity over adding abstraction.
               suffix: |-
-                Your working directory is {{cwd}}.
-
                 Use, discover, and suggest the right tooling for each goal:
                 - Discover before you build: check your skill catalog for a matching skill and load it with the `skill` tool. The `software-architecture`, `fullstack-development`, `supabase`, and `supabase-postgres-best-practices` skills cover this preset's core work; load `supabase-postgres-best-practices` before changing anything in a Postgres database.
                 - If the `suggest_resources` tool is available, call it to rank the tools, plugins, MCP servers, and skills that fit a task before recommending one; otherwise check a built-in tool before proposing anything new.

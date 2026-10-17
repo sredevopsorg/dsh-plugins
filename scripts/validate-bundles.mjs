@@ -17,6 +17,7 @@
  *   - `!!js` expressions are evaluated with a stub `ctx`, so gated rows are
  *     checked as they resolve in a non-profile context
  *   - no row uses a removed option (currently `backgroundMode`)
+ *   - persona templates use only prompt variables registered by the installed DSH
  *   - every `tool-subagent` provider is registered by an installed
  *     `dsh-subagent-*` package
  *   - the Architect Dev preset declaration is structurally valid
@@ -253,6 +254,25 @@ function packageDirectories(dshRoot, dshPackageDir) {
   return [...directories.values()];
 }
 
+/**
+ * Prompt variable names registered by the installed DSH packages. Persona
+ * templates resolve `{{name}}` strictly against these; an unregistered name
+ * fails the whole turn when the prompt renders.
+ */
+function registeredPromptVariables(packageDirs) {
+  const names = new Set();
+  const pattern = /\.variable\(\s*["']([^"']+)["']/g;
+  for (const directory of packageDirs) {
+    for (const relative of ["lib/index.js", "lib/startup.js"]) {
+      const file = path.join(directory, relative);
+      if (!exists(file)) continue;
+      const text = fs.readFileSync(file, "utf8");
+      for (const match of text.matchAll(pattern)) names.add(match[1]);
+    }
+  }
+  return names;
+}
+
 /** Evaluate a `!!js` scalar the way the Loader would in a profile-less scope. */
 function evaluateExpression(expression) {
   const ctx = { get: () => undefined };
@@ -472,9 +492,11 @@ async function main() {
     }
   }
 
-  // ── Subagent providers available in this installation ────────────────────
+  // ── Installed package inventory, subagent providers, prompt variables ─────
+  const installationPackages = packageDirectories(dshRoot, dshPackageDir);
+  const promptVariables = registeredPromptVariables(installationPackages);
   const providerNames = new Set();
-  for (const directory of packageDirectories(dshRoot, dshPackageDir)) {
+  for (const directory of installationPackages) {
     const packageName = path.basename(directory);
     if (!packageName.startsWith("dsh-subagent-")) continue;
     const file = path.join(directory, "lib", "index.js");
@@ -550,6 +572,21 @@ async function main() {
       } catch (error) {
         fail(`${label}: config expression failed: ${error.message}`);
         return;
+      }
+      if (row.name === "@deepseek-ai/dsh-persona") {
+        for (const field of ["prefix", "suffix"]) {
+          const text = config?.[field];
+          if (typeof text !== "string") continue;
+          for (const match of text.matchAll(/{{([^{}]+)}}/g)) {
+            const variable = match[1].trim();
+            if (!promptVariables.has(variable)) {
+              fail(
+                `${label}: ${field} uses unregistered prompt variable {{${variable}}}; ` +
+                  `registered: ${[...promptVariables].sort().join(", ") || "none"}`,
+              );
+            }
+          }
+        }
       }
       try {
         const Config = await loadConfig(resolved.file);
