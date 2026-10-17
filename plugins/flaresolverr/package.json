@@ -1,6 +1,6 @@
 {
   "name": "@sredevopsorg/dsh-flaresolverr",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Disposable loopback-only FlareSolverr workspaces for solving Cloudflare challenges.",
   "license": "MIT",
   "type": "module",
@@ -14,6 +14,7 @@
     "index.js",
     "docker.js",
     "flare.js",
+    "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
     "README.md"
@@ -25,7 +26,11 @@
     "cloudflare",
     "docker"
   ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
     }

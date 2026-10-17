@@ -90,14 +90,20 @@ export const MCP_SERVERS = [
   {
     name: 'github',
     description:
-      'GitHub API access: issues, pull requests, and repository contents. Archived by the MCP project and no longer actively maintained; prefer a current integration if one exists.',
+      'Official GitHub MCP Server: repositories, issues, pull requests, code search, and Actions. Runs the maintained server in Docker and needs a GITHUB_PERSONAL_ACCESS_TOKEN with repository access; the retired @modelcontextprotocol/server-github package is no longer functional.',
     transport: 'stdio',
-    command: 'npx',
-    args: ['-y', '@modelcontextprotocol/server-github'],
+    command: 'docker',
+    args: [
+      'run',
+      '-i',
+      '--rm',
+      '-e',
+      'GITHUB_PERSONAL_ACCESS_TOKEN',
+      'ghcr.io/github/github-mcp-server'
+    ],
     envHint: 'GITHUB_PERSONAL_ACCESS_TOKEN',
-    archived: true,
-    tags: ['github', 'issues', 'pull-request', 'repository', 'code-review'],
-    source: 'https://modelcontextprotocol.io/examples'
+    tags: ['github', 'issues', 'pull-request', 'repository', 'code-review', 'actions'],
+    source: 'https://github.com/github/github-mcp-server'
   }
 ];
 

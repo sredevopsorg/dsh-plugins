@@ -2,15 +2,16 @@
 
 Custom **skills, plugins, and tools** for [DeepSeek Harness (DSH)](https://github.com/sredevopsorg), maintained by [sredevopsorg](https://github.com/sredevopsorg).
 
-DSH loads three kinds of extension:
+DSH loads four kinds of extension:
 
 | Kind | What it is | Where it lives here |
 |---|---|---|
 | **Skill** | A `SKILL.md` (or flat `<name>.md`) instruction bundle discovered from a skills root and loaded on demand by the model or with `/name`. | [`skills/`](skills/) |
 | **Plugin** | A Cordis plugin package loaded into a DSH profile (`dsh plugin …`). | [`plugins/`](plugins/) |
 | **Tool** | A model-facing tool registered by a plugin via `ctx.tools`. Usually shipped inside a plugin package. | [`plugins/<name>/`](plugins/suggest-resources/) |
+| **Agent preset** | A named plugin composition (`@deepseek-ai/dsh-agent-preset`) delivered by a bundle, selectable per session. | [`plugins/architect-dev-bundle/`](plugins/architect-dev-bundle/README.md) |
 
-> Verified against `@deepseek-ai/dsh` **0.2.x** (`0.2.0-rc.2`). The CLI version gate is strict, so check `dsh --version` before reporting plugin issues.
+> Verified against `@deepseek-ai/dsh` **0.2.x**, currently **`0.2.1-rc.2`**. The CLI version gate is strict, so check `dsh --version` before reporting plugin issues. Bundle patches are checked against the installed DSH by `scripts/validate-bundles.mjs`.
 
 ---
 
@@ -33,6 +34,7 @@ DSH loads three kinds of extension:
 
 | Plugin | Kind | Use it for |
 |---|---|---|
+| [`architect-dev-bundle`](plugins/architect-dev-bundle/README.md) | bundle + agent preset | Adding the **Architect Dev** preset: senior software architect and fullstack developer, minimalistic architectures, skills, and Supabase/GitHub MCP discovery |
 | [`suggest-resources`](plugins/suggest-resources/README.md) | bundle + tool | Ranking the available tools, plugins, MCP servers, and skills against a task |
 | [`flaresolverr`](plugins/flaresolverr/README.md) | bundle + tool | Running a disposable, loopback-only FlareSolverr container to solve Cloudflare and DDoS-Guard challenges |
 
@@ -48,7 +50,8 @@ DSH loads three kinds of extension:
 ├── install.sh                             # register skills with a DSH skill root
 ├── .shellcheckrc
 ├── scripts/
-│   └── validate-skills.mjs                # frontmatter contract check (CI)
+│   ├── validate-skills.mjs                # frontmatter contract check (CI)
+│   └── validate-bundles.mjs               # bundle/preset compatibility check (CI)
 ├── .github/workflows/ci.yml
 ├── docs/
 │   └── ghost-themes.md                    # repo doc — NOT a skill
@@ -76,6 +79,12 @@ DSH loads three kinds of extension:
 │       ├── references/                    # template-language, chart-structure, functions, debugging
 │       └── scripts/                       # verify-chart.mjs
 ├── plugins/
+│   ├── architect-dev-bundle/
+│   │   ├── package.json                   # name, license, engines.dsh, dsh.bundle.patch
+│   │   ├── cordis.patch.yml               # the agent-preset declaration + MCP rows
+│   │   ├── locale/en.json                 # display title/description
+│   │   ├── icon.svg
+│   │   └── README.md                      # install, select, configure, verify
 │   ├── suggest-resources/
 │   │   ├── package.json                   # name, license, exports, dsh.bundle.patch
 │   │   ├── cordis.patch.yml               # the plugin row
@@ -296,11 +305,18 @@ A DSH plugin is an npm package that Cordis loads; a **bundle** additionally decl
   "name": "@sredevopsorg/dsh-<name>",
   "type": "module",
   "exports": { ".": "./index.js" },
+  "engines": { "dsh": "^0.2.1-rc.2" },
   "dsh": {
+    "manifestVersion": 1,
     "bundle": { "patch": "./cordis.patch.yml" }
   }
 }
 ```
+
+`engines.dsh` is the compatibility gate the installer and launcher enforce; omit it and an
+unsupported DSH version installs silently and fails later at activation. A bundle that only adds
+configuration or an agent preset needs no `index.js` or `.` export — declare the patch, plus
+`./package.json`, `./locale/*.json`, and `./icon.svg` for management display.
 
 Install and select it into a profile:
 
@@ -314,8 +330,8 @@ Conventions this repository follows:
 
 ```
 plugins/<name>/
-├── package.json          # name, license, exports, dsh.bundle.patch
-├── cordis.patch.yml      # plugin rows / config
+├── package.json          # name, license, engines.dsh, exports, dsh.bundle.patch
+├── cordis.patch.yml      # plugin rows / config, or the agent-preset declaration
 ├── index.js              # plugin entry: export apply() / inject / (optional) Config
 ├── <support>.js          # plain-ESM support modules, imported relatively
 ├── locale/en.json        # display title + description for management surfaces
@@ -339,20 +355,35 @@ Model-facing tools are registered from a plugin via `ctx.tools`; they should dec
 node scripts/validate-skills.mjs            # frontmatter contract; exits 1 on errors
 node scripts/validate-skills.mjs --json     # machine-readable results
 node scripts/validate-skills.mjs --strict   # warnings become failures
+
+node scripts/validate-bundles.mjs           # bundle/preset compatibility with the installed DSH
+node scripts/validate-bundles.mjs --strict  # drift and metadata warnings become failures
+node scripts/validate-bundles.mjs --json    # machine-readable results
 ```
 
 `validate-skills.mjs` reproduces the checks DSH's filesystem provider makes at discovery, where a
 malformed skill is dropped with only a log line. It enforces the frontmatter contract and flags
 nested `SKILL.md` files, duplicate names, unknown keys, and descriptions the catalog will truncate.
-[CI](.github/workflows/ci.yml) runs it on every push and pull request.
 
-Beyond the validator:
+`validate-bundles.mjs` parses every `plugins/*/cordis.patch.yml`, resolves each referenced package
+and subpath from the installed DSH, validates each row's `Config` against the live schema, checks
+`engines.dsh`, and — for the Architect Dev preset — compares the copied plugin list with
+`@deepseek-ai/dsh-web-app/presets/standard.patch.yml`, failing when DSH adds or changes a row the
+bundle has not mirrored. It resolves `yaml` and `semver` from the DSH installation, so this
+repository stays dependency-free. Pass `--dsh-root <path-to-node_modules/@deepseek-ai>` when
+`dsh` is not the one on `PATH`.
+
+[CI](.github/workflows/ci.yml) runs both validators on every push and pull request; a weekly
+canary runs the bundle validator against the newest published DSH.
+
+Beyond the validators:
 
 - `dsh --version` matches the peer range you target.
 - Start a session and confirm the skill appears in the catalog (`/` in the composer lists user-invocable skills).
 - Load it once by exact name to confirm the body parses and the resource paths resolve.
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
 - For the plugin in this repository: install it with `dsh plugin --profile <name> add plugins/suggest-resources`, confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it disappears — that proves the registration belongs to the plugin's context.
+- For the Architect Dev preset: follow [its verification checklist](plugins/architect-dev-bundle/README.md#verify) in a new session.
 - For FlareSolverr: `bash skills/flaresolverr-workspace/scripts/verify-workspace.sh` proves the workspace path end to end and asserts no container or network is left behind.
 - For Ghost themes: `bash skills/ghost-theme-modern-frontend/scripts/verify-theme.sh <theme-dir>`.
 
@@ -362,7 +393,8 @@ Beyond the validator:
 
 1. Branch from `main`; keep one concern per branch.
 2. Add or update the skill/plugin **and** this README's catalog table in the same change.
-3. Run `node scripts/validate-skills.mjs` — CI runs it too, and a malformed skill is invisible until discovery.
+3. Run `node scripts/validate-skills.mjs` and, for any bundle change,
+   `node scripts/validate-bundles.mjs` — CI runs both.
 4. Verify the skill loads in a real DSH session (frontmatter errors are only visible at discovery).
 5. Keep shell scripts `shellcheck`-clean and preserve their executable bits.
 6. Never commit secrets, tokens, personal paths, or session data.

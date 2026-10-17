@@ -1,0 +1,32 @@
+name: compatibility canary
+
+# The bundle copies the shipped `standard` preset, so a DSH release that adds
+# or changes a preset row must surface here before it surprises users. This
+# workflow is intentionally not part of PR blocking.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  newest:
+    name: Newest published DSH
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install the newest published DSH
+        run: npm install --global @deepseek-ai/dsh@latest
+
+      - name: Report the tested runtime
+        run: dsh --version
+
+      - name: Validate bundles against the newest published DSH
+        run: node scripts/validate-bundles.mjs --strict --dsh-root "$(npm root -g)/@deepseek-ai"
