@@ -30,10 +30,58 @@ to the profile patch instead:
 - `npx` on `PATH` (Node/npm). The row runs
   `npx -y kubernetes-mcp-server@latest`; the first launch downloads the package and
   its platform binary.
-- A kubeconfig. The server uses `KUBECONFIG` when set and otherwise
-  `~/.kube/config`; the MCP client preserves `KUBECONFIG` through its environment
-  scrubbing.
+- A kubeconfig. Set `KUBERNETES_MCP_KUBECONFIG` to an absolute path to give the
+  server a dedicated file; otherwise it uses the ambient `KUBECONFIG` or
+  `~/.kube/config`. The MCP client preserves both variables through its
+  environment scrubbing.
 - A Kubernetes cluster reachable with that kubeconfig.
+
+## Pass the kubeconfig through configuration
+
+The bundle's `mcp-kubernetes` row evaluates this expression when it activates:
+
+```yaml
+env: !!js "process.env.KUBERNETES_MCP_KUBECONFIG ? { KUBECONFIG: process.env.KUBERNETES_MCP_KUBECONFIG } : {}"
+```
+
+So:
+
+```bash
+export KUBERNETES_MCP_KUBECONFIG="$HOME/.kube/mcp-viewer.kubeconfig"
+chmod 600 "$KUBERNETES_MCP_KUBECONFIG"
+```
+
+- The value must be an **absolute path**; relative paths resolve from the DSH
+  process working directory.
+- It is read when the row activates. Set it before starting DSH (and restart DSH
+  after changing it); exporting it in a later shell does not reach the running
+  DSH process.
+- When set, the child receives it as `KUBECONFIG`, so the MCP uses that file while
+  your `kubectl` can keep using the default kubeconfig.
+- When unset or empty, the child keeps the ambient `KUBECONFIG` and otherwise
+  falls back to `~/.kube/config`.
+- A static profile override can enable the row and set `env` literally, but a
+  profile patch replaces the row's whole `config`:
+
+```yaml
+- id: mcp-kubernetes
+  disabled: false
+  config:
+    serverName: kubernetes
+    transport: stdio
+    command: npx
+    args: ['-y', 'kubernetes-mcp-server@latest']
+    env:
+      KUBECONFIG: /absolute/path/mcp-viewer.kubeconfig
+    failOnStartupError: false
+```
+
+Verify the exact file before enabling:
+
+```bash
+bash scripts/verify-kube-access.sh \
+  --kubeconfig "$KUBERNETES_MCP_KUBECONFIG" --require-read-only
+```
 
 ## Read-only is enforced by credentials, not by the bundle
 
@@ -64,20 +112,21 @@ kubectl create clusterrolebinding mcp-viewer-crb \
   --clusterrole=view --serviceaccount=mcp:mcp-viewer
 TOKEN="$(kubectl create token mcp-viewer --duration=2h -n mcp)"
 # Build ~/.kube/mcp-viewer.kubeconfig from the current cluster + token, then:
-export KUBECONFIG="$HOME/.kube/mcp-viewer.kubeconfig"
+export KUBERNETES_MCP_KUBECONFIG="$HOME/.kube/mcp-viewer.kubeconfig"
 ```
 
 The built-in `view` ClusterRole is read-only and deliberately excludes Secrets and
 RBAC objects. Use a namespace-scoped RoleBinding instead of a ClusterRoleBinding when
 the MCP only needs one namespace.
 
-Before enabling the MCP, check the ambient context:
+Before enabling the MCP, check the selected file (or the ambient context when the
+variable is unset):
 
 ```bash
-kubectl config current-context
-kubectl auth can-i --list
-kubectl auth can-i create pods,deployments,services -A
-kubectl auth can-i delete pods -A
+bash scripts/verify-kube-access.sh \
+  --kubeconfig "${KUBERNETES_MCP_KUBECONFIG:-$HOME/.kube/config}" \
+  --require-read-only
+kubectl --kubeconfig "${KUBERNETES_MCP_KUBECONFIG:-$HOME/.kube/config}" config current-context
 ```
 
 If writes are allowed, do not enable the MCP for exploratory work; point the MCP at the
@@ -189,4 +238,6 @@ the `helm-chart-development` skill or the `helm` CLI.
 | Tools return authorization errors | RBAC denies the verb/resource. Fix the kubeconfig/ServiceAccount; do not widen to an admin context casually. |
 | Secret reads are blocked | RBAC or `denied_resources` is doing its job. Do not work around it. |
 | Tool arguments rejected | `resources_*` requires `apiVersion` + `kind`; `pods_list_in_namespace` requires `namespace`; `pods_get`/`pods_log` require `name`. |
-| Wrong cluster | `kubectl config get-contexts`, then pass `context` explicitly. |
+| `KUBERNETES_MCP_KUBECONFIG` ignored | It was unset, relative, or exported after DSH started. Set an absolute path before DSH starts (restart if needed), then enable the row. |
+| Kubeconfig unreadable | Check the absolute path and file permissions; test with `kubectl --kubeconfig <path> config current-context`. |
+| Wrong cluster | Check `KUBERNETES_MCP_KUBECONFIG`, then `kubectl config get-contexts`, and pass the `context` argument explicitly. |
