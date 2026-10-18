@@ -7,12 +7,14 @@
 #   2. the profile-gated `plugin_manager` tool, so a Web session can install,
 #      remove, and select profile bundles from the chat (every call still needs
 #      full access or approval);
-#   3. the MCP rows at the end: Supabase (token-gated, read-only by default)
-#      and an opt-in GitHub example;
-#   4. no customSkillDirs — the architecture, fullstack, and Supabase skills
-#      live under the harness-wide skill root (~/.dsh/skills), which the
-#      default skill-filesystem roots already scan for every preset. Run
-#      `./install.sh` at the repository root to link them there.
+#   3. the MCP rows: Supabase (token-gated, read-only by default) and an
+#      opt-in GitHub example inside the preset, plus a profile-level
+#      `mcp-kubernetes` row after the preset that is disabled by default and
+#      enabled on request;
+#   4. no customSkillDirs — the architecture, fullstack, Supabase, and
+#      Kubernetes skills live under the harness-wide skill root (~/.dsh/skills),
+#      which the default skill-filesystem roots already scan for every preset.
+#      Run `./install.sh` at the repository root to link them there.
 #
 # KEEP IN SYNC: `scripts/validate-bundles.mjs` compares this list with
 # `@deepseek-ai/dsh-web-app/presets/standard.patch.yml` from the installed DSH
@@ -22,6 +24,11 @@
 # Installing this bundle puts the preset in the profile, so every workspace
 # using the profile can select "Architect Dev". Edits saved from the Web editor
 # override this row's `config.plugins` by id from the profile patch.
+#
+# The `mcp-kubernetes` row at the end is deliberately OUTSIDE the preset:
+# agent-preset compositions are read-only to `plugin_manager`, while a
+# profile-level row can be enabled on request with `set_plugin`. It is disabled
+# by default, so DSH starts no MCP process until the user asks for it.
 - insert:
     - id: preset-architect-dev
       name: '@deepseek-ai/dsh-agent-preset'
@@ -49,7 +56,8 @@
                 Work architect first, developer second: clarify requirements and constraints, choose the simplest architecture that satisfies them, state the trade-offs, record the decision (a C4 diagram or ADR when it helps), then implement in small tested increments. Prefer deleting complexity over adding abstraction.
               suffix: |-
                 Use, discover, and suggest the right tooling for each goal:
-                - Discover before you build: check your skill catalog for a matching skill and load it with the `skill` tool. The `software-architecture`, `fullstack-development`, `supabase`, and `supabase-postgres-best-practices` skills cover this preset's core work; load `supabase-postgres-best-practices` before changing anything in a Postgres database.
+                - Discover before you build: check your skill catalog for a matching skill and load it with the `skill` tool. The `software-architecture`, `fullstack-development`, `supabase`, `supabase-postgres-best-practices`, and `kubernetes-kubectl-operations` skills cover this preset's core work; load `supabase-postgres-best-practices` before changing anything in a Postgres database.
+                - For Kubernetes, load `kubernetes-kubectl-operations` and default to `kubectl`. The profile-level `mcp-kubernetes` row is disabled by default; enable it on request with `plugin_manager` only after confirming the kubeconfig is read-only, and treat MCP use as inspection-only unless the user explicitly asks for a mutation.
                 - If the `suggest_resources` tool is available, call it to rank the tools, plugins, MCP servers, and skills that fit a task before recommending one; otherwise check a built-in tool before proposing anything new.
                 - Recommend skills, plugins, MCP servers, CLIs, and frameworks concretely, with trade-offs and prerequisites; research current options with web search before naming something specific, and never invent a package or server name.
                 - Delegate independent work to subagents or a workflow; reach for an external MCP server or CLI only for capabilities the harness does not ship.
@@ -228,3 +236,39 @@
               headers:
                 Authorization: !!js '`Bearer ${process.env.GITHUB_TOKEN}`'
               failOnStartupError: false
+
+    # ── Kubernetes MCP (on demand) ────────────────────────────────────────
+    # A profile-level sibling of the preset, NOT a preset child: preset
+    # compositions are read-only to `plugin_manager`, so a child row could not
+    # be enabled on request. This row is disabled by default; DSH starts no
+    # `npx` process and downloads nothing until someone enables it.
+    #
+    # Enable it from the Web Plugins page or with `plugin_manager`:
+    #   list_plugins -> find id "mcp-kubernetes" -> set_plugin enabled=true.
+    # Enabling affects every session in the profile and needs approval; disable
+    # it when the task is done. `failOnStartupError: false` keeps the rest of
+    # the profile usable if npx or the package download fails.
+    #
+    # Source: https://github.com/containers/kubernetes-mcp-server (Apache-2.0).
+    # It is a Go-native server; no kubectl or helm binary is required. The
+    # default toolsets are `core` and `config` (no Helm tools). It is NOT a
+    # read-only server: `resources_create_or_update`, `resources_delete`,
+    # `pods_delete`, `pods_exec`, `pods_run`, and `resources_scale` can mutate.
+    # Point it at a read-only kubeconfig / view-only ServiceAccount before
+    # enabling it for inspection, and never expose Secrets, `configuration_view`
+    # (kubeconfig credentials), or `nodes_log` through it.
+    #
+    # The MCP client scrubs ambient secret-like variables but preserves
+    # KUBECONFIG, which is the server's client-go fallback when no TOML
+    # `kubeconfig` is set.
+    - id: mcp-kubernetes
+      name: '@deepseek-ai/dsh-mcp-client'
+      disabled: true
+      config:
+        serverName: kubernetes
+        transport: stdio
+        command: npx
+        args:
+          - '-y'
+          - 'kubernetes-mcp-server@latest'
+        failOnStartupError: false
