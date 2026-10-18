@@ -28,13 +28,14 @@ DSH loads four kinds of extension:
 | [`ghost-theme-development`](skills/ghost-theme-development/SKILL.md) | model + user | Authoring Ghost Handlebars themes: templates, contexts, helpers, settings, routing, GScan |
 | [`ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | model + user | Wiring a Ghost theme to Vite, Tailwind CSS, and React/Vue/Svelte islands |
 | [`helm-chart-development`](skills/helm-chart-development/SKILL.md) | model + user | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
+| [`kubernetes-kubectl-operations`](skills/kubernetes-kubectl-operations/SKILL.md) | model + user | Safe kubectl operations, cluster triage, and opt-in Kubernetes MCP inspection |
 | [`flaresolverr-workspace`](skills/flaresolverr-workspace/SKILL.md) | model + user | Operating a disposable FlareSolverr workspace: the v1 API contract, lifecycle and teardown, the User-Agent trap, and the failure playbook |
 
 ### Plugins and tools
 
 | Plugin | Kind | Use it for |
 |---|---|---|
-| [`architect-dev-bundle`](plugins/architect-dev-bundle/README.md) | bundle + agent preset | Adding the **Architect Dev** preset: senior software architect and fullstack developer, minimalistic architectures, skills, and Supabase/GitHub MCP discovery |
+| [`architect-dev-bundle`](plugins/architect-dev-bundle/README.md) | bundle + agent preset | Adding the **Architect Dev** preset: senior software architect and fullstack developer, minimalistic architectures, skills, Supabase/GitHub MCP discovery, and an on-demand Kubernetes MCP |
 | [`suggest-resources`](plugins/suggest-resources/README.md) | bundle + tool | Ranking the available tools, plugins, MCP servers, and skills against a task |
 | [`flaresolverr`](plugins/flaresolverr/README.md) | bundle + tool | Running a disposable, loopback-only FlareSolverr container to solve Cloudflare and DDoS-Guard challenges |
 
@@ -74,6 +75,14 @@ DSH loads four kinds of extension:
 │   │   ├── SKILL.md
 │   │   ├── references/
 │   │   └── scripts/                       # scaffold-theme.mjs, verify-theme.sh
+│   ├── kubernetes-kubectl-operations/
+│   │   ├── SKILL.md
+│   │   ├── references/                    # mcp setup/safety, contexts, inspect/debug, apply/rollout
+│   │   └── scripts/                       # verify-kube-access.sh
+│   ├── flaresolverr-workspace/
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   └── scripts/                       # verify-workspace.sh
 │   └── helm-chart-development/
 │       ├── SKILL.md
 │       ├── references/                    # template-language, chart-structure, functions, debugging
@@ -81,7 +90,7 @@ DSH loads four kinds of extension:
 ├── plugins/
 │   ├── architect-dev-bundle/
 │   │   ├── package.json                   # name, license, engines.dsh, dsh.bundle.patch
-│   │   ├── cordis.patch.yml               # the agent-preset declaration + MCP rows
+│   │   ├── cordis.patch.yml               # agent-preset declaration + preset MCP rows + on-demand Kubernetes row
 │   │   ├── locale/en.json                 # display title/description
 │   │   ├── icon.svg
 │   │   └── README.md                      # install, select, configure, verify
@@ -111,10 +120,14 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
 ## Requirements
 
 - **DSH** — `npx @deepseek-ai/dsh …`, or a global `dsh` install (`@deepseek-ai/dsh`).
-- **Node.js ≥ 18** and **npm/npx** — for the Ghost and Helm toolchain scripts and for `npx gscan`.
+- **Node.js ≥ 18** and **npm/npx** — for the Ghost and Helm toolchain scripts, `npx gscan`, and the optional Kubernetes MCP server (`npx -y kubernetes-mcp-server@latest`).
 - **Ghost 6.x + `gscan`** — only for the two Ghost theme skills.
 - **Helm 3+** — only for `helm-chart-development`. No cluster or network needed;
   `scripts/verify-chart.mjs` shells out to `helm lint` and `helm template`.
+- **`kubectl` + a kubeconfig** — only for `kubernetes-kubectl-operations`. The skill
+  inspects and, with explicit confirmation, changes a cluster;
+  `scripts/verify-kube-access.sh` is a read-only preflight. Prefer a read-only kubeconfig
+  or a `view`-only ServiceAccount for the optional Kubernetes MCP.
 - **Docker Engine** with a reachable daemon — only for the `flaresolverr` plugin and its
   `flaresolverr-workspace` skill. The plugin creates containers, networks, and loopback-only
   published ports, so the daemon must be running and the user must be able to reach the socket.
@@ -384,6 +397,7 @@ Beyond the validators:
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
 - For the plugin in this repository: install it with `dsh plugin --profile <name> add plugins/suggest-resources`, confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it disappears — that proves the registration belongs to the plugin's context.
 - For the Architect Dev preset: follow [its verification checklist](plugins/architect-dev-bundle/README.md#verify) in a new session.
+- For Kubernetes: `bash skills/kubernetes-kubectl-operations/scripts/verify-kube-access.sh` is a read-only access preflight; it warns when the context can write, in which case the Kubernetes MCP should not be enabled for exploratory inspection.
 - For FlareSolverr: `bash skills/flaresolverr-workspace/scripts/verify-workspace.sh` proves the workspace path end to end and asserts no container or network is left behind.
 - For Ghost themes: `bash skills/ghost-theme-modern-frontend/scripts/verify-theme.sh <theme-dir>`.
 
@@ -409,3 +423,5 @@ Released under the [MIT License](LICENSE). Third-party attribution is listed in
 - `supabase` and `supabase-postgres-best-practices` are derived from Supabase's published agent skills (MIT). Metadata is preserved in each `SKILL.md`.
 - `ghost-theme-development` and `ghost-theme-modern-frontend` are grounded in the official `docs.ghost.org` documentation and the MIT-licensed community reference theme [christopher-b/vapour](https://github.com/christopher-b/vapour).
 - `helm-chart-development` is grounded in the official Helm documentation — the [Chart Template Developer's Guide](https://helm.sh/docs/chart_template_guide/), [Charts](https://helm.sh/docs/topics/charts/), [Best Practices](https://helm.sh/docs/chart_best_practices/) and [Hooks](https://helm.sh/docs/topics/charts_hooks/) — which is published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Examples and function signatures were verified against Helm 4.3.
+- `kubernetes-kubectl-operations` is grounded in the official Kubernetes documentation at <https://kubernetes.io/docs/> (source: <https://github.com/kubernetes/website>), published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), and the `containers/kubernetes-mcp-server` documentation (Apache-2.0).
+- The Architect Dev bundle configures `containers/kubernetes-mcp-server` at runtime. The server is an Apache-2.0 dependency and is not redistributed here.

@@ -59,7 +59,11 @@ const ARCHITECT_SKILLS = [
   "fullstack-development",
   "supabase",
   "supabase-postgres-best-practices",
+  "kubernetes-kubectl-operations",
 ];
+/** Profile-level Kubernetes MCP row, enabled on request rather than at startup. */
+const KUBERNETES_ROW_ID = "mcp-kubernetes";
+const KUBERNETES_PACKAGE = "kubernetes-mcp-server@latest";
 /** Rows that intentionally differ from the shipped standard preset. */
 const DELTA_ROWS = new Set(["persona", "tool-plugin-manager"]);
 /** Extra row ids allowed beyond the shipped standard preset. */
@@ -646,6 +650,46 @@ async function main() {
         if (!personaText.includes(skill)) {
           fail(`architect-dev: the persona must name skill ${JSON.stringify(skill)}`);
         }
+      }
+    }
+
+    // The Kubernetes MCP is profile-level and disabled by default so it can be
+    // toggled on demand via plugin_manager; a preset child would be read-only.
+    const kubernetesRows = rows.filter((row) => row.id === KUBERNETES_ROW_ID);
+    if (kubernetesRows.length !== 1) {
+      fail(
+        `architect-dev: the patch must insert exactly one top-level ${KUBERNETES_ROW_ID} row ` +
+          `(found ${kubernetesRows.length})`,
+      );
+    } else {
+      const kubernetes = kubernetesRows[0];
+      if (kubernetes.name !== "@deepseek-ai/dsh-mcp-client") {
+        fail(`${KUBERNETES_ROW_ID}: name must be @deepseek-ai/dsh-mcp-client`);
+      }
+      const kubernetesConfig = evaluateSafe(kubernetes.config) ?? {};
+      if (kubernetesConfig.serverName !== "kubernetes") {
+        fail(`${KUBERNETES_ROW_ID}: config.serverName must be "kubernetes"`);
+      }
+      if (kubernetesConfig.transport !== "stdio") {
+        fail(`${KUBERNETES_ROW_ID}: config.transport must be "stdio"`);
+      }
+      if (kubernetesConfig.command !== "npx") {
+        fail(`${KUBERNETES_ROW_ID}: config.command must be "npx"`);
+      }
+      const kubernetesArgs = Array.isArray(kubernetesConfig.args) ? kubernetesConfig.args : [];
+      if (!kubernetesArgs.includes("-y") || !kubernetesArgs.includes(KUBERNETES_PACKAGE)) {
+        fail(`${KUBERNETES_ROW_ID}: args must include -y and ${KUBERNETES_PACKAGE}`);
+      }
+      if (evaluateSafe(kubernetes.disabled) !== true) {
+        fail(`${KUBERNETES_ROW_ID}: must be disabled by default; enable it on request instead`);
+      }
+    }
+    if (declaration !== undefined) {
+      const presetKubernetes = collectPresetRows(declaration).filter(
+        (row) => row.id === KUBERNETES_ROW_ID,
+      );
+      if (presetKubernetes.length > 0) {
+        fail(`architect-dev: ${KUBERNETES_ROW_ID} must be profile-level, not a preset child`);
       }
     }
 
