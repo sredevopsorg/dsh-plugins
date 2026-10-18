@@ -60,9 +60,11 @@ delegation/workflow tools, web access, goals, and presentation.
 4. **GitHub MCP (optional)** — set `GITHUB_TOKEN` with a personal access token
    that can read the repositories you want to expose.
 5. **Kubernetes MCP (optional, on demand)** — `npx` must be on `PATH`, and a
-   kubeconfig must reach the cluster (`KUBECONFIG` or `~/.kube/config`). Prefer a
-   **read-only** kubeconfig or a `view`-only ServiceAccount; the server is not
-   read-only by default. The row starts disabled and is enabled only on request.
+   kubeconfig must reach the cluster. Set `KUBERNETES_MCP_KUBECONFIG` to an
+   absolute path to a dedicated kubeconfig (preferably **read-only**); the row
+   passes it to the server as `KUBECONFIG`. When unset, the server uses its
+   ambient `KUBECONFIG` or `~/.kube/config`. The row starts disabled and is
+   enabled only on request.
 
 ## Install
 
@@ -109,6 +111,10 @@ with) and check:
   exists at startup;
 - enabling `mcp-kubernetes` on request adds `mcp__kubernetes__*` tools, and
   disabling it removes them;
+- with `KUBERNETES_MCP_KUBECONFIG` set before DSH starts, the MCP uses that
+  kubeconfig: compare `kubectl --kubeconfig "$KUBERNETES_MCP_KUBECONFIG" config current-context`
+  with the cluster reached by `mcp__kubernetes__namespaces_list`; without the
+  variable, the MCP falls back to `KUBECONFIG` or `~/.kube/config`;
 - plan mode says it stays active "until the user approves your plan through
   `exit_plan_mode`".
 
@@ -127,7 +133,7 @@ node scripts/validate-bundles.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
 |---|---|---|---|
 | `mcp-supabase` | Streamable HTTP, `https://mcp.supabase.com/mcp?read_only=true&features=docs,database,debugging,development,functions,storage` | `SUPABASE_ACCESS_TOKEN` | Enabled when the token is set; read-only |
 | `mcp-github` | Streamable HTTP, `https://api.githubcopilot.com/mcp/` | `GITHUB_TOKEN` | Disabled unless the token is also set |
-| `mcp-kubernetes` | stdio, `npx -y kubernetes-mcp-server@latest` | `KUBECONFIG` or `~/.kube/config` | **Disabled by default**; enable on demand |
+| `mcp-kubernetes` | stdio, `npx -y kubernetes-mcp-server@latest` | `KUBERNETES_MCP_KUBECONFIG` (passed as the child's `KUBECONFIG`); falls back to `KUBECONFIG` or `~/.kube/config` | **Disabled by default**; enable on demand |
 
 All rows set `failOnStartupError: false`, so a reachable-but-failing or
 unreachable server logs an error and leaves the preset usable instead of failing
@@ -175,6 +181,34 @@ static equivalent:
   disabled: false
 ```
 
+#### Pass a dedicated kubeconfig
+
+The row does not embed a path. Instead, set `KUBERNETES_MCP_KUBECONFIG` in the
+environment that starts DSH:
+
+```bash
+export KUBERNETES_MCP_KUBECONFIG="$HOME/.kube/mcp-viewer.kubeconfig"
+chmod 600 "$KUBERNETES_MCP_KUBECONFIG"
+```
+
+When the variable is non-empty, the row passes it to the MCP child as
+`KUBECONFIG`. When it is unset or empty, the child keeps the ambient
+`KUBECONFIG` or falls back to `~/.kube/config`. This lets `kubectl` keep using
+your normal kubeconfig while the MCP uses a dedicated, read-only one. Use an
+absolute path; relative paths resolve from the DSH process working directory.
+The expression is evaluated when the row activates, so restart DSH after
+changing the variable.
+
+Verify the exact file before enabling the MCP:
+
+```bash
+bash skills/kubernetes-kubectl-operations/scripts/verify-kube-access.sh \
+  --kubeconfig "$KUBERNETES_MCP_KUBECONFIG" --require-read-only
+```
+
+A static profile override can set `env` directly, but it must restate the row's
+whole `config` because a patch replaces `config` wholesale.
+
 **It is not a read-only server.** The default `core` + `config` toolsets can
 create/update (`resources_create_or_update`), delete (`resources_delete`,
 `pods_delete`), exec (`pods_exec`), run pods (`pods_run`), and scale
@@ -211,6 +245,8 @@ the full procedure.
   mutations through `kubectl` with a diff and confirmation. Do not expose
   Secrets, kubeconfig contents (`configuration_view`), node logs, or pod exec
   through it.
+- `KUBERNETES_MCP_KUBECONFIG` is a path, not a credential; the kubeconfig file
+  itself is sensitive. Set `chmod 600` and never commit it or paste it into chat.
 - Enabling the Kubernetes row changes the whole profile, not just the current
   session. Disable it when it was enabled only for one task.
 - `plugin_manager` can install, remove, and select profile bundles. Every call
@@ -267,5 +303,7 @@ want it to keep its preset.
 | GitHub row never loads | Set `GITHUB_TOKEN`; the row is token-gated and disabled otherwise |
 | No Kubernetes tools | `mcp-kubernetes` is still disabled. Enable it on request via `plugin_manager` or the Web Plugins page. |
 | Kubernetes row fails to start | `npx` missing, npm registry/package download failed, or DSH not reloaded. Try `npx -y kubernetes-mcp-server@latest --version` in a shell. |
+| Kubernetes MCP uses the wrong cluster | `KUBERNETES_MCP_KUBECONFIG` was unset, relative, or set after DSH started. Set an absolute path before starting DSH, then enable the row. |
+| Kubernetes MCP cannot read the kubeconfig | Check the path, file permissions, and that the file parses with `kubectl --kubeconfig <path> config current-context`. |
 | Kubernetes tools return `Forbidden` | RBAC denies the verb/resource. Fix the kubeconfig/ServiceAccount; do not widen to an admin context casually. |
 | Named skills missing | Run `./install.sh` and confirm the skill catalog lists `software-architecture` and `kubernetes-kubectl-operations` |

@@ -34,8 +34,10 @@ state for every subsequent command and every other terminal.
 - `KUBECONFIG` with multiple paths merges them. Duplicate names are resolved by the
   merge rules, which can silently select a different cluster/user than expected. Check
   `kubectl config view` with the same environment before trusting it.
-- The MCP server inherits `KUBECONFIG` through the MCP client environment. Set it in the
-  environment that starts DSH, not in an unrelated shell.
+- The MCP row passes `KUBERNETES_MCP_KUBECONFIG` as the child's `KUBECONFIG` when it
+  is set; otherwise the child inherits `KUBECONFIG` and falls back to
+  `~/.kube/config`. Use an absolute path and set it in the environment that starts
+  DSH, not in an unrelated shell.
 - Do not commit kubeconfigs, tokens, or client certificates. Do not paste their contents
   into chat.
 
@@ -143,11 +145,17 @@ argument. List contexts with `kubectl config get-contexts`, then pass the intend
 context to every call. The server's default context is whatever the kubeconfig marks as
 current; never rely on that for multi-cluster work.
 
-If the MCP is enabled, verify its target independently:
+If the MCP is enabled, verify its target independently. Its kubeconfig is
+`KUBERNETES_MCP_KUBECONFIG` when set, otherwise the ambient `KUBECONFIG` or
+`~/.kube/config`:
+
+```bash
+kubectl --kubeconfig "${KUBERNETES_MCP_KUBECONFIG:-$HOME/.kube/config}" config current-context
+```
 
 ```text
 mcp__kubernetes__namespaces_list
 ```
 
-Then compare with `kubectl config current-context`. A mismatch means stop and fix the
+Then compare the result with that context. A mismatch means stop and fix the
 kubeconfig before changing anything.

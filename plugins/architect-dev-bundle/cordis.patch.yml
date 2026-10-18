@@ -261,6 +261,14 @@
     # The MCP client scrubs ambient secret-like variables but preserves
     # KUBECONFIG, which is the server's client-go fallback when no TOML
     # `kubeconfig` is set.
+    #
+    # KUBECONFIG PASS-THROUGH: set KUBERNETES_MCP_KUBECONFIG (absolute path) in
+    # the environment that starts DSH to give this server a dedicated, ideally
+    # read-only kubeconfig without changing the kubeconfig kubectl uses. The
+    # expression below passes it as the child's KUBECONFIG only when non-empty;
+    # otherwise the server falls back to its ambient KUBECONFIG or
+    # ~/.kube/config. The variable is evaluated when the row activates, so set
+    # it before starting DSH (or restart DSH after changing it).
     - id: mcp-kubernetes
       name: '@deepseek-ai/dsh-mcp-client'
       disabled: true
@@ -271,4 +279,5 @@
         args:
           - '-y'
           - 'kubernetes-mcp-server@latest'
+        env: !!js "process.env.KUBERNETES_MCP_KUBECONFIG ? { KUBECONFIG: process.env.KUBERNETES_MCP_KUBECONFIG } : {}"
         failOnStartupError: false

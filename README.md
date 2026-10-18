@@ -126,8 +126,10 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   `scripts/verify-chart.mjs` shells out to `helm lint` and `helm template`.
 - **`kubectl` + a kubeconfig** — only for `kubernetes-kubectl-operations`. The skill
   inspects and, with explicit confirmation, changes a cluster;
-  `scripts/verify-kube-access.sh` is a read-only preflight. Prefer a read-only kubeconfig
-  or a `view`-only ServiceAccount for the optional Kubernetes MCP.
+  `scripts/verify-kube-access.sh` is a read-only preflight and accepts
+  `--kubeconfig <path>`. Set `KUBERNETES_MCP_KUBECONFIG` to an absolute path for a
+  dedicated, preferably read-only kubeconfig; the MCP row passes it to the server as
+  `KUBECONFIG`. Without it, the server uses `KUBECONFIG` or `~/.kube/config`.
 - **Docker Engine** with a reachable daemon — only for the `flaresolverr` plugin and its
   `flaresolverr-workspace` skill. The plugin creates containers, networks, and loopback-only
   published ports, so the daemon must be running and the user must be able to reach the socket.
@@ -397,7 +399,7 @@ Beyond the validators:
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
 - For the plugin in this repository: install it with `dsh plugin --profile <name> add plugins/suggest-resources`, confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it disappears — that proves the registration belongs to the plugin's context.
 - For the Architect Dev preset: follow [its verification checklist](plugins/architect-dev-bundle/README.md#verify) in a new session.
-- For Kubernetes: `bash skills/kubernetes-kubectl-operations/scripts/verify-kube-access.sh` is a read-only access preflight; it warns when the context can write, in which case the Kubernetes MCP should not be enabled for exploratory inspection.
+- For Kubernetes: `bash skills/kubernetes-kubectl-operations/scripts/verify-kube-access.sh --kubeconfig "$KUBERNETES_MCP_KUBECONFIG" --require-read-only` is a read-only access preflight; it warns when the context can write, in which case the Kubernetes MCP should not be enabled for exploratory inspection.
 - For FlareSolverr: `bash skills/flaresolverr-workspace/scripts/verify-workspace.sh` proves the workspace path end to end and asserts no container or network is left behind.
 - For Ghost themes: `bash skills/ghost-theme-modern-frontend/scripts/verify-theme.sh <theme-dir>`.
 

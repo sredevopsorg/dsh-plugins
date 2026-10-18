@@ -31,8 +31,21 @@ possible.
 No Kubernetes MCP process starts at DSH launch. Enable it only when the user asks for
 the MCP tools or when their structured output materially helps the task:
 
-1. **Verify the target is read-only first.** The server can create, update, delete,
-   exec, and run pods if the kubeconfig permits it. Run:
+1. **Point the MCP at the right kubeconfig.** The Architect Dev row passes
+   `KUBERNETES_MCP_KUBECONFIG` (absolute path) to the server as its `KUBECONFIG`
+   when set; otherwise the server uses the ambient `KUBECONFIG` or
+   `~/.kube/config`. The variable is read when the row activates, so set it in the
+   environment that starts DSH. Do not export it in a shell after DSH is already
+   running.
+2. **Verify the target is read-only.** The server can create, update, delete, exec,
+   and run pods if the kubeconfig permits it. Run the preflight against the exact
+   file:
+   ```bash
+   bash scripts/verify-kube-access.sh \
+     --kubeconfig "${KUBERNETES_MCP_KUBECONFIG:?set KUBERNETES_MCP_KUBECONFIG first}" \
+     --require-read-only
+   ```
+   If `KUBERNETES_MCP_KUBECONFIG` is unset, check the ambient context instead:
    ```bash
    kubectl config current-context
    kubectl auth can-i --list
@@ -41,16 +54,15 @@ the MCP tools or when their structured output materially helps the task:
    ```
    If writes are allowed, do **not** enable the MCP for exploratory inspection; use
    `kubectl` against the read-only context instead, or ask the user for a read-only
-   kubeconfig. `scripts/verify-kube-access.sh --require-read-only` performs the same
-   check and exits non-zero when write permissions are detected.
-2. **Find the row.** Call `plugin_manager` with `action: list_plugins` and locate the
+   kubeconfig.
+3. **Find the row.** Call `plugin_manager` with `action: list_plugins` and locate the
    row whose id is `mcp-kubernetes` (module `@deepseek-ai/dsh-mcp-client`); note its
    `entryId`.
-3. **Enable it.** Call `plugin_manager` with `action: set_plugin`, that `entryId`, and
+4. **Enable it.** Call `plugin_manager` with `action: set_plugin`, that `entryId`, and
    `enabled: true`. The call needs full access or approval; the change affects every
    session in the profile.
-4. **Use it.** After connection, tools appear as `mcp__kubernetes__*`.
-5. **Disable it when done** with `set_plugin` and `enabled: false`, unless the user
+5. **Use it.** After connection, tools appear as `mcp__kubernetes__*`.
+6. **Disable it when done** with `set_plugin` and `enabled: false`, unless the user
    wants it left on.
 
 If `plugin_manager` is unavailable, ask the user to enable the `mcp-kubernetes` row in

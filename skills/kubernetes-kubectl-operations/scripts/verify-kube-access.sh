@@ -7,27 +7,36 @@
 # never applies, patches, deletes, execs, drains, or otherwise mutates the cluster.
 #
 # Usage:
-#   scripts/verify-kube-access.sh [--context NAME] [--namespace NAME] [--require-read-only]
+#   scripts/verify-kube-access.sh [--kubeconfig PATH] [--context NAME] [--namespace NAME] [--require-read-only]
 #
 # Options:
+#   --kubeconfig PATH     Check this kubeconfig file instead of kubectl's defaults.
+#                         Defaults to $KUBERNETES_MCP_KUBECONFIG when set.
 #   --context NAME        Check this context instead of the current one.
 #   --namespace NAME      Require this namespace to exist.
 #   --require-read-only   Exit non-zero if any create/delete permission is detected.
 #   -h, --help            Show this help.
 #
-# Exits non-zero on missing kubectl, an unknown context, an unreachable API server, a
-# missing or unreadable namespace, or a failed --require-read-only check.
+# Exits non-zero on missing kubectl, an unreadable kubeconfig, an unknown context, an
+# unreachable API server, a missing or unreadable namespace, or a failed
+# --require-read-only check.
 
 set -euo pipefail
 
 context=""
 namespace=""
+kubeconfig=""
 require_read_only=0
 
 usage() { sed -n '3,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --kubeconfig)
+      [ "$#" -ge 2 ] || { echo "--kubeconfig needs a value" >&2; exit 2; }
+      kubeconfig="$2"
+      shift 2
+      ;;
     --context)
       [ "$#" -ge 2 ] || { echo "--context needs a value" >&2; exit 2; }
       context="$2"
@@ -69,18 +78,26 @@ ok() {
 
 command -v kubectl >/dev/null 2>&1 || fail "kubectl not found on PATH"
 
+if [ -z "$kubeconfig" ]; then
+  kubeconfig="${KUBERNETES_MCP_KUBECONFIG:-}"
+fi
+
 kubectl_args=()
+if [ -n "$kubeconfig" ]; then
+  [ -f "$kubeconfig" ] || fail "kubeconfig file not found: $kubeconfig"
+  kubectl_args+=(--kubeconfig "$kubeconfig")
+fi
 if [ -n "$context" ]; then
   kubectl_args+=(--context "$context")
 fi
 
 if [ -n "$context" ]; then
-  if ! kubectl config get-contexts "$context" >/dev/null 2>&1; then
+  if ! kubectl "${kubectl_args[@]}" config get-contexts "$context" >/dev/null 2>&1; then
     fail "context not found in kubeconfig: $context"
   fi
   current="$context"
 else
-  current="$(kubectl config current-context 2>/dev/null || true)"
+  current="$(kubectl "${kubectl_args[@]}" config current-context 2>/dev/null || true)"
   [ -n "$current" ] || fail "no current kubeconfig context; set one or pass --context"
 fi
 
@@ -89,6 +106,7 @@ server="$(kubectl "${kubectl_args[@]}" config view --minify -o jsonpath='{.clust
 user="$(kubectl "${kubectl_args[@]}" config view --minify -o jsonpath='{.users[0].name}' 2>/dev/null || true)"
 
 printf 'Kubernetes access preflight\n'
+ok "kubeconfig: ${kubeconfig:-<ambient>}"
 ok "context: ${current}"
 ok "cluster: ${cluster:-<unknown>}"
 ok "server:  ${server:-<unknown>}"

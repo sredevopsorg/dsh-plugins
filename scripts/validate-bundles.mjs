@@ -680,6 +680,17 @@ async function main() {
       if (!kubernetesArgs.includes("-y") || !kubernetesArgs.includes(KUBERNETES_PACKAGE)) {
         fail(`${KUBERNETES_ROW_ID}: args must include -y and ${KUBERNETES_PACKAGE}`);
       }
+      const kubernetesEnv = evaluateSafe(kubernetesConfig.env);
+      if (
+        kubernetesEnv === null ||
+        typeof kubernetesEnv !== "object" ||
+        Array.isArray(kubernetesEnv)
+      ) {
+        fail(`${KUBERNETES_ROW_ID}: config.env must evaluate to an object`);
+      }
+      if (!JSON.stringify(kubernetes.config?.env ?? "").includes("KUBERNETES_MCP_KUBECONFIG")) {
+        fail(`${KUBERNETES_ROW_ID}: config.env must pass KUBERNETES_MCP_KUBECONFIG`);
+      }
       if (evaluateSafe(kubernetes.disabled) !== true) {
         fail(`${KUBERNETES_ROW_ID}: must be disabled by default; enable it on request instead`);
       }
