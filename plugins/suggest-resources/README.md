@@ -12,6 +12,24 @@ doing?*
 Suggestions are advisory. The plugin never enables a plugin, installs a
 bundle, connects an MCP server, or appends session events.
 
+## Install
+
+Install the pinned GitHub release into a profile:
+
+```bash
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"
+dsh --profile web --dump-config          # the suggest-resources row is present
+```
+
+The same address works with the `plugin_manager` tool's `install_bundle` and
+with the Web **Plugins** install dialog. Quote the spec so the shell does not
+interpret `&`. See
+[Installing plugins from GitHub](../../docs/installing-plugins-from-github.md)
+for commit-pinned and full-URL variants.
+
+For local development, install the checkout instead:
+`dsh plugin --profile web add ./plugins/suggest-resources`.
+
 ## What it searches
 
 | Category | Source | Notes |
@@ -137,7 +155,7 @@ conversation text.
 ## Verifying
 
 ```bash
-dsh plugin --profile <name> add /path/to/plugins/suggest-resources
+dsh plugin --profile <name> add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"
 dsh --profile <name> --dump-config      # the suggest-resources row is present
 ```
 

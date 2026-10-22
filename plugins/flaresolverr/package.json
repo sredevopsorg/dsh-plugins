@@ -1,8 +1,17 @@
 {
   "name": "@sredevopsorg/dsh-flaresolverr",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Disposable loopback-only FlareSolverr workspaces for solving Cloudflare challenges.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/flaresolverr"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/flaresolverr#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./index.js",

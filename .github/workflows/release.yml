@@ -1,0 +1,53 @@
+name: release
+
+# A plugin release is one annotated tag named `<plugin>-v<version>`.
+# This workflow validates that the tag matches the package version, runs the
+# repository validators, and creates the GitHub release with the pinned install
+# spec. Tagging is documented in README.md and docs/installing-plugins-from-github.md.
+
+on:
+  push:
+    tags:
+      - "*-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish plugin release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install the pinned DSH
+        run: npm install --global @deepseek-ai/dsh@0.2.1-rc.2
+
+      - name: Validate the release tag and packages
+        run: |
+          node scripts/validate-github-install.mjs --strict --tag "$GITHUB_REF_NAME"
+          node scripts/validate-skills.mjs
+          node scripts/validate-bundles.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          plugin="${GITHUB_REF_NAME%-v*}"
+          version="${GITHUB_REF_NAME:${#plugin}+2}"
+          spec="github:sredevopsorg/dsh-plugins#${GITHUB_REF_NAME}&path:/plugins/${plugin}"
+          notes="$(printf '%s\n' \
+            "Install ${plugin} ${version} into a DSH profile:" \
+            "" \
+            "  dsh plugin --profile web add \"${spec}\"" \
+            "" \
+            "The same spec works with plugin_manager install_bundle." \
+            "" \
+            "Requires DSH ^0.2.1-rc.2, Git, and pnpm 9 or newer." \
+            "" \
+            "See https://github.com/sredevopsorg/dsh-plugins/blob/main/plugins/${plugin}/README.md")"
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "${plugin} ${version}" --notes "$notes"
