@@ -1,8 +1,17 @@
 {
   "name": "@sredevopsorg/dsh-suggest-resources",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Suggest tools, plugins, MCP servers, and skills for a task.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/suggest-resources"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/suggest-resources#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./index.js",
@@ -17,6 +26,14 @@
     "locale/*.json",
     "icon.svg",
     "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "suggestions",
+    "discovery",
+    "mcp",
+    "skills"
   ],
   "engines": {
     "dsh": "^0.2.1-rc.2"

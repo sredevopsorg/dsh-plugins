@@ -9,6 +9,24 @@ The tool exposes four actions — `start`, `status`, `request`, `stop`. The work
 the calling session, so it is removed when the session ends; there is no durable daemon to
 forget about.
 
+## Install
+
+Install the pinned GitHub release into a profile:
+
+```bash
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"
+dsh --profile web --dump-config          # the flaresolverr row is present
+```
+
+The same address works with the `plugin_manager` tool's `install_bundle` and
+with the Web **Plugins** install dialog. Quote the spec so the shell does not
+interpret `&`. See
+[Installing plugins from GitHub](../../docs/installing-plugins-from-github.md)
+for commit-pinned and full-URL variants.
+
+For local development, install the checkout instead:
+`dsh plugin --profile web add ./plugins/flaresolverr`.
+
 ## Why a workspace rather than an endpoint
 
 FlareSolverr is an **unauthenticated open proxy**. Anyone who can reach port 8191 can make your
@@ -144,7 +162,7 @@ echo environment **names** only, never values. Do not put a long-lived secret in
 ## Verifying
 
 ```bash
-dsh plugin --profile <name> add /path/to/plugins/flaresolverr
+dsh plugin --profile <name> add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"
 dsh --profile <name> --dump-config        # the flaresolverr row is present
 ```
 

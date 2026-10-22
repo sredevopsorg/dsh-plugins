@@ -52,10 +52,16 @@ DSH loads four kinds of extension:
 ├── .shellcheckrc
 ├── scripts/
 │   ├── validate-skills.mjs                # frontmatter contract check (CI)
-│   └── validate-bundles.mjs               # bundle/preset compatibility check (CI)
-├── .github/workflows/ci.yml
+│   ├── validate-bundles.mjs               # bundle/preset compatibility check (CI)
+│   ├── validate-github-install.mjs        # GitHub install metadata + tarball check (CI)
+│   └── release-tag.mjs                    # validate and tag one plugin release
+├── .github/workflows/
+│   ├── ci.yml
+│   ├── compat-canary.yml
+│   └── release.yml                        # tag-driven GitHub release
 ├── docs/
-│   └── ghost-themes.md                    # repo doc — NOT a skill
+│   ├── ghost-themes.md                    # repo doc — NOT a skill
+│   └── installing-plugins-from-github.md  # install addresses, pinning, troubleshooting
 ├── skills/
 │   ├── software-architecture/
 │   │   └── SKILL.md
@@ -136,6 +142,8 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   Missing CLI, a stopped daemon, and a permission error are each detected and reported with the
   specific fix.
 - **`pnpm`** — only when installing DSH plugin packages (`dsh plugin …` forwards to pnpm).
+  Installing this repository's plugins from GitHub also needs **`git`** and pnpm **9 or newer**
+  (for the `path:` subdirectory parameter); no npm publish is involved.
 
 ---
 
@@ -209,6 +217,36 @@ The provider watches roots, so new, renamed, or deleted skills appear without re
 
 ---
 
+## Installing plugins from GitHub
+
+Every plugin under [`plugins/`](plugins/) is a dependency-free DSH bundle. It installs
+straight from this repository — no npm publish — through pnpm's Git subdirectory
+parameter:
+
+```bash
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#<plugin>-v<version>&path:/plugins/<plugin>"
+```
+
+Quote the spec: the shell must not interpret `&`. Replace `web` with your profile.
+
+| Plugin | Pinned command |
+|---|---|
+| `architect-dev-bundle` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#architect-dev-bundle-v1.3.1&path:/plugins/architect-dev-bundle"` |
+| `flaresolverr` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"` |
+| `suggest-resources` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"` |
+
+The tag is immutable, so the command reproduces the same package contents. The
+same address works with the `plugin_manager` tool's `install_bundle` and with
+the Web Plugins install dialog.
+
+Requirements, full-URL and commit-pinned variants, update/uninstall commands,
+and troubleshooting are in
+[`docs/installing-plugins-from-github.md`](docs/installing-plugins-from-github.md).
+For local development, install a checkout instead:
+`dsh plugin --profile web add ./plugins/<plugin>`.
+
+---
+
 ## Quick start — Ghost theme toolchain
 
 `scaffold-theme.mjs` generates a GScan-clean theme wired for Vite, optional Tailwind, and optional React islands. It needs only plain Node ≥ 18.
@@ -242,7 +280,7 @@ Flags: `--name`, `--out`, `--react`, `--no-tailwind`, `--force`.
 and tears it down with the session.
 
 ```bash
-dsh plugin --profile web add plugins/flaresolverr
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"
 dsh --profile web --dump-config          # the flaresolverr row is present
 ```
 
@@ -333,13 +371,19 @@ unsupported DSH version installs silently and fails later at activation. A bundl
 configuration or an agent preset needs no `index.js` or `.` export — declare the patch, plus
 `./package.json`, `./locale/*.json`, and `./icon.svg` for management display.
 
-Install and select it into a profile:
+Install and select it into a profile — from GitHub with a pinned release tag, or
+from a local checkout while developing:
 
 ```bash
-dsh plugin --profile web add <package-spec>      # pnpm args are forwarded
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"
+dsh plugin --profile web add ./plugins/suggest-resources   # local checkout
 dsh plugin --profile web list
-dsh --profile web --dump-config                   # inspect the composed tree, no boot
+dsh --profile web --dump-config                           # inspect the composed tree, no boot
 ```
+
+`dsh plugin` forwards its arguments to pnpm. See
+[Installing plugins from GitHub](docs/installing-plugins-from-github.md) for the
+tag scheme, pinning, and troubleshooting.
 
 Conventions this repository follows:
 
@@ -374,6 +418,11 @@ node scripts/validate-skills.mjs --strict   # warnings become failures
 node scripts/validate-bundles.mjs           # bundle/preset compatibility with the installed DSH
 node scripts/validate-bundles.mjs --strict  # drift and metadata warnings become failures
 node scripts/validate-bundles.mjs --json    # machine-readable results
+
+node scripts/validate-github-install.mjs        # GitHub install metadata + npm pack contents
+node scripts/validate-github-install.mjs --strict
+node scripts/validate-github-install.mjs --json
+node scripts/validate-github-install.mjs --tag flaresolverr-v1.0.2   # release-tag check
 ```
 
 `validate-skills.mjs` reproduces the checks DSH's filesystem provider makes at discovery, where a
@@ -388,8 +437,15 @@ bundle has not mirrored. It resolves `yaml` and `semver` from the DSH installati
 repository stays dependency-free. Pass `--dsh-root <path-to-node_modules/@deepseek-ai>` when
 `dsh` is not the one on `PATH`.
 
-[CI](.github/workflows/ci.yml) runs both validators on every push and pull request; a weekly
-canary runs the bundle validator against the newest published DSH.
+`validate-github-install.mjs` checks the packaging contract behind the GitHub addresses: repository
+metadata, self-contained manifests (no workspace/file dependencies or install scripts), export
+targets, `npm pack --dry-run` contents, the pinned docs commands, and the release tag against the
+package version. It needs only Node and npm, so it runs without a DSH installation. `--tag` is the
+mode used by the release workflow.
+
+[CI](.github/workflows/ci.yml) runs all three validators on every push and pull request; a weekly
+canary runs the bundle validator against the newest published DSH, and a tag push runs
+[`release.yml`](.github/workflows/release.yml).
 
 Beyond the validators:
 
@@ -397,7 +453,10 @@ Beyond the validators:
 - Start a session and confirm the skill appears in the catalog (`/` in the composer lists user-invocable skills).
 - Load it once by exact name to confirm the body parses and the resource paths resolve.
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
-- For the plugin in this repository: install it with `dsh plugin --profile <name> add plugins/suggest-resources`, confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it disappears — that proves the registration belongs to the plugin's context.
+- For the plugin in this repository: install it with
+  `dsh plugin --profile <name> add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"`,
+  confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it
+  disappears — that proves the registration belongs to the plugin's context.
 - For the Architect Dev preset: follow [its verification checklist](plugins/architect-dev-bundle/README.md#verify) in a new session.
 - For Kubernetes: `bash skills/kubernetes-kubectl-operations/scripts/verify-kube-access.sh --kubeconfig "$KUBERNETES_MCP_KUBECONFIG" --require-read-only` is a read-only access preflight; it warns when the context can write, in which case the Kubernetes MCP should not be enabled for exploratory inspection.
 - For FlareSolverr: `bash skills/flaresolverr-workspace/scripts/verify-workspace.sh` proves the workspace path end to end and asserts no container or network is left behind.
@@ -409,11 +468,30 @@ Beyond the validators:
 
 1. Branch from `main`; keep one concern per branch.
 2. Add or update the skill/plugin **and** this README's catalog table in the same change.
-3. Run `node scripts/validate-skills.mjs` and, for any bundle change,
-   `node scripts/validate-bundles.mjs` — CI runs both.
+3. Run `node scripts/validate-skills.mjs`, `node scripts/validate-github-install.mjs --strict` and,
+   for any bundle change, `node scripts/validate-bundles.mjs` — CI runs all three.
 4. Verify the skill loads in a real DSH session (frontmatter errors are only visible at discovery).
 5. Keep shell scripts `shellcheck`-clean and preserve their executable bits.
 6. Never commit secrets, tokens, personal paths, or session data.
+
+### Releasing a plugin
+
+Plugin versions are independent, and a release is one annotated tag named
+`<plugin-directory>-v<version>`:
+
+1. Bump `version` in `plugins/<dir>/package.json`.
+2. Update this README's install table and the plugin README with the new pinned
+   command; `validate-github-install.mjs` fails until both match.
+3. Run the three validators, commit on `main`, and push.
+4. Tag and push the release:
+
+   ```bash
+   node scripts/release-tag.mjs --plugin flaresolverr --push
+   ```
+
+The tag push runs [`release.yml`](.github/workflows/release.yml), which
+revalidates the tag/version pair and creates the GitHub release. Never move a
+published tag — release a new version.
 
 ---
 

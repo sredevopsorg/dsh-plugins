@@ -68,17 +68,27 @@ delegation/workflow tools, web access, goals, and presentation.
 
 ## Install
 
-From the repository root, into a profile:
+Install the pinned GitHub release into a profile:
 
 ```bash
-dsh plugin --profile web add ./plugins/architect-dev-bundle
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#architect-dev-bundle-v1.3.1&path:/plugins/architect-dev-bundle"
 dsh plugin --profile web list
 ```
 
-The same directory also installs through the `plugin_manager` tool or the Web
-**Plugins** page (`install_bundle` with the absolute package directory). The
-bundle is linked, so with HMR (the Web default) later edits to this directory
-apply on the next reload without reinstalling; otherwise restart DSH.
+The same address works with the `plugin_manager` tool's `install_bundle` and
+with the Web **Plugins** install dialog. Quote the spec so the shell does not
+interpret `&`. See
+[Installing plugins from GitHub](../../docs/installing-plugins-from-github.md)
+for commit-pinned and full-URL variants.
+
+For local development, install the checkout instead:
+
+```bash
+dsh plugin --profile web add ./plugins/architect-dev-bundle
+```
+
+The directory is linked, so with HMR (the Web default) later edits apply on the
+next reload without reinstalling; otherwise restart DSH.
 
 ## Select the preset
 

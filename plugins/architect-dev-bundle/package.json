@@ -1,8 +1,17 @@
 {
   "name": "@sredevopsorg/dsh-architect-dev-bundle",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Architect Dev agent preset: senior software architect and fullstack developer assistant.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/architect-dev-bundle"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/architect-dev-bundle#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
   "type": "module",
   "keywords": [
     "dsh",
