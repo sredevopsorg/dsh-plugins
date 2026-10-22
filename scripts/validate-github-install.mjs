@@ -151,12 +151,27 @@ function canonicalSpec(directory, version) {
   return `github:${REPO_SLUG}#${canonicalTag(directory, version)}&path:/plugins/${directory}`;
 }
 
-/** Normalize npm's `pack --json` shape: an array on npm 10, a map on npm 12. */
+/** Normalize npm's `pack --json` shape: an array on npm 10/11, a map on npm 12. */
 function packEntry(stdout) {
-  const start = stdout.indexOf("{");
-  const end = stdout.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) throw new Error("npm did not print JSON");
-  const parsed = JSON.parse(stdout.slice(start, end + 1));
+  const text = stdout.trim();
+  const candidates = [text];
+  const arrayStart = text.indexOf("[");
+  const arrayEnd = text.lastIndexOf("]");
+  if (arrayStart !== -1 && arrayEnd > arrayStart) candidates.push(text.slice(arrayStart, arrayEnd + 1));
+  const objectStart = text.indexOf("{");
+  const objectEnd = text.lastIndexOf("}");
+  if (objectStart !== -1 && objectEnd > objectStart) candidates.push(text.slice(objectStart, objectEnd + 1));
+
+  let parsed;
+  for (const candidate of candidates) {
+    try {
+      parsed = JSON.parse(candidate);
+      break;
+    } catch {
+      // Try the next shape; npm notices may precede the JSON document.
+    }
+  }
+  if (parsed === undefined) throw new Error("npm did not print JSON");
   const entry = Array.isArray(parsed) ? parsed[0] : Object.values(parsed)[0];
   if (entry === undefined || typeof entry !== "object") throw new Error("npm printed no package entry");
   return entry;
