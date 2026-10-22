@@ -34,7 +34,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -177,12 +177,27 @@ function packDryRun(directory) {
   };
   const command = process.platform === "win32" ? "npm.cmd" : "npm";
   try {
-    const stdout = execFileSync(
-      command,
-      ["pack", "--dry-run", "--json", "--ignore-scripts"],
-      { cwd: directory, env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    );
-    return packEntry(stdout);
+    const result = spawnSync(command, ["pack", "--dry-run", "--json", "--ignore-scripts"], {
+      cwd: directory,
+      env,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    if (result.error !== undefined) {
+      throw new Error(`cannot run ${command}: ${result.error.message}`);
+    }
+    if (result.status !== 0) {
+      const diagnostics = [result.stderr, result.stdout]
+        .map((text) => (text === null ? "" : text.trim()))
+        .filter((text) => text !== "")
+        .join("\n");
+      throw new Error(`npm pack exited with ${String(result.status)}${diagnostics === "" ? "" : `:\n${diagnostics}`}`);
+    }
+    try {
+      return packEntry(result.stdout ?? "");
+    } catch (error) {
+      throw new Error(`${error.message}; stdout was:\n${String(result.stdout ?? "").slice(0, 2000)}`);
+    }
   } finally {
     fs.rmSync(temporary, { recursive: true, force: true });
   }
@@ -333,8 +348,7 @@ function checkTarball(directory, manifest, required, label) {
   try {
     entry = packDryRun(directory);
   } catch (error) {
-    const detail = error.stderr === undefined ? "" : `: ${String(error.stderr).trim()}`;
-    fail(`${label}: npm pack --dry-run failed${detail}`);
+    fail(`${label}: npm pack --dry-run failed: ${error.message}`);
     return [];
   }
   const shipped = new Set((entry.files ?? []).map((file) => file.path));
