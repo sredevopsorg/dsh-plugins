@@ -39,6 +39,7 @@ DSH loads four kinds of extension:
 | [`architect-dev-bundle`](plugins/architect-dev-bundle/README.md) | bundle + agent preset | Adding the **Architect Dev** preset: senior software architect and fullstack developer, minimalistic architectures, skills, Supabase/GitHub MCP discovery, and an on-demand Kubernetes MCP |
 | [`suggest-resources`](plugins/suggest-resources/README.md) | bundle + tool | Ranking the available tools, plugins, MCP servers, and skills against a task |
 | [`flaresolverr`](plugins/flaresolverr/README.md) | bundle + tool | Running a disposable, loopback-only FlareSolverr container to solve Cloudflare and DDoS-Guard challenges |
+| [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
 
 ---
 
@@ -111,12 +112,20 @@ DSH loads four kinds of extension:
 │   │   ├── locale/en.json                 # display title/description
 │   │   ├── icon.svg
 │   │   └── README.md                      # configuration table + observable behavior
-│   └── flaresolverr/
+│   ├── flaresolverr/
+│   │   ├── package.json                   # name, license, exports, dsh.bundle.patch
+│   │   ├── cordis.patch.yml               # the plugin row + defaults
+│   │   ├── index.js                       # flaresolverr tool: policy, ownership, rendering
+│   │   ├── docker.js                      # Docker CLI adapter (the only module that executes)
+│   │   ├── flare.js                       # FlareSolverr wire-protocol adapter
+│   │   ├── locale/en.json
+│   │   ├── icon.svg
+│   │   └── README.md
+│   └── entire/
 │       ├── package.json                   # name, license, exports, dsh.bundle.patch
-│       ├── cordis.patch.yml               # the plugin row + defaults
-│       ├── index.js                       # flaresolverr tool: policy, ownership, rendering
-│       ├── docker.js                      # Docker CLI adapter (the only module that executes)
-│       ├── flare.js                       # FlareSolverr wire-protocol adapter
+│       ├── cordis.patch.yml               # the plugin row + capture defaults
+│       ├── index.js                       # tools, approval policy, prompt section, bridge wiring
+│       ├── lib/                           # commands, policy, exec, config, text, session bridge
 │       ├── locale/en.json
 │       ├── icon.svg
 │       └── README.md
@@ -144,6 +153,10 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   published ports, so the daemon must be running and the user must be able to reach the socket.
   Missing CLI, a stopped daemon, and a permission error are each detected and reported with the
   specific fix.
+- **Entire CLI** (`entire`) on `PATH` — only for the `entire` plugin. It records agent sessions and
+  checkpoints and backs every tool; session capture additionally needs the `entire-agent-dsh`
+  binary and `entire agent add dsh` in the target repository. Search, trails, and recap also need
+  an authenticated login and OS keyring access.
 - **`pnpm`** — only when installing DSH plugin packages (`dsh plugin …` forwards to pnpm).
   Installing this repository's plugins from GitHub also needs **`git`** and pnpm **9 or newer**
   (for the `path:` subdirectory parameter); no npm publish is involved.
@@ -237,6 +250,7 @@ Quote the spec: the shell must not interpret `&`. Replace `web` with your profil
 | `architect-dev-bundle` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#architect-dev-bundle-v1.3.1&path:/plugins/architect-dev-bundle"` |
 | `flaresolverr` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"` |
 | `suggest-resources` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"` |
+| `entire` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"` |
 
 The tag is immutable, so the command reproduces the same package contents. The
 same address works with the `plugin_manager` tool's `install_bundle` and with
