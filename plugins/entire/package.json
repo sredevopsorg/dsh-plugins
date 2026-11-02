@@ -1,0 +1,54 @@
+{
+  "name": "@sredevopsorg/dsh-entire",
+  "version": "0.2.0",
+  "description": "Entire sessions, checkpoints, search, trails, code history and DSH session capture as DSH tools.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/entire"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/entire#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "lib/*.js",
+    "test/*.test.mjs",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check index.js && for f in lib/*.js test/*.mjs; do node --check \"$f\" || exit 1; done"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "entire",
+    "checkpoints",
+    "sessions",
+    "code-history",
+    "trails"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

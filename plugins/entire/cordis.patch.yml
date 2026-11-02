@@ -1,0 +1,14 @@
+- insert:
+    - id: entire
+      name: '@sredevopsorg/dsh-entire'
+      config:
+        binary: entire
+        repoPath: ''
+        allowWrites: false
+        allowAdmin: false
+        timeoutMs: 600000
+        maxOutputChars: 24000
+        promptSection: true
+        capture: true
+        captureMarker: .entire/dsh-hooks.json
+        captureTimeoutMs: 10000
