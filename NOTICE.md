@@ -13,6 +13,7 @@ reproduced below. Full license texts ship with the upstream projects.
 | [`skills/ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | Guidance grounded in the MIT-licensed community theme https://github.com/christopher-b/vapour and the official docs at https://docs.ghost.org | MIT |
 | [`skills/helm-chart-development`](skills/helm-chart-development/SKILL.md) | Guidance grounded in the official Helm docs — https://helm.sh/docs/chart_template_guide/ (source: https://github.com/helm/helm-www) | CC-BY-4.0 |
 | [`skills/flaresolverr-workspace`](skills/flaresolverr-workspace/SKILL.md) | Guidance grounded in the FlareSolverr source and documentation — https://github.com/FlareSolverr/FlareSolverr | MIT |
+| [`skills/github-actions-security-audit`](skills/github-actions-security-audit/SKILL.md) | Guidance grounded in GitHub's Secure use reference — https://docs.github.com/en/actions/reference/security/secure-use (source: https://github.com/github/docs) | CC-BY-4.0 |
 | [`skills/kubernetes-kubectl-operations`](skills/kubernetes-kubectl-operations/SKILL.md) | Guidance grounded in the official Kubernetes documentation — https://kubernetes.io/docs/ (source: https://github.com/kubernetes/website) and the Kubernetes MCP Server documentation — https://github.com/containers/kubernetes-mcp-server | CC-BY-4.0 (Kubernetes docs); Apache-2.0 (MCP server docs) |
 
 Each derived `SKILL.md` preserves its upstream `metadata` (author, version,

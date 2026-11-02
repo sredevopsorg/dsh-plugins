@@ -30,6 +30,7 @@ DSH loads four kinds of extension:
 | [`helm-chart-development`](skills/helm-chart-development/SKILL.md) | model + user | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
 | [`kubernetes-kubectl-operations`](skills/kubernetes-kubectl-operations/SKILL.md) | model + user | Safe kubectl operations, cluster triage, and opt-in Kubernetes MCP inspection |
 | [`flaresolverr-workspace`](skills/flaresolverr-workspace/SKILL.md) | model + user | Operating a disposable FlareSolverr workspace: the v1 API contract, lifecycle and teardown, the User-Agent trap, and the failure playbook |
+| [`github-actions-security-audit`](skills/github-actions-security-audit/SKILL.md) | model + user | Auditing and hardening GitHub Actions workflows: token permissions, script injection, `pull_request_target`, action pinning, runners, supply chain |
 
 ### Plugins and tools
 
@@ -89,10 +90,12 @@ DSH loads four kinds of extension:
 │   │   ├── SKILL.md
 │   │   ├── references/
 │   │   └── scripts/                       # verify-workspace.sh
-│   └── helm-chart-development/
-│       ├── SKILL.md
-│       ├── references/                    # template-language, chart-structure, functions, debugging
-│       └── scripts/                       # verify-chart.mjs
+│   ├── helm-chart-development/
+│   │   ├── SKILL.md
+│   │   ├── references/                    # template-language, chart-structure, functions, debugging
+│   │   └── scripts/                       # verify-chart.mjs
+│   └── github-actions-security-audit/
+│       └── SKILL.md
 ├── plugins/
 │   ├── architect-dev-bundle/
 │   │   ├── package.json                   # name, license, engines.dsh, dsh.bundle.patch
@@ -503,5 +506,6 @@ Released under the [MIT License](LICENSE). Third-party attribution is listed in
 - `supabase` and `supabase-postgres-best-practices` are derived from Supabase's published agent skills (MIT). Metadata is preserved in each `SKILL.md`.
 - `ghost-theme-development` and `ghost-theme-modern-frontend` are grounded in the official `docs.ghost.org` documentation and the MIT-licensed community reference theme [christopher-b/vapour](https://github.com/christopher-b/vapour).
 - `helm-chart-development` is grounded in the official Helm documentation — the [Chart Template Developer's Guide](https://helm.sh/docs/chart_template_guide/), [Charts](https://helm.sh/docs/topics/charts/), [Best Practices](https://helm.sh/docs/chart_best_practices/) and [Hooks](https://helm.sh/docs/topics/charts_hooks/) — which is published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Examples and function signatures were verified against Helm 4.3.
+- `github-actions-security-audit` is grounded in GitHub's [Secure use reference](https://docs.github.com/en/actions/reference/security/secure-use) (GitHub Docs, CC-BY-4.0).
 - `kubernetes-kubectl-operations` is grounded in the official Kubernetes documentation at <https://kubernetes.io/docs/> (source: <https://github.com/kubernetes/website>), published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), and the `containers/kubernetes-mcp-server` documentation (Apache-2.0).
 - The Architect Dev bundle configures `containers/kubernetes-mcp-server` at runtime. The server is an Apache-2.0 dependency and is not redistributed here.
