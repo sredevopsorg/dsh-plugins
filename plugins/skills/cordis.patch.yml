@@ -1,0 +1,5 @@
+# Bundle patch: insert this package's own host-wide skill-provider row. The row
+# mounts `index.js`, whose apply() registers the packaged skills on ctx.skills.
+- insert:
+    - id: skills
+      name: '@sredevopsorg/dsh-skills'

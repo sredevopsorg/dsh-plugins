@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 #
-# install.sh — register this repository's skills with a DeepSeek Harness
-#               skill root by creating per-skill symlinks.
+# install.sh — legacy/manual alternative: register this repository's skills with
+#               a DeepSeek Harness skill root by creating per-skill symlinks.
+#
+# The supported install path is the packaged plugin, which registers every skill
+# through one host-wide provider row:
+#
+#   dsh plugin --profile web add ./plugins/skills
+#   dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
+#
+# This script is kept for setups that cannot install a plugin. It links the same
+# skills from plugins/skills/skills/ into a DSH filesystem skill root.
 #
 # DSH's filesystem skill provider scans, in precedence order:
 #   <projectRoot>/.dsh/skills   <projectRoot>/.agents/skills
 #   customSkillDirs             ~/.dsh/skills   ~/.agents/skills
-# This repository's top-level skills/ directory is none of those, so a bare
-# clone registers nothing. This script links each skill in.
+# The packaged plugin directory is none of those, so this script links each
+# skill in for the legacy path. Note that a filesystem root outranks the packaged
+# provider (rank 400 vs 600), so the symlinked copy wins duplicate-name
+# precedence; `--uninstall` detaches it and hands the skills back to the plugin.
 #
 # Usage:
 #   ./install.sh                          # all skills -> ~/.dsh/skills (user scope)
@@ -29,7 +40,7 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-skills_dir="$script_dir/skills"
+skills_dir="$script_dir/plugins/skills/skills"
 
 target=""
 project=""
@@ -61,7 +72,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-[ -d "$skills_dir" ] || die "no skills/ directory next to this script"
+[ -d "$skills_dir" ] || die "no packaged skills directory at plugins/skills/skills (next to this script)"
 
 # Resolve discovered skills: top-level dirs containing SKILL.md, plus flat
 # top-level *.md files with frontmatter. Mirrors dsh-skill-filesystem.
@@ -150,4 +161,5 @@ if [ "$uninstall" -eq 1 ]; then
 else
   printf 'install.sh: linked %d, skipped %d\n' "$linked" "$skipped"
   printf 'install.sh: restart DSH if it is already running, then check the skill catalog.\n'
+  printf 'install.sh: preferred alternative: dsh plugin add ./plugins/skills (no symlinks needed).\n'
 fi

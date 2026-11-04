@@ -84,14 +84,26 @@ a tag push and the merge of the index update pull request described below; the v
 reports it as a warning, and `--strict` fails. Any other difference between `index.json`
 and the generator output fails validation.
 
-## Publish a release in the index
+## Version on merge, publish in the index
 
-Pushing a release tag starts [`.github/workflows/release.yml`](../.github/workflows/release.yml),
-which:
+A merged plugin change that bumps `plugins/<directory>/package.json` is versioned
+automatically. [`version-plugins.yml`](../.github/workflows/version-plugins.yml) runs on
+every push to `main`, creates the annotated tag `<plugin-directory>-v<version>` for every
+market bundle whose tag does not exist yet, and dispatches
+[`release.yml`](../.github/workflows/release.yml) for each new tag. The dispatch is
+required because a tag pushed with `GITHUB_TOKEN` does not start another workflow run.
+The workflow is idempotent: existing tags are skipped, so re-running it tags nothing twice.
+
+`release.yml` then:
 
 1. validates the tag against the package version,
 2. creates the GitHub release, and
 3. rebuilds `index.json` and opens a pull request from a `market/publish-<tag>` branch.
+
+Releases are serialized by a `plugin-release` concurrency group. When one merge introduces
+several versions, the first release run opens the index pull request and the queued runs
+find a branch that already publishes the same `index.json`, so they skip instead of opening
+duplicates.
 
 The workflow validates the rebuilt index before it opens the pull request, so the branch
 is known-good. GitHub does not start CI for a pull request opened with the repository
@@ -100,6 +112,16 @@ token, so to get the full CI run either dispatch the `ci` workflow on that branc
 
 Merge that pull request to make the new version appear in Discover. Until it merges,
 Discover shows the previous versions; nothing needs to be installed from it.
+
+The manual path still works when the versioning workflow is unavailable: bump and commit
+the version on `main`, then run
+
+```bash
+node scripts/release-tag.mjs --plugin <directory> --push
+```
+
+which creates and pushes the same annotated tag, so `release.yml` runs directly. Never move
+a published tag; release a new version instead.
 
 If the repository does not allow GitHub Actions to create pull requests, the release
 workflow stops before opening the update; build the index locally and open the pull

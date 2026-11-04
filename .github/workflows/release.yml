@@ -4,12 +4,24 @@ name: release
 # This workflow validates that the tag matches the package version, runs the
 # repository validators, creates the GitHub release, and opens a pull request
 # that republishes `index.json` (the Discover plugin index) with the new version.
+#
+# It runs on a tag push (the manual `scripts/release-tag.mjs` path) and on a
+# workflow_dispatch with `--ref <tag>`, which version-plugins.yml uses: a tag
+# pushed by GITHUB_TOKEN does not start another workflow, so the versioning
+# workflow dispatches this one explicitly for each new tag.
 # Tagging is documented in README.md and docs/plugin-index.md.
 
 on:
   push:
     tags:
       - "*-v*"
+  workflow_dispatch:
+
+# Releases touch tags, releases and the shared index, so run them one at a time.
+# A queued run sees the pull request an earlier run opened and does not duplicate it.
+concurrency:
+  group: plugin-release
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -34,6 +46,10 @@ jobs:
 
       - name: Validate the release tag and packages
         run: |
+          case "$GITHUB_REF" in
+            refs/tags/*) ;;
+            *) echo "::error::release must run for a tag ref, not $GITHUB_REF"; exit 1 ;;
+          esac
           node scripts/validate-github-install.mjs --strict --tag "$GITHUB_REF_NAME"
           node scripts/validate-skills.mjs
           node scripts/validate-bundles.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
@@ -47,6 +63,10 @@ jobs:
           spec="github:sredevopsorg/dsh-plugins#${GITHUB_REF_NAME}&path:/plugins/${plugin}"
           dsh_range="$(node -e "process.stdout.write(require('./plugins/${plugin}/package.json').engines?.dsh ?? '')")"
           if [ -z "$dsh_range" ]; then dsh_range="the target DSH release"; fi
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "release $GITHUB_REF_NAME already exists; leaving it untouched"
+            exit 0
+          fi
           notes="$(printf '%s\n' \
             "This is by an automated agent, not a human." \
             "" \
@@ -77,6 +97,15 @@ jobs:
             echo "index.json already lists ${GITHUB_REF_NAME}; nothing to publish"
             exit 0
           fi
+          # A queued release run may find the same index already published by the
+          # pull request an earlier release opened; do not open a duplicate.
+          for existing in $(git ls-remote --heads origin 'refs/heads/market/publish-*' | sed 's#.*refs/heads/##'); do
+            if git fetch --quiet --depth=1 origin "refs/heads/${existing}" >/dev/null 2>&1 \
+              && git show FETCH_HEAD:index.json | cmp -s - index.json; then
+              echo "branch ${existing} already publishes this index; nothing to do"
+              exit 0
+            fi
+          done
           branch="market/publish-${GITHUB_REF_NAME}"
           if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
             echo "branch ${branch} already exists; an update pull request is open"

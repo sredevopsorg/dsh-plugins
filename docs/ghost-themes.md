@@ -3,9 +3,11 @@
 Two agent skills for building and editing Ghost themes with modern frontend tooling
 (Tailwind CSS, Vite, React and other islands).
 
-They live in this repository's [`skills/`](../skills/) directory. That directory is **not** one
-of DSH's scanned skill roots, so they are not discovered by a bare clone — run
-[`install.sh`](../install.sh) or see [Installing](#installing) below.
+They live in this repository's skills plugin package at
+[`plugins/skills/skills/`](../plugins/skills/skills/). That directory is **not** one of DSH's
+scanned skill roots, so they are not discovered by a bare clone — install the plugin (or use
+[`install.sh`](../install.sh) as a legacy/manual alternative); see [Installing](#installing)
+below.
 
 ## Skills
 
@@ -40,7 +42,7 @@ server-rendered Handlebars contract. Use it whenever the task is *how the assets
 
 ```bash
 # Scaffold a Vite + Tailwind + React-islands theme
-node skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs \
+node plugins/skills/skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs \
   --name my-theme --out ./themes --react
 
 cd themes/my-theme
@@ -49,7 +51,7 @@ npm run build
 npm test                      # build + GScan
 
 # Or run the fuller pre-flight (build → GScan → zip → archive assertions)
-bash "$OLDPWD/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh" .
+bash "$OLDPWD/plugins/skills/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh" .
 ```
 
 `scaffold-theme.mjs --help` documents the flags (`--no-tailwind`, `--react`, `--out`,
@@ -57,9 +59,25 @@ bash "$OLDPWD/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh" .
 
 ## Installing
 
+The supported path is the repository's skills plugin, which registers every packaged skill
+through one provider row (no filesystem roots involved):
+
+```bash
+# local checkout
+dsh plugin --profile web add ./plugins/skills
+
+# or the pinned release (quotes required: & is part of the spec)
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
+```
+
+Restart DSH after installing. The plugin's package README covers the provider, the bundled
+rank, and migration from symlinks.
+
+### Legacy/manual alternative — `install.sh`
+
 Skill discovery only sees DSH's roots — `<projectRoot>/.dsh/skills`,
 `<projectRoot>/.agents/skills`, `customSkillDirs`, `~/.dsh/skills`, `~/.agents/skills` —
-never this repository's `skills/`. Link the two Ghost skills into the root you want:
+never the packaged `plugins/skills/skills/`. Link the two Ghost skills into the root you want:
 
 ```bash
 # user scope, available from every project
@@ -73,8 +91,9 @@ never this repository's `skills/`. Link the two Ghost skills into the root you w
 ./install.sh --dry-run
 ```
 
-`install.sh` creates per-skill symlinks, skips real files, and only ever removes links that
-point back into this repository. Re-run it with `--uninstall` to detach.
+`install.sh` creates per-skill symlinks from `plugins/skills/skills/`, skips real files, and
+only ever removes links that point back into this repository. Re-run it with `--uninstall` to
+detach and let the packaged provider serve the skills again.
 
 ## Provenance
 
