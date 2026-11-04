@@ -44,6 +44,90 @@
           }
         }
       ]
+    },
+    {
+      "name": "@sredevopsorg/dsh-skills",
+      "title": "Skills",
+      "description": "All sredevopsorg agent skills as one plugin: architecture, fullstack, Supabase/Postgres, Ghost themes, Helm, Kubernetes, and GitHub Actions security.",
+      "icon": "plugins/skills/icon.svg",
+      "author": "sredevopsorg",
+      "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/skills#readme",
+      "repository": {
+        "url": "https://github.com/sredevopsorg/dsh-plugins",
+        "directory": "plugins/skills"
+      },
+      "metadata": {
+        "keywords": [
+          "dsh",
+          "dsh-plugin",
+          "dsh-bundle",
+          "skills",
+          "agent-skills",
+          "software-architecture",
+          "fullstack",
+          "supabase",
+          "postgres",
+          "ghost",
+          "helm",
+          "kubernetes",
+          "github-actions",
+          "security"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793785343,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "590e2bc3057d37040a96ed24c3bedd39d8c7094d",
+            "path": "plugins/skills"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        }
+      ]
+    },
+    {
+      "name": "@sredevopsorg/dsh-superagent",
+      "title": "Superagent",
+      "description": "Watch one GitHub repository, turn authorized requests into Tickets, and execute each in its own DSH Session.",
+      "icon": "plugins/superagent/icon.svg",
+      "author": "sredevopsorg",
+      "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/superagent#readme",
+      "repository": {
+        "url": "https://github.com/sredevopsorg/dsh-plugins",
+        "directory": "plugins/superagent"
+      },
+      "metadata": {
+        "keywords": [
+          "dsh",
+          "dsh-plugin",
+          "dsh-bundle",
+          "superagent",
+          "github",
+          "feishu",
+          "agent",
+          "automation"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793785343,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "590e2bc3057d37040a96ed24c3bedd39d8c7094d",
+            "path": "plugins/superagent"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        }
+      ]
     }
   ]
 }
