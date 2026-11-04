@@ -1,0 +1,62 @@
+{
+  "name": "@sredevopsorg/dsh-skills",
+  "version": "0.1.0",
+  "description": "Every sredevopsorg agent skill (architecture, fullstack, Supabase/Postgres, Ghost themes, Helm, Kubernetes, GitHub Actions security) as one installable DSH plugin.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/skills"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/skills#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./skills/*": "./skills/*"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "test/*.test.mjs",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "skills"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check index.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "skills",
+    "agent-skills",
+    "software-architecture",
+    "fullstack",
+    "supabase",
+    "postgres",
+    "ghost",
+    "helm",
+    "kubernetes",
+    "github-actions",
+    "security"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

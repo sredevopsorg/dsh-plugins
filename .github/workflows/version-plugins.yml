@@ -1,0 +1,102 @@
+name: version plugins
+
+# Turn merged plugin version bumps into releases. A plugin is versioned by one
+# annotated tag `<plugin-directory>-v<package.json version>`; `.github/workflows/release.yml`
+# then creates the GitHub release and opens the pull request that republishes
+# `index.json` (the Discover plugin index).
+#
+# A person merges a plugin change that bumps `plugins/<dir>/package.json`; this
+# workflow tags every version on main that has no tag yet and dispatches
+# `release.yml` for each new tag. The dispatch is required because a tag pushed
+# with GITHUB_TOKEN does not start another workflow run.
+#
+# It is safe to re-run: existing tags are skipped, so a release workflow's own
+# index pull request merge is a no-op here.
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+# Serialize versioning runs: two merges in a row must not dispatch overlapping
+# releases against a moving main (release.yml also serializes itself).
+concurrency:
+  group: plugin-versions
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  version:
+    name: Tag new plugin versions and dispatch releases
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Tags must be visible to decide what is already released.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install the pinned DSH
+        run: npm install --global @deepseek-ai/dsh@0.2.1-rc.2
+
+      - name: Validate the merged plugins before tagging
+        run: |
+          node scripts/validate-github-install.mjs --strict
+          node scripts/validate-skills.mjs
+          node scripts/validate-bundles.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
+
+      - name: Tag new plugin versions
+        id: tag
+        run: |
+          git config user.name "sredevopsorgagents"
+          git config user.email "292528627+sredevopsorgagents@users.noreply.github.com"
+          tags=""
+          for manifest in plugins/*/package.json; do
+            directory="$(basename "$(dirname "$manifest")")"
+            is_bundle="$(node -e "process.stdout.write(require('./${manifest}').dsh?.bundle?.patch === undefined ? 'no' : 'yes')")"
+            if [ "$is_bundle" != "yes" ]; then
+              echo "skip plugins/${directory}: not a market bundle"
+              continue
+            fi
+            version="$(node -e "process.stdout.write(require('./${manifest}').version)")"
+            tag="${directory}-v${version}"
+            if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "skip ${tag}: already released"
+              continue
+            fi
+            git tag -a "$tag" -m "Release ${tag}"
+            git push origin "refs/tags/${tag}"
+            echo "created ${tag}"
+            tags="${tags}${tag}"$'\n'
+          done
+          {
+            echo "tags<<EOF"
+            printf '%s' "$tags"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch a release for every new tag
+        if: steps.tag.outputs.tags != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            echo "dispatching release.yml for ${tag}"
+            gh workflow run release.yml --ref "$tag" --repo "$GITHUB_REPOSITORY"
+          done <<< "${{ steps.tag.outputs.tags }}"
+
+      - name: Report
+        run: |
+          if [ -z "${{ steps.tag.outputs.tags }}" ]; then
+            echo "no new plugin versions to tag"
+          else
+            echo "tagged and dispatched:"
+            printf '%s' "${{ steps.tag.outputs.tags }}"
+          fi

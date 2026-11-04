@@ -272,6 +272,17 @@ function evaluateValue(value) {
   return value;
 }
 
+/**
+ * True when an import failed because a dependency is not installed here. A
+ * repository-local plugin may declare peer dependencies on the DSH packages
+ * and real runtime dependencies; this script runs inside the repository, which
+ * installs none of them, so its module cannot always be imported for a config
+ * schema check.
+ */
+function isMissingDependencyError(error) {
+  return error !== null && typeof error === "object" && error.code === "ERR_MODULE_NOT_FOUND";
+}
+
 function parsePatch(filename, parseYaml) {
   const text = fs.readFileSync(filename, "utf8");
   return parseYaml(text, {
@@ -365,14 +376,31 @@ async function main() {
     if (specifier.startsWith("@deepseek-ai/")) {
       return { file: requireFromDsh.resolve(specifier), detail: specifier };
     }
-    const directory = localPackages.get(specifier);
+    const segments = specifier.split("/");
+    const packageName = specifier.startsWith("@") ? segments.slice(0, 2).join("/") : segments[0];
+    const slash = specifier.length > packageName.length ? 1 : -1;
+    const directory = localPackages.get(packageName);
     if (directory === undefined) throw new Error(`unknown package: ${specifier}`);
     const manifest = manifests.get(directory);
-    const entry = manifest.exports?.["."] ?? manifest.main;
-    return {
-      file: typeof entry === "string" ? path.resolve(directory, entry) : undefined,
-      detail: `${specifier} (repository package)`,
-    };
+    let entry;
+    if (slash === -1) {
+      entry = manifest.exports?.["."] ?? manifest.main;
+    } else {
+      // Resolve a subpath export (`pkg/subpath`) from the repository package's
+      // own manifest, so a bundle can insert its own watcher/entry rows.
+      const subpath = `.${specifier.slice(packageName.length)}`;
+      entry = manifest.exports?.[subpath];
+      if (entry !== null && typeof entry === "object") {
+        entry = entry.default ?? entry.import ?? entry.require;
+      }
+    }
+    if (typeof entry === "string") {
+      const file = path.resolve(directory, entry);
+      if (!exists(file)) throw new Error(`package subpath does not resolve to a file: ${specifier}`);
+      return { file, detail: `${specifier} (repository package)`, repositoryLocal: true };
+    }
+    if (slash !== -1) throw new Error(`package subpath is not exported: ${specifier}`);
+    return { file: undefined, detail: `${specifier} (repository package)`, repositoryLocal: true };
   };
 
   const configCache = new Map();
@@ -565,9 +593,22 @@ async function main() {
           }
         }
       }
+      let Config;
       try {
-        const Config = await loadConfig(resolved.file);
-        if (Config === undefined) return;
+        Config = await loadConfig(resolved.file);
+      } catch (error) {
+        if (resolved.repositoryLocal === true && isMissingDependencyError(error)) {
+          note(
+            `${label}: skipped the config schema check for repository-local ${JSON.stringify(row.name)}; ` +
+              "its dependencies are not installed in this repository",
+          );
+          return;
+        }
+        fail(`${label}: cannot import ${JSON.stringify(row.name)}: ${String(error.message).split("\n")[0]}`);
+        return;
+      }
+      if (Config === undefined) return;
+      try {
         Config(config);
       } catch (error) {
         fail(`${label}: config does not match the current schema: ${error.message.split("\n")[0]}`);

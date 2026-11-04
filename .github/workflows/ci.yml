@@ -45,11 +45,53 @@ jobs:
       - name: Validate the plugin market index
         run: node scripts/validate-market-index.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
 
+      # A plugin may need a build (the forked superagent does); the committed
+      # build output is what a Git install ships, so the lockfile is installed
+      # and the build is re-run to prove the checked-in output is current.
+      - name: Install plugin build toolchains
+        run: |
+          # The superagent fork pins pnpm through packageManager; install that
+          # version explicitly rather than depending on a corepack shim.
+          npm install --global pnpm@11.7.0
+          for lockfile in plugins/*/pnpm-lock.yaml; do
+            [ -f "$lockfile" ] || continue
+            directory="$(dirname "$lockfile")"
+            echo "installing $directory"
+            (cd "$directory" && pnpm install --frozen-lockfile) || exit 1
+          done
+
+      - name: Check committed build output is current
+        run: |
+          for manifest in plugins/*/package.json; do
+            directory="$(dirname "$manifest")"
+            if [ ! -f "$directory/pnpm-lock.yaml" ]; then continue; fi
+            if ! node -e "process.exit(require('./${manifest}').scripts?.build ? 0 : 1)"; then continue; fi
+            echo "building $directory"
+            (cd "$directory" && pnpm run build) || exit 1
+            if ! git diff --exit-code -- "$directory"; then
+              echo "::error::$directory has committed build output that differs from a fresh build; run pnpm build in that directory and commit the result"
+              exit 1
+            fi
+          done
+
+      - name: Typecheck plugin packages
+        run: |
+          for manifest in plugins/*/package.json; do
+            directory="$(dirname "$manifest")"
+            if [ ! -f "$directory/pnpm-lock.yaml" ]; then continue; fi
+            if ! node -e "process.exit(require('./${manifest}').scripts?.typecheck ? 0 : 1)"; then continue; fi
+            echo "typechecking $directory"
+            (cd "$directory" && pnpm run typecheck) || exit 1
+          done
+
       - name: Test plugin packages
         run: |
           for manifest in plugins/*/package.json; do
             directory="$(dirname "$manifest")"
-            if node -e "process.exit(require('./${manifest}').scripts?.test ? 0 : 1)"; then
+            if ! node -e "process.exit(require('./${manifest}').scripts?.test ? 0 : 1)"; then continue; fi
+            if [ -f "$directory/pnpm-lock.yaml" ]; then
+              (cd "$directory" && pnpm test) || exit 1
+            else
               (cd "$directory" && npm test) || exit 1
             fi
           done
