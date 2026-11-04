@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "title": {
+    "en": "sredevopsorg DSH plugins"
+  },
+  "description": {
+    "en": "DSH bundles maintained by sredevopsorg, installed from pinned Git commits."
+  },
+  "plugins": [
+    {
+      "name": "@sredevopsorg/dsh-entire",
+      "title": "Entire",
+      "description": "Read Entire sessions, checkpoints, search results, trails, and code history.",
+      "icon": "plugins/entire/icon.svg",
+      "author": "sredevopsorg",
+      "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/entire#readme",
+      "repository": {
+        "url": "https://github.com/sredevopsorg/dsh-plugins",
+        "directory": "plugins/entire"
+      },
+      "metadata": {
+        "keywords": [
+          "dsh",
+          "dsh-plugin",
+          "entire",
+          "checkpoints",
+          "sessions",
+          "code-history",
+          "trails"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.2.0",
+          "publishTimestamp": 1793651934,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "0039c349704054e26d4a4bf714e6de206a1474b5",
+            "path": "plugins/entire"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        }
+      ]
+    }
+  ]
+}

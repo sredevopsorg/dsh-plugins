@@ -3,9 +3,9 @@
  *
  * A workspace-linked plugin cannot resolve bare `@deepseek-ai/*` specifiers
  * unless its manifest declares them, so this package stays dependency-free and
- * validates its own config instead of exporting a zod `Config` schema. The
- * posture matches the local flaresolverr plugin: every key is optional and a
- * malformed value falls back to its default rather than failing activation.
+ * validates its own config instead of exporting a zod `Config` schema. Every
+ * key is optional and a malformed value falls back to its default rather than
+ * failing activation.
  */
 
 export const DEFAULTS = Object.freeze({

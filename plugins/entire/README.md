@@ -12,10 +12,15 @@ Install from this repository (the release tag is immutable, so the command repro
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 ```
 
+Or install from the repository's plugin index, which the Web **Plugins → Discover** tab
+reads; add `https://raw.githubusercontent.com/sredevopsorg/dsh-plugins/main/index.json`
+as an index source, then install the version from the card. See
+[`docs/plugin-index.md`](../../docs/plugin-index.md).
+
 Or install the local checkout:
 
 ```sh
-dsh plugin add /home/ngeorger/dsh-plugins/plugins/entire
+dsh plugin add ./plugins/entire
 ```
 
 Either way the package is linked from the profile; there is no build step and no runtime dependency. The same address works with the `plugin_manager` tool's `install_bundle`.

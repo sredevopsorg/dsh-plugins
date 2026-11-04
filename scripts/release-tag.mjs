@@ -5,11 +5,12 @@
  * Create the annotated release tag for one plugin package, after checking that
  * the package validates and that the tag matches its `package.json` version.
  * Pushing the tag starts `.github/workflows/release.yml`, which validates the
- * tag again and creates the GitHub release.
+ * tag again, creates the GitHub release, and opens a pull request that republishes
+ * `index.json` (the Discover plugin index) with the new version.
  *
  * Usage:
  *   node scripts/release-tag.mjs --plugin <dir> [--dry-run] [--push]
- *   --plugin DIR  plugin directory under plugins/ (e.g. flaresolverr)
+ *   --plugin DIR  plugin directory under plugins/ (e.g. entire)
  *   --dry-run     print the tag and install command; change nothing
  *   --push        push the tag to origin after creating it
  *   -h, --help    show this help

@@ -5,6 +5,15 @@ self-contained DSH bundle with no dependencies and no build step. The packages
 are not published to npm, so they install straight from this GitHub repository
 with pnpm's Git **subdirectory** support.
 
+There are two ways to install them:
+
+- **Discover** — add the repository's [plugin market index](../docs/plugin-index.md)
+  under **Plugins → Discover → Add index source** and install a listed version.
+  The index pins every version to its release-tag commit, so this is the same
+  package with the same pinning and less typing.
+- **A pnpm Git spec** — install a pinned release tag directly, as documented
+  below.
+
 `dsh plugin` forwards its arguments to pnpm, so the install address is a normal
 pnpm Git spec:
 
@@ -13,7 +22,7 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 ```
 
 - `github:` selects the GitHub shorthand.
-- `<plugin-directory>-v<version>` is the release tag, e.g. `flaresolverr-v1.0.2`.
+- `<plugin-directory>-v<version>` is the release tag, e.g. `entire-v0.2.0`.
 - `&path:/plugins/<plugin-directory>` tells pnpm to pack only that package from
   the monorepo (supported since pnpm 9).
 - Quote the whole spec: the shell must not interpret `&`.
@@ -21,7 +30,8 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 ## Requirements
 
 - **DSH `^0.2.1-rc.2`** — the `engines.dsh` gate in every package, and the
-  version checked by CI.
+  version checked by CI. The Discover flow additionally needs the experimental
+  **Custom plugin indexes** bundle enabled in the Web profile.
 - **Git** on `PATH` and network access to GitHub. DSH checks a GitHub address
   with `git ls-remote` before pnpm starts.
 - **pnpm 9 or newer**, which DSH invokes for `dsh plugin` operations. No build
@@ -31,9 +41,7 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 
 | Plugin | Tag | Command |
 |---|---|---|
-| `architect-dev-bundle` | `architect-dev-bundle-v1.3.1` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#architect-dev-bundle-v1.3.1&path:/plugins/architect-dev-bundle"` |
-| `flaresolverr` | `flaresolverr-v1.0.2` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"` |
-| `suggest-resources` | `suggest-resources-v1.0.2` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"` |
+| `entire` | `entire-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"` |
 
 Replace `web` with the profile you use. The tag is immutable: a new release gets
 a new tag and a new version, so an install command always reproduces the same
@@ -45,16 +53,16 @@ If your environment does not accept the `github:` shorthand, spell out the Git
 URL — pnpm treats both forms as the same dependency:
 
 ```bash
-dsh plugin --profile web add "git+https://github.com/sredevopsorg/dsh-plugins.git#flaresolverr-v1.0.2&path:/plugins/flaresolverr"
+dsh plugin --profile web add "git+https://github.com/sredevopsorg/dsh-plugins.git#entire-v0.2.0&path:/plugins/entire"
 ```
 
 ### Other refs
 
 | Ref | Example fragment | Use |
 |---|---|---|
-| Release tag | `#flaresolverr-v1.0.2&path:/plugins/flaresolverr` | Reproducible install (recommended) |
-| Commit | `#<40-hex-commit>&path:/plugins/flaresolverr` | Reproducible install before a tag exists |
-| Branch | `#main&path:/plugins/flaresolverr` | Latest unreleased code; may change without notice |
+| Release tag | `#entire-v0.2.0&path:/plugins/entire` | Reproducible install (recommended) |
+| Commit | `#<40-hex-commit>&path:/plugins/entire` | Reproducible install before a tag exists |
+| Branch | `#main&path:/plugins/entire` | Latest unreleased code; may change without notice |
 
 ## Install through `plugin_manager` or the Web UI
 
@@ -65,7 +73,7 @@ In a Web session, `plugin_manager` with `install_bundle`:
 ```json
 {
   "action": "install_bundle",
-  "target": "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"
+  "target": "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 }
 ```
 
@@ -77,23 +85,21 @@ default; on a profile without HMR, restart DSH before the new rows load.
 
 ```bash
 dsh plugin --profile web list
-dsh --profile web --dump-config | grep -E 'architect-dev|flaresolverr|suggest-resources'
+dsh --profile web --dump-config | grep -E 'entire'
 ```
 
-Then in a new session, load the plugin's tool or select the preset:
+Then in a new session, confirm the plugin's tools appear:
 
-- `suggest_resources` appears in the tool list.
-- `flaresolverr` appears in the tool list.
-- **Architect Dev** appears in the preset selector.
+- `entire` appears in the tool list.
 
-See each plugin README for its full verification checklist.
+See the plugin README for its full verification checklist.
 
 ## Update
 
 Install the newer tag over the existing package:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.3&path:/plugins/flaresolverr"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.1&path:/plugins/entire"
 ```
 
 If the bundle is running and cannot be replaced in place, DSH reports
@@ -103,7 +109,7 @@ and then install the new tag.
 ## Uninstall
 
 ```bash
-dsh plugin --profile web remove @sredevopsorg/dsh-flaresolverr
+dsh plugin --profile web remove @sredevopsorg/dsh-entire
 ```
 
 Use the package name, not the Git address. Then restart DSH if it reports
@@ -118,6 +124,7 @@ Use the package name, not the Git address. Then restart DSH if it reports
 | `ERR_PNPM_UNSUPPORTED_PROTOCOL` or the `path:` parameter is ignored | The pnpm behind DSH is older than 9. Upgrade pnpm. |
 | "no version compatible with the running DSH" | The package's `engines.dsh` rejects the running DSH. Use a matching DSH release; a version exemption is a deliberate, risky override. |
 | Tag not found | Release tags are created after the version bump merges. Use the commit-pinned or `#main` form until the tag is published, or check the tag list on GitHub. |
+| Discover shows an older version | Merge the index update pull request that the release workflow opens after a tag push; see [Publishing the plugin index](plugin-index.md). |
 | `Cannot find module '@sredevopsorg/...'` after install | The bundle is installed but not selected, or DSH needs a restart (no HMR). Check `dsh --profile <p> --dump-config`, then restart. |
 
 ## Release tags
@@ -128,8 +135,7 @@ Maintainers tag one plugin at a time:
 <plugin-directory>-v<package-version>
 ```
 
-Examples: `flaresolverr-v1.0.2`, `architect-dev-bundle-v1.3.1`,
-`suggest-resources-v1.0.2`.
+Examples: `entire-v0.2.0`.
 
 The procedure is:
 
@@ -140,9 +146,11 @@ The procedure is:
 4. Create and push the tag:
 
    ```bash
-   node scripts/release-tag.mjs --plugin flaresolverr --push
+   node scripts/release-tag.mjs --plugin entire --push
    ```
 
 The tag push starts [`.github/workflows/release.yml`](../.github/workflows/release.yml),
-which revalidates the tag against the package version and creates the GitHub
-release. Never move a published tag; release a new version instead.
+which revalidates the tag against the package version, creates the GitHub release,
+and opens a pull request that republishes [`index.json`](../index.json) with the new
+version. Merge that pull request to publish the version in Discover. Never move a
+published tag; release a new version instead.

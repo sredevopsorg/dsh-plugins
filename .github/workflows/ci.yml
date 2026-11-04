@@ -2,24 +2,34 @@ name: ci
 
 on:
   push:
+    branches: ["**"]
   pull_request:
+  # Lets a maintainer validate a generated pull request branch, whose CI does
+  # not run automatically when the release workflow opened it with the
+  # repository token.
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   validate:
-    name: Skills and bundles
+    name: Skills, bundles, and plugin index
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The plugin index validator reads release tags and the commits they
+          # pin, so the checkout needs the full history and tags.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
 
-      # The validators resolve `yaml` and `semver` from the DSH installation, so
-      # the repository itself stays dependency-free.
+      # The validators resolve `yaml`, `semver`, and the plugin market index
+      # validator from the DSH installation, so the repository itself stays
+      # dependency-free.
       - name: Install the pinned DSH
         run: npm install --global @deepseek-ai/dsh@0.2.1-rc.2
 
@@ -31,3 +41,15 @@ jobs:
 
       - name: Validate GitHub install metadata
         run: node scripts/validate-github-install.mjs --strict
+
+      - name: Validate the plugin market index
+        run: node scripts/validate-market-index.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
+
+      - name: Test plugin packages
+        run: |
+          for manifest in plugins/*/package.json; do
+            directory="$(dirname "$manifest")"
+            if node -e "process.exit(require('./${manifest}').scripts?.test ? 0 : 1)"; then
+              (cd "$directory" && npm test) || exit 1
+            fi
+          done

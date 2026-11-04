@@ -1,8 +1,9 @@
 name: compatibility canary
 
-# The bundle copies the shipped `standard` preset, so a DSH release that adds
-# or changes a preset row must surface here before it surprises users. This
-# workflow is intentionally not part of PR blocking.
+# The bundles are validated against the newest published DSH, so a release that
+# changes a plugin row schema or the plugin market index format surfaces here
+# before it surprises users. This workflow is intentionally not part of PR
+# blocking.
 on:
   schedule:
     - cron: "0 6 * * 1"
@@ -17,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -30,3 +33,6 @@ jobs:
 
       - name: Validate bundles against the newest published DSH
         run: node scripts/validate-bundles.mjs --strict --dsh-root "$(npm root -g)/@deepseek-ai"
+
+      - name: Validate the plugin index against the newest published DSH
+        run: node scripts/validate-market-index.mjs --dsh-root "$(npm root -g)/@deepseek-ai"

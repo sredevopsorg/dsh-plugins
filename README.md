@@ -1,15 +1,19 @@
 # DSH Plugins
 
-Custom **skills, plugins, and tools** for [DeepSeek Harness (DSH)](https://github.com/sredevopsorg), maintained by [sredevopsorg](https://github.com/sredevopsorg).
+Custom **skills and plugins** for [DeepSeek Harness (DSH)](https://github.com/sredevopsorg), maintained by [sredevopsorg](https://github.com/sredevopsorg).
 
-DSH loads four kinds of extension:
+The repository publishes two things:
+
+- **Skills** — `SKILL.md` instruction bundles under [`skills/`](skills/), installed with [`install.sh`](install.sh) or by symlink.
+- **DSH plugins** — dependency-free bundles under [`plugins/`](plugins/), installed from this repository's release tags **or** browsed from the repository's [plugin market index](#the-plugin-index-discover).
 
 | Kind | What it is | Where it lives here |
 |---|---|---|
 | **Skill** | A `SKILL.md` (or flat `<name>.md`) instruction bundle discovered from a skills root and loaded on demand by the model or with `/name`. | [`skills/`](skills/) |
 | **Plugin** | A Cordis plugin package loaded into a DSH profile (`dsh plugin …`). | [`plugins/`](plugins/) |
-| **Tool** | A model-facing tool registered by a plugin via `ctx.tools`. Usually shipped inside a plugin package. | [`plugins/<name>/`](plugins/suggest-resources/) |
-| **Agent preset** | A named plugin composition (`@deepseek-ai/dsh-agent-preset`) delivered by a bundle, selectable per session. | [`plugins/architect-dev-bundle/`](plugins/architect-dev-bundle/README.md) |
+| **Tool** | A model-facing tool registered by a plugin via `ctx.tools`, shipped inside a plugin package. | [`plugins/entire/`](plugins/entire/) |
+
+The repository also publishes [`index.json`](index.json), a **format-1 plugin market index** that [@deepseek-ai/dsh-experimental-plugin-market-bundle](https://github.com/deepseek-ai/deepseek-harness) reads in the Web **Plugins → Discover** tab.
 
 > Verified against `@deepseek-ai/dsh` **0.2.x**, currently **`0.2.1-rc.2`**. The CLI version gate is strict, so check `dsh --version` before reporting plugin issues. Bundle patches are checked against the installed DSH by `scripts/validate-bundles.mjs`.
 
@@ -29,16 +33,12 @@ DSH loads four kinds of extension:
 | [`ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | model + user | Wiring a Ghost theme to Vite, Tailwind CSS, and React/Vue/Svelte islands |
 | [`helm-chart-development`](skills/helm-chart-development/SKILL.md) | model + user | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
 | [`kubernetes-kubectl-operations`](skills/kubernetes-kubectl-operations/SKILL.md) | model + user | Safe kubectl operations, cluster triage, and opt-in Kubernetes MCP inspection |
-| [`flaresolverr-workspace`](skills/flaresolverr-workspace/SKILL.md) | model + user | Operating a disposable FlareSolverr workspace: the v1 API contract, lifecycle and teardown, the User-Agent trap, and the failure playbook |
 | [`github-actions-security-audit`](skills/github-actions-security-audit/SKILL.md) | model + user | Auditing and hardening GitHub Actions workflows: token permissions, script injection, `pull_request_target`, action pinning, runners, supply chain |
 
 ### Plugins and tools
 
 | Plugin | Kind | Use it for |
 |---|---|---|
-| [`architect-dev-bundle`](plugins/architect-dev-bundle/README.md) | bundle + agent preset | Adding the **Architect Dev** preset: senior software architect and fullstack developer, minimalistic architectures, skills, Supabase/GitHub MCP discovery, and an on-demand Kubernetes MCP |
-| [`suggest-resources`](plugins/suggest-resources/README.md) | bundle + tool | Ranking the available tools, plugins, MCP servers, and skills against a task |
-| [`flaresolverr`](plugins/flaresolverr/README.md) | bundle + tool | Running a disposable, loopback-only FlareSolverr container to solve Cloudflare and DDoS-Guard challenges |
 | [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
 
 ---
@@ -50,20 +50,24 @@ DSH loads four kinds of extension:
 ├── README.md
 ├── LICENSE
 ├── NOTICE.md                              # third-party attribution
+├── index.json                             # published format-1 plugin market index
 ├── install.sh                             # register skills with a DSH skill root
 ├── .shellcheckrc
 ├── scripts/
 │   ├── validate-skills.mjs                # frontmatter contract check (CI)
-│   ├── validate-bundles.mjs               # bundle/preset compatibility check (CI)
+│   ├── validate-bundles.mjs               # bundle/patch compatibility check (CI)
 │   ├── validate-github-install.mjs        # GitHub install metadata + tarball check (CI)
+│   ├── validate-market-index.mjs          # plugin index format and pinning check (CI)
+│   ├── build-market-index.mjs             # regenerate index.json from release tags
 │   └── release-tag.mjs                    # validate and tag one plugin release
 ├── .github/workflows/
 │   ├── ci.yml
 │   ├── compat-canary.yml
-│   └── release.yml                        # tag-driven GitHub release
+│   └── release.yml                        # tag-driven release + index update PR
 ├── docs/
 │   ├── ghost-themes.md                    # repo doc — NOT a skill
-│   └── installing-plugins-from-github.md  # install addresses, pinning, troubleshooting
+│   ├── installing-plugins-from-github.md  # install addresses, pinning, troubleshooting
+│   └── plugin-index.md                    # publishing and maintaining index.json
 ├── skills/
 │   ├── software-architecture/
 │   │   └── SKILL.md
@@ -87,48 +91,22 @@ DSH loads four kinds of extension:
 │   │   ├── SKILL.md
 │   │   ├── references/                    # mcp setup/safety, contexts, inspect/debug, apply/rollout
 │   │   └── scripts/                       # verify-kube-access.sh
-│   ├── flaresolverr-workspace/
-│   │   ├── SKILL.md
-│   │   ├── references/
-│   │   └── scripts/                       # verify-workspace.sh
 │   ├── helm-chart-development/
 │   │   ├── SKILL.md
 │   │   ├── references/                    # template-language, chart-structure, functions, debugging
 │   │   └── scripts/                       # verify-chart.mjs
 │   └── github-actions-security-audit/
 │       └── SKILL.md
-├── plugins/
-│   ├── architect-dev-bundle/
-│   │   ├── package.json                   # name, license, engines.dsh, dsh.bundle.patch
-│   │   ├── cordis.patch.yml               # agent-preset declaration + preset MCP rows + on-demand Kubernetes row
-│   │   ├── locale/en.json                 # display title/description
-│   │   ├── icon.svg
-│   │   └── README.md                      # install, select, configure, verify
-│   ├── suggest-resources/
-│   │   ├── package.json                   # name, license, exports, dsh.bundle.patch
-│   │   ├── cordis.patch.yml               # the plugin row
-│   │   ├── index.js                       # suggest_resources tool + capability discovery
-│   │   ├── catalog.js                     # MCP server catalogue + plugin seeds
-│   │   ├── locale/en.json                 # display title/description
-│   │   ├── icon.svg
-│   │   └── README.md                      # configuration table + observable behavior
-│   ├── flaresolverr/
-│   │   ├── package.json                   # name, license, exports, dsh.bundle.patch
-│   │   ├── cordis.patch.yml               # the plugin row + defaults
-│   │   ├── index.js                       # flaresolverr tool: policy, ownership, rendering
-│   │   ├── docker.js                      # Docker CLI adapter (the only module that executes)
-│   │   ├── flare.js                       # FlareSolverr wire-protocol adapter
-│   │   ├── locale/en.json
-│   │   ├── icon.svg
-│   │   └── README.md
-│   └── entire/
-│       ├── package.json                   # name, license, exports, dsh.bundle.patch
-│       ├── cordis.patch.yml               # the plugin row + capture defaults
-│       ├── index.js                       # tools, approval policy, prompt section, bridge wiring
-│       ├── lib/                           # commands, policy, exec, config, text, session bridge
-│       ├── locale/en.json
-│       ├── icon.svg
-│       └── README.md
+└── plugins/
+    └── entire/
+        ├── package.json                   # name, license, exports, dsh.bundle.patch
+        ├── cordis.patch.yml               # the plugin row + capture defaults
+        ├── index.js                       # tools, approval policy, prompt section, bridge wiring
+        ├── lib/                           # commands, policy, exec, config, text, session bridge
+        ├── test/                          # unit tests (node --test)
+        ├── locale/en.json
+        ├── icon.svg
+        └── README.md
 ```
 
 A skill directory may carry any supporting files — `references/`, `scripts/`, `assets/` — because the whole directory is the skill's resource base.
@@ -137,7 +115,7 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
 
 ## Requirements
 
-- **DSH** — `npx @deepseek-ai/dsh …`, or a global `dsh` install (`@deepseek-ai/dsh`).
+- **DSH** — `npx @deepseek-ai/dsh …`, or a global `dsh` install (`@deepseek-ai/dsh`). The Discover flow additionally needs the experimental **Custom plugin indexes** bundle (`@deepseek-ai/dsh-experimental-plugin-market-bundle`), enabled from the Web Plugins page.
 - **Node.js ≥ 18** and **npm/npx** — for the Ghost and Helm toolchain scripts, `npx gscan`, and the optional Kubernetes MCP server (`npx -y kubernetes-mcp-server@latest`).
 - **Ghost 6.x + `gscan`** — only for the two Ghost theme skills.
 - **Helm 3+** — only for `helm-chart-development`. No cluster or network needed;
@@ -146,20 +124,16 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   inspects and, with explicit confirmation, changes a cluster;
   `scripts/verify-kube-access.sh` is a read-only preflight and accepts
   `--kubeconfig <path>`. Set `KUBERNETES_MCP_KUBECONFIG` to an absolute path for a
-  dedicated, preferably read-only kubeconfig; the MCP row passes it to the server as
-  `KUBECONFIG`. Without it, the server uses `KUBECONFIG` or `~/.kube/config`.
-- **Docker Engine** with a reachable daemon — only for the `flaresolverr` plugin and its
-  `flaresolverr-workspace` skill. The plugin creates containers, networks, and loopback-only
-  published ports, so the daemon must be running and the user must be able to reach the socket.
-  Missing CLI, a stopped daemon, and a permission error are each detected and reported with the
-  specific fix.
+  dedicated, preferably read-only kubeconfig; when the optional Kubernetes MCP row is
+  enabled, it passes that value to the server as `KUBECONFIG`. Without it, the server
+  uses `KUBECONFIG` or `~/.kube/config`.
 - **Entire CLI** (`entire`) on `PATH` — only for the `entire` plugin. It records agent sessions and
   checkpoints and backs every tool; session capture additionally needs the `entire-agent-dsh`
   binary and `entire agent add dsh` in the target repository. Search, trails, and recap also need
   an authenticated login and OS keyring access.
-- **`pnpm`** — only when installing DSH plugin packages (`dsh plugin …` forwards to pnpm).
-  Installing this repository's plugins from GitHub also needs **`git`** and pnpm **9 or newer**
-  (for the `path:` subdirectory parameter); no npm publish is involved.
+- **`git`** and **`pnpm` 9 or newer** — only when installing DSH plugin packages from this
+  repository (`dsh plugin …` forwards to pnpm; `path:` subdirectory installs need pnpm 9).
+  No npm publish is involved.
 
 ---
 
@@ -233,34 +207,46 @@ The provider watches roots, so new, renamed, or deleted skills appear without re
 
 ---
 
-## Installing plugins from GitHub
+## Installing plugins
 
-Every plugin under [`plugins/`](plugins/) is a dependency-free DSH bundle. It installs
-straight from this repository — no npm publish — through pnpm's Git subdirectory
-parameter:
+Every plugin under [`plugins/`](plugins/) is a dependency-free DSH bundle. Two install paths
+resolve to the same package:
+
+### From Discover (plugin index)
+
+Add the repository's index once; **Discover** then lists every published plugin version and
+installs it after confirmation:
+
+1. Open **Plugins** in the Web sidebar and switch on **Custom plugin indexes** under
+   **Experimental plugins**.
+2. Select **Discover → Add index source** and enter:
+
+   ```
+   https://raw.githubusercontent.com/sredevopsorg/dsh-plugins/main/index.json
+   ```
+
+3. Pick a plugin and version and confirm the install. Each entry pins its exact Git commit.
+
+The index and its maintenance are documented in [`docs/plugin-index.md`](docs/plugin-index.md).
+
+### From a pinned GitHub release tag
+
+The same package installs with pnpm's Git subdirectory parameter, pinned to an immutable
+release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#<plugin>-v<version>&path:/plugins/<plugin>"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 ```
 
 Quote the spec: the shell must not interpret `&`. Replace `web` with your profile.
-
-| Plugin | Pinned command |
-|---|---|
-| `architect-dev-bundle` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#architect-dev-bundle-v1.3.1&path:/plugins/architect-dev-bundle"` |
-| `flaresolverr` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"` |
-| `suggest-resources` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"` |
-| `entire` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"` |
-
-The tag is immutable, so the command reproduces the same package contents. The
-same address works with the `plugin_manager` tool's `install_bundle` and with
-the Web Plugins install dialog.
+`dsh --profile web list` shows the installed package, and
+`dsh --profile web --dump-config` composes the tree without booting.
 
 Requirements, full-URL and commit-pinned variants, update/uninstall commands,
 and troubleshooting are in
 [`docs/installing-plugins-from-github.md`](docs/installing-plugins-from-github.md).
 For local development, install a checkout instead:
-`dsh plugin --profile web add ./plugins/<plugin>`.
+`dsh plugin --profile web add ./plugins/entire`.
 
 ---
 
@@ -287,39 +273,6 @@ node skills/ghost-theme-modern-frontend/scripts/scaffold-theme.mjs --help
 ```
 
 Flags: `--name`, `--out`, `--react`, `--no-tailwind`, `--force`.
-
----
-
-## Quick start — FlareSolverr workspace
-
-`flaresolverr` gives a session a disposable, loopback-only FlareSolverr container. FlareSolverr has
-**no authentication**, so the plugin publishes it on `127.0.0.1` only, on a kernel-assigned port,
-and tears it down with the session.
-
-```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#flaresolverr-v1.0.2&path:/plugins/flaresolverr"
-dsh --profile web --dump-config          # the flaresolverr row is present
-```
-
-Then in a session:
-
-```
-flaresolverr action=start
-flaresolverr action=request cmd=request.get url="https://protected.example/" disableMedia=true
-flaresolverr action=stop
-```
-
-The result carries `solution.cookies` **and** `solution.userAgent`. A Cloudflare clearance cookie
-only works for the User-Agent that earned it — reuse `solution.userAgent` verbatim downstream, or
-the challenge reappears.
-
-Prove the whole path (Docker, pull, start, `/health`, loopback-only, `request.get`, teardown, and
-the assertion that nothing leaked):
-
-```bash
-bash skills/flaresolverr-workspace/scripts/verify-workspace.sh
-bash skills/flaresolverr-workspace/scripts/verify-workspace.sh --help
-```
 
 ---
 
@@ -383,45 +336,94 @@ A DSH plugin is an npm package that Cordis loads; a **bundle** additionally decl
 }
 ```
 
-`engines.dsh` is the compatibility gate the installer and launcher enforce; omit it and an
-unsupported DSH version installs silently and fails later at activation. A bundle that only adds
-configuration or an agent preset needs no `index.js` or `.` export — declare the patch, plus
-`./package.json`, `./locale/*.json`, and `./icon.svg` for management display.
+`engines.dsh` is the compatibility gate the installer, the market index, and the launcher enforce; omit it and an unsupported DSH version installs silently and fails later at activation. A bundle that only adds configuration needs no `index.js` or `.` export — declare the patch, plus `./package.json`, `./locale/*.json`, and `./icon.svg` for management and market display.
 
-Install and select it into a profile — from GitHub with a pinned release tag, or
-from a local checkout while developing:
+Install and select it into a profile — from Discover, from GitHub with a pinned release tag, or from a local checkout while developing:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"
-dsh plugin --profile web add ./plugins/suggest-resources   # local checkout
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
+dsh plugin --profile web add ./plugins/entire   # local checkout
 dsh plugin --profile web list
-dsh --profile web --dump-config                           # inspect the composed tree, no boot
+dsh --profile web --dump-config                 # inspect the composed tree, no boot
 ```
 
 `dsh plugin` forwards its arguments to pnpm. See
 [Installing plugins from GitHub](docs/installing-plugins-from-github.md) for the
-tag scheme, pinning, and troubleshooting.
+tag scheme, pinning, and troubleshooting, and [Publishing the plugin index](docs/plugin-index.md)
+for how a released version reaches Discover.
 
 Conventions this repository follows:
 
 ```
 plugins/<name>/
 ├── package.json          # name, license, engines.dsh, exports, dsh.bundle.patch
-├── cordis.patch.yml      # plugin rows / config, or the agent-preset declaration
+├── cordis.patch.yml      # plugin rows / config
 ├── index.js              # plugin entry: export apply() / inject / (optional) Config
 ├── <support>.js          # plain-ESM support modules, imported relatively
-├── locale/en.json        # display title + description for management surfaces
+├── locale/en.json        # display title + description for management and market surfaces
 ├── icon.svg              # optional, referenced by package.json "icon"
+├── test/                 # unit tests where the plugin has logic to test
 └── README.md             # configuration table + observable behavior
 ```
 
-The first plugin here, [`suggest-resources`](plugins/suggest-resources/README.md), ships plain ESM
-with **no dependencies and no build step**. That is deliberate: a workspace-linked plugin cannot
-resolve bare `@deepseek-ai/*` specifiers unless its manifest declares them as `peerDependencies`, so
+The plugin here, [`entire`](plugins/entire/README.md), ships plain ESM with **no dependencies
+and no build step**. That is deliberate: a workspace-linked plugin cannot resolve bare
+`@deepseek-ai/*` specifiers unless its manifest declares them as `peerDependencies`, so
 a dependency-free package keeps `dsh plugin add` free of both a toolchain and install-script
 approval. Add a build only when a plugin genuinely needs one.
 
 Model-facing tools are registered from a plugin via `ctx.tools`; they should declare a JSON-schema input, fail with actionable messages, and never leak stack traces.
+
+---
+
+## The plugin index (Discover)
+
+[`index.json`](index.json) is a **format-1 plugin market index**. It lists each published
+plugin version with its display metadata and an exact install source pinned to the
+release-tag commit, so the experimental **Custom plugin indexes** bundle can browse and
+install this repository's plugins without npm publishing.
+
+```json
+{
+  "format": 1,
+  "title": { "en": "sredevopsorg DSH plugins" },
+  "plugins": [
+    {
+      "name": "@sredevopsorg/dsh-entire",
+      "versions": [
+        {
+          "version": "0.2.0",
+          "publishTimestamp": 1793651934,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "<40-hex commit of the entire-v0.2.0 tag>",
+            "path": "plugins/entire"
+          },
+          "engines": { "dsh": "^0.2.1-rc.2" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+`index.json` is generated from the package manifests and Git release tags; do not edit it
+by hand:
+
+```bash
+node scripts/build-market-index.mjs          # regenerate index.json
+node scripts/build-market-index.mjs --check  # fail when it is stale
+node scripts/validate-market-index.mjs       # validate format, pins, metadata, freshness
+```
+
+The validator resolves `@deepseek-ai/dsh-plugin-market-index` from your DSH installation
+(`--dsh-root <node_modules/@deepseek-ai>` or `DSH_INSTALL`). Release tags must be present:
+use a full clone (`git fetch --tags`), as CI does.
+
+Every tag push runs [`release.yml`](.github/workflows/release.yml), which creates the
+GitHub release and opens a pull request that republishes `index.json` with the new
+version. See [`docs/plugin-index.md`](docs/plugin-index.md) for the full workflow.
 
 ---
 
@@ -432,37 +434,29 @@ node scripts/validate-skills.mjs            # frontmatter contract; exits 1 on e
 node scripts/validate-skills.mjs --json     # machine-readable results
 node scripts/validate-skills.mjs --strict   # warnings become failures
 
-node scripts/validate-bundles.mjs           # bundle/preset compatibility with the installed DSH
+node scripts/validate-bundles.mjs           # bundle compatibility with the installed DSH
 node scripts/validate-bundles.mjs --strict  # drift and metadata warnings become failures
 node scripts/validate-bundles.mjs --json    # machine-readable results
 
 node scripts/validate-github-install.mjs        # GitHub install metadata + npm pack contents
 node scripts/validate-github-install.mjs --strict
 node scripts/validate-github-install.mjs --json
-node scripts/validate-github-install.mjs --tag flaresolverr-v1.0.2   # release-tag check
+node scripts/validate-github-install.mjs --tag entire-v0.2.0   # release-tag check
+
+node scripts/build-market-index.mjs --check     # index.json matches the release tags
+node scripts/validate-market-index.mjs          # index format, pins, metadata, freshness
+node scripts/validate-market-index.mjs --strict # unlisted release tags become failures
 ```
 
-`validate-skills.mjs` reproduces the checks DSH's filesystem provider makes at discovery, where a
-malformed skill is dropped with only a log line. It enforces the frontmatter contract and flags
-nested `SKILL.md` files, duplicate names, unknown keys, and descriptions the catalog will truncate.
+`validate-skills.mjs` reproduces the checks DSH's filesystem provider makes at discovery, where a malformed skill is dropped with only a log line. It enforces the frontmatter contract and flags nested `SKILL.md` files, duplicate names, unknown keys, and descriptions the catalog will truncate.
 
-`validate-bundles.mjs` parses every `plugins/*/cordis.patch.yml`, resolves each referenced package
-and subpath from the installed DSH, validates each row's `Config` against the live schema, checks
-`engines.dsh`, and — for the Architect Dev preset — compares the copied plugin list with
-`@deepseek-ai/dsh-web-app/presets/standard.patch.yml`, failing when DSH adds or changes a row the
-bundle has not mirrored. It resolves `yaml` and `semver` from the DSH installation, so this
-repository stays dependency-free. Pass `--dsh-root <path-to-node_modules/@deepseek-ai>` when
-`dsh` is not the one on `PATH`.
+`validate-bundles.mjs` parses every `plugins/*/cordis.patch.yml`, resolves each referenced package and subpath from the installed DSH, validates each row's `Config` against the live schema, and checks `engines.dsh`. It resolves `yaml` and `semver` from the DSH installation, so this repository stays dependency-free. Pass `--dsh-root <path-to-node_modules/@deepseek-ai>` when `dsh` is not the one on `PATH`.
 
-`validate-github-install.mjs` checks the packaging contract behind the GitHub addresses: repository
-metadata, self-contained manifests (no workspace/file dependencies or install scripts), export
-targets, `npm pack --dry-run` contents, the pinned docs commands, and the release tag against the
-package version. It needs only Node and npm, so it runs without a DSH installation. `--tag` is the
-mode used by the release workflow.
+`validate-github-install.mjs` checks the packaging contract behind the GitHub addresses: repository metadata, self-contained manifests (no workspace/file dependencies or install scripts), export targets, `npm pack --dry-run` contents, the pinned docs commands, and the release tag against the package version. It needs only Node and npm, so it runs without a DSH installation. `--tag` is the mode used by the release workflow.
 
-[CI](.github/workflows/ci.yml) runs all three validators on every push and pull request; a weekly
-canary runs the bundle validator against the newest published DSH, and a tag push runs
-[`release.yml`](.github/workflows/release.yml).
+`validate-market-index.mjs` validates `index.json` against the DSH installation's format-1 validator, checks that every listed version is a release tag pinned to its commit, committer time, name, version, and `engines.dsh`, and fails when the file differs from `build-market-index.mjs` output. It treats a not-yet-published release tag as a warning: the release workflow opens the index update. Use a full checkout with tags (`fetch-depth: 0`), as CI does.
+
+[CI](.github/workflows/ci.yml) runs all four validators and the plugin unit tests on every branch push and pull request; a weekly canary runs the bundle and index validators against the newest published DSH, and a tag push runs [`release.yml`](.github/workflows/release.yml).
 
 Beyond the validators:
 
@@ -470,14 +464,15 @@ Beyond the validators:
 - Start a session and confirm the skill appears in the catalog (`/` in the composer lists user-invocable skills).
 - Load it once by exact name to confirm the body parses and the resource paths resolve.
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
-- For the plugin in this repository: install it with
-  `dsh plugin --profile <name> add "github:sredevopsorg/dsh-plugins#suggest-resources-v1.0.2&path:/plugins/suggest-resources"`,
-  confirm `suggest_resources` appears in the tool list, then disable the bundle and confirm it
-  disappears — that proves the registration belongs to the plugin's context.
-- For the Architect Dev preset: follow [its verification checklist](plugins/architect-dev-bundle/README.md#verify) in a new session.
+- For the plugin here: install it (from Discover or the pinned GitHub spec above), confirm
+  `entire` appears in the tool list, then disable the bundle and confirm it disappears —
+  that proves the registration belongs to the plugin's context. The plugin README has the
+  full verification checklist.
 - For Kubernetes: `bash skills/kubernetes-kubectl-operations/scripts/verify-kube-access.sh --kubeconfig "$KUBERNETES_MCP_KUBECONFIG" --require-read-only` is a read-only access preflight; it warns when the context can write, in which case the Kubernetes MCP should not be enabled for exploratory inspection.
-- For FlareSolverr: `bash skills/flaresolverr-workspace/scripts/verify-workspace.sh` proves the workspace path end to end and asserts no container or network is left behind.
 - For Ghost themes: `bash skills/ghost-theme-modern-frontend/scripts/verify-theme.sh <theme-dir>`.
+- For the plugin index: add
+  `https://raw.githubusercontent.com/sredevopsorg/dsh-plugins/main/index.json` as a Discover
+  index source and confirm the listed versions and sources match the release tags.
 
 ---
 
@@ -485,8 +480,9 @@ Beyond the validators:
 
 1. Branch from `main`; keep one concern per branch.
 2. Add or update the skill/plugin **and** this README's catalog table in the same change.
-3. Run `node scripts/validate-skills.mjs`, `node scripts/validate-github-install.mjs --strict` and,
-   for any bundle change, `node scripts/validate-bundles.mjs` — CI runs all three.
+3. Run `node scripts/validate-skills.mjs`, `node scripts/validate-github-install.mjs --strict`,
+   `node scripts/validate-bundles.mjs`, and `node scripts/validate-market-index.mjs` — CI runs
+   all four plus the plugin tests.
 4. Verify the skill loads in a real DSH session (frontmatter errors are only visible at discovery).
 5. Keep shell scripts `shellcheck`-clean and preserve their executable bits.
 6. Never commit secrets, tokens, personal paths, or session data.
@@ -499,16 +495,17 @@ Plugin versions are independent, and a release is one annotated tag named
 1. Bump `version` in `plugins/<dir>/package.json`.
 2. Update this README's install table and the plugin README with the new pinned
    command; `validate-github-install.mjs` fails until both match.
-3. Run the three validators, commit on `main`, and push.
+3. Run the validators, commit on `main`, and push.
 4. Tag and push the release:
 
    ```bash
-   node scripts/release-tag.mjs --plugin flaresolverr --push
+   node scripts/release-tag.mjs --plugin entire --push
    ```
 
-The tag push runs [`release.yml`](.github/workflows/release.yml), which
-revalidates the tag/version pair and creates the GitHub release. Never move a
-published tag — release a new version.
+The tag push runs [`release.yml`](.github/workflows/release.yml), which revalidates the
+tag/version pair, creates the GitHub release, and opens a pull request that republishes
+[`index.json`](index.json) with the new version. Merge that pull request to make the
+version appear in Discover. Never move a published tag — release a new version.
 
 ---
 
@@ -519,7 +516,6 @@ Released under the [MIT License](LICENSE). Third-party attribution is listed in
 
 - `supabase` and `supabase-postgres-best-practices` are derived from Supabase's published agent skills (MIT). Metadata is preserved in each `SKILL.md`.
 - `ghost-theme-development` and `ghost-theme-modern-frontend` are grounded in the official `docs.ghost.org` documentation and the MIT-licensed community reference theme [christopher-b/vapour](https://github.com/christopher-b/vapour).
-- `helm-chart-development` is grounded in the official Helm documentation — the [Chart Template Developer's Guide](https://helm.sh/docs/chart_template_guide/), [Charts](https://helm.sh/docs/topics/charts/), [Best Practices](https://helm.sh/docs/chart_best_practices/) and [Hooks](https://helm.sh/docs/topics/charts_hooks/) — which is published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Examples and function signatures were verified against Helm 4.3.
+- `helm-chart-development` is grounded in the official Helm documentation — the [Chart Template Developer's Guide](https://helm.sh/docs/chart_template_guide/), [Charts](https://helm.sh/docs/topics/charts/), [Best Practices](https://helm.sh/docs/charts_best_practices/) and [Hooks](https://helm.sh/docs/charts_hooks/) — which is published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Examples and function signatures were verified against Helm 4.3.
 - `github-actions-security-audit` is grounded in GitHub's [Secure use reference](https://docs.github.com/en/actions/reference/security/secure-use) (GitHub Docs, CC-BY-4.0).
 - `kubernetes-kubectl-operations` is grounded in the official Kubernetes documentation at <https://kubernetes.io/docs/> (source: <https://github.com/kubernetes/website>), published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), and the `containers/kubernetes-mcp-server` documentation (Apache-2.0).
-- The Architect Dev bundle configures `containers/kubernetes-mcp-server` at runtime. The server is an Apache-2.0 dependency and is not redistributed here.

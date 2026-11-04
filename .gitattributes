@@ -16,3 +16,6 @@
 
 # Makes `git diff` readable for the release notes and generated files.
 dist/** linguist-generated=true
+
+# Generated plugin market index (scripts/build-market-index.mjs).
+index.json linguist-generated=true
