@@ -20,20 +20,20 @@ Kubernetes work has two paths: **`kubectl`**, which is always available when ins
 and configured, and the optional **Kubernetes MCP server**, which exposes structured
 Kubernetes tools through `mcp__kubernetes__*`.
 
-Default to `kubectl`. The MCP server is installed by the Architect Dev bundle but is
-**disabled by default** and is a full management server when enabled — it is not a
-read-only bridge. Treat MCP use as inspection-only unless the user explicitly asks
-otherwise, and send mutations through `kubectl` where a diff and confirmation are
-possible.
+Default to `kubectl`. The MCP server is an optional `@deepseek-ai/dsh-mcp-client` row
+the user adds to a profile; keep it **disabled by default** and remember it is a full
+management server when enabled — it is not a read-only bridge. Treat MCP use as
+inspection-only unless the user explicitly asks otherwise, and send mutations through
+`kubectl` where a diff and confirmation are possible.
 
 ## 0. MCP is opt-in
 
 No Kubernetes MCP process starts at DSH launch. Enable it only when the user asks for
 the MCP tools or when their structured output materially helps the task:
 
-1. **Point the MCP at the right kubeconfig.** The Architect Dev row passes
-   `KUBERNETES_MCP_KUBECONFIG` (absolute path) to the server as its `KUBECONFIG`
-   when set; otherwise the server uses the ambient `KUBECONFIG` or
+1. **Point the MCP at the right kubeconfig.** Configure the row's `env` so
+   `KUBERNETES_MCP_KUBECONFIG` (absolute path) is passed to the server as its
+   `KUBECONFIG` when set; otherwise the server uses the ambient `KUBECONFIG` or
    `~/.kube/config`. The variable is read when the row activates, so set it in the
    environment that starts DSH. Do not export it in a shell after DSH is already
    running.
@@ -66,8 +66,8 @@ the MCP tools or when their structured output materially helps the task:
    wants it left on.
 
 If `plugin_manager` is unavailable, ask the user to enable the `mcp-kubernetes` row in
-the Web **Plugins** page. If the row is unavailable, the MCP feature is not part of the
-installed bundle.
+the Web **Plugins** page. A profile can add the row in its `cordis.patch.yml` when the
+installed setup does not expose one.
 
 `references/mcp-setup-and-safety.md` has the full activation, read-only kubeconfig, and
 hard read-only TOML guidance.

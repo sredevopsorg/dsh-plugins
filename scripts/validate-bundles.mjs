@@ -3,8 +3,7 @@
  * validate-bundles.mjs
  *
  * Validate every bundle patch in this repository against the DSH installation
- * that will load it, and keep the Architect Dev agent preset synchronized with
- * the shipped `standard` preset.
+ * that will load it.
  *
  * Checks (errors):
  *   - each `plugins/<name>/package.json` declares the expected package name,
@@ -20,11 +19,6 @@
  *   - persona templates use only prompt variables registered by the installed DSH
  *   - every `tool-subagent` provider is registered by an installed
  *     `dsh-subagent-*` package
- *   - the Architect Dev preset declaration is structurally valid
- *   - its plugin list mirrors `@deepseek-ai/dsh-web-app/presets/standard.patch.yml`,
- *     except the documented deltas (persona, gated plugin manager, `mcp-*` rows);
- *     its plan-mode section must match the shipped text exactly
- *   - the skills named by the Architect Dev persona exist under `skills/`
  *
  * Checks (warnings): missing locale metadata, subagent provider packages that
  * cannot be inspected, and an installation with no provider packages.
@@ -50,24 +44,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PLUGINS_DIR = path.join(REPO_ROOT, "plugins");
-const SKILLS_DIR = path.join(REPO_ROOT, "skills");
 
-const ARCHITECT_ROW_ID = "preset-architect-dev";
-const ARCHITECT_ID = "architect-dev";
-const ARCHITECT_SKILLS = [
-  "software-architecture",
-  "fullstack-development",
-  "supabase",
-  "supabase-postgres-best-practices",
-  "kubernetes-kubectl-operations",
-];
-/** Profile-level Kubernetes MCP row, enabled on request rather than at startup. */
-const KUBERNETES_ROW_ID = "mcp-kubernetes";
-const KUBERNETES_PACKAGE = "kubernetes-mcp-server@latest";
-/** Rows that intentionally differ from the shipped standard preset. */
-const DELTA_ROWS = new Set(["persona", "tool-plugin-manager"]);
-/** Extra row ids allowed beyond the shipped standard preset. */
-const EXTRA_ROW_PREFIXES = ["mcp-"];
 /** Options removed from current DSH plugin configs. */
 const REMOVED_OPTIONS = ["backgroundMode"];
 
@@ -331,10 +308,6 @@ function pluginDirectories() {
     .map((entry) => path.join(PLUGINS_DIR, entry.name))
     .filter((directory) => exists(path.join(directory, "package.json")))
     .sort();
-}
-
-function jsonEqual(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 async function main() {
@@ -620,167 +593,6 @@ async function main() {
     }
   }
 
-  // ── Architect Dev preset checks ──────────────────────────────────────────
-  const architectDirectory = directories.find(
-    (directory) => manifests.get(directory)?.name === "@sredevopsorg/dsh-architect-dev-bundle",
-  );
-  if (architectDirectory === undefined) {
-    fail("plugins/architect-dev-bundle is missing");
-  } else {
-    const rows = rowsByDirectory.get(architectDirectory) ?? [];
-    const declaration = rows.find((row) => row.id === ARCHITECT_ROW_ID);
-    if (declaration === undefined) {
-      fail(`architect-dev: the patch must insert row ${ARCHITECT_ROW_ID}`);
-    } else {
-      const config = declaration.config ?? {};
-      if (config.id !== ARCHITECT_ID) {
-        fail(`${ARCHITECT_ROW_ID}: config.id must be ${JSON.stringify(ARCHITECT_ID)}`);
-      } else if (declaration.id !== `preset-${config.id}`) {
-        fail(`${ARCHITECT_ROW_ID}: row id must be preset-${config.id}`);
-      }
-      if (!Array.isArray(config.plugins) || config.plugins.length === 0) {
-        fail(`${ARCHITECT_ROW_ID}: config.plugins must be a non-empty list`);
-      }
-      const persona = leafRows(config.plugins ?? []).find((row) => row.id === "persona");
-      const personaText = JSON.stringify(persona?.config ?? {});
-      for (const skill of ARCHITECT_SKILLS) {
-        if (!exists(path.join(SKILLS_DIR, skill, "SKILL.md"))) {
-          fail(`architect-dev: persona names skill ${JSON.stringify(skill)} but skills/${skill}/SKILL.md is missing`);
-        }
-        if (!personaText.includes(skill)) {
-          fail(`architect-dev: the persona must name skill ${JSON.stringify(skill)}`);
-        }
-      }
-    }
-
-    // The Kubernetes MCP is profile-level and disabled by default so it can be
-    // toggled on demand via plugin_manager; a preset child would be read-only.
-    const kubernetesRows = rows.filter((row) => row.id === KUBERNETES_ROW_ID);
-    if (kubernetesRows.length !== 1) {
-      fail(
-        `architect-dev: the patch must insert exactly one top-level ${KUBERNETES_ROW_ID} row ` +
-          `(found ${kubernetesRows.length})`,
-      );
-    } else {
-      const kubernetes = kubernetesRows[0];
-      if (kubernetes.name !== "@deepseek-ai/dsh-mcp-client") {
-        fail(`${KUBERNETES_ROW_ID}: name must be @deepseek-ai/dsh-mcp-client`);
-      }
-      const kubernetesConfig = evaluateSafe(kubernetes.config) ?? {};
-      if (kubernetesConfig.serverName !== "kubernetes") {
-        fail(`${KUBERNETES_ROW_ID}: config.serverName must be "kubernetes"`);
-      }
-      if (kubernetesConfig.transport !== "stdio") {
-        fail(`${KUBERNETES_ROW_ID}: config.transport must be "stdio"`);
-      }
-      if (kubernetesConfig.command !== "npx") {
-        fail(`${KUBERNETES_ROW_ID}: config.command must be "npx"`);
-      }
-      const kubernetesArgs = Array.isArray(kubernetesConfig.args) ? kubernetesConfig.args : [];
-      if (!kubernetesArgs.includes("-y") || !kubernetesArgs.includes(KUBERNETES_PACKAGE)) {
-        fail(`${KUBERNETES_ROW_ID}: args must include -y and ${KUBERNETES_PACKAGE}`);
-      }
-      const kubernetesEnv = evaluateSafe(kubernetesConfig.env);
-      if (
-        kubernetesEnv === null ||
-        typeof kubernetesEnv !== "object" ||
-        Array.isArray(kubernetesEnv)
-      ) {
-        fail(`${KUBERNETES_ROW_ID}: config.env must evaluate to an object`);
-      }
-      if (!JSON.stringify(kubernetes.config?.env ?? "").includes("KUBERNETES_MCP_KUBECONFIG")) {
-        fail(`${KUBERNETES_ROW_ID}: config.env must pass KUBERNETES_MCP_KUBECONFIG`);
-      }
-      if (evaluateSafe(kubernetes.disabled) !== true) {
-        fail(`${KUBERNETES_ROW_ID}: must be disabled by default; enable it on request instead`);
-      }
-    }
-    if (declaration !== undefined) {
-      const presetKubernetes = collectPresetRows(declaration).filter(
-        (row) => row.id === KUBERNETES_ROW_ID,
-      );
-      if (presetKubernetes.length > 0) {
-        fail(`architect-dev: ${KUBERNETES_ROW_ID} must be profile-level, not a preset child`);
-      }
-    }
-
-    // Compare the plugin list with the shipped standard preset.
-    let standardFile;
-    try {
-      standardFile = requireFromDsh.resolve("@deepseek-ai/dsh-web-app/presets/standard.patch.yml");
-    } catch {
-      const webAppManifest = resolvePackageManifest(
-        requireFromDsh,
-        dshRoot,
-        "@deepseek-ai/dsh-web-app",
-      );
-      standardFile =
-        webAppManifest === undefined
-          ? path.join(dshRoot, "dsh-web-app", "presets", "standard.patch.yml")
-          : path.join(path.dirname(webAppManifest), "presets", "standard.patch.yml");
-    }
-    if (!exists(standardFile)) {
-      fail(`architect-dev: cannot read the shipped standard preset at ${standardFile}`);
-    } else {
-      const standardDocument = parsePatch(standardFile, parseYaml);
-      const standardInsert = Array.isArray(standardDocument)
-        ? standardDocument.flatMap((entry) => (Array.isArray(entry?.insert) ? entry.insert : []))
-        : [];
-      const standardDeclaration = standardInsert.find((row) => row.id === "preset-standard");
-      const standardRows = leafRows(standardDeclaration?.config?.plugins ?? []);
-      const architectRows = collectPresetRows(rows.find((row) => row.id === ARCHITECT_ROW_ID));
-      const architectById = new Map(architectRows.map((row) => [row.id, row]));
-      const standardById = new Map(standardRows.map((row) => [row.id, row]));
-
-      for (const standardRow of standardRows) {
-        const candidate = architectById.get(standardRow.id);
-        if (candidate === undefined) {
-          fail(
-            `architect-dev: shipped standard preset row ${JSON.stringify(standardRow.id)} is missing; mirror it`,
-          );
-          continue;
-        }
-        if (candidate.name !== standardRow.name) {
-          fail(
-            `architect-dev: row ${JSON.stringify(standardRow.id)} must use ${standardRow.name}, found ${candidate.name}`,
-          );
-          continue;
-        }
-        if (standardRow.id === "plan-mode") {
-          const expected = evaluateValue(standardRow.config?.section);
-          const actual = evaluateValue(candidate.config?.section);
-          if (actual !== expected) {
-            fail(
-              `architect-dev: plan-mode section drifted from the shipped standard preset; copy the current text`,
-            );
-          }
-          continue;
-        }
-        if (DELTA_ROWS.has(standardRow.id)) continue;
-        const standardDisabled = evaluateSafe(standardRow.disabled);
-        const candidateDisabled = evaluateSafe(candidate.disabled);
-        if (!jsonEqual(standardDisabled, candidateDisabled)) {
-          fail(
-            `architect-dev: row ${JSON.stringify(standardRow.id)} disabled state differs from standard ` +
-              `(${JSON.stringify(candidateDisabled)} vs ${JSON.stringify(standardDisabled)})`,
-          );
-        }
-        const standardConfig = evaluateSafe(standardRow.config);
-        const candidateConfig = evaluateSafe(candidate.config);
-        if (!jsonEqual(standardConfig, candidateConfig)) {
-          fail(
-            `architect-dev: row ${JSON.stringify(standardRow.id)} config differs from standard; mirror the shipped config`,
-          );
-        }
-      }
-      for (const candidate of architectRows) {
-        if (standardById.has(candidate.id)) continue;
-        if (EXTRA_ROW_PREFIXES.some((prefix) => candidate.id.startsWith(prefix))) continue;
-        fail(`architect-dev: extra row ${JSON.stringify(candidate.id)} is not part of the standard preset`);
-      }
-    }
-  }
-
   // ── Report ───────────────────────────────────────────────────────────────
   if (options.strict === true) {
     for (const warning of warnings) errors.push(`[strict] ${warning}`);
@@ -813,14 +625,6 @@ async function main() {
   }
 
   if (errors.length > 0) process.exitCode = 1;
-}
-
-/** Flatten a preset declaration's plugin list, tolerating an unreadable row. */
-function collectPresetRows(declaration) {
-  if (declaration === undefined) return [];
-  const plugins = declaration.config?.plugins;
-  if (!Array.isArray(plugins)) return [];
-  return leafRows(plugins);
 }
 
 /** Evaluate a value, returning it unchanged when an `!!js` expression fails. */

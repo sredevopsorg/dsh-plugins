@@ -1,9 +1,9 @@
 # MCP setup and safety
 
-The Architect Dev bundle ships a profile-level `mcp-kubernetes` row for
-[`containers/kubernetes-mcp-server`](https://github.com/containers/kubernetes-mcp-server).
-The row is **disabled by default** and is a sibling of the preset, not a preset child,
-so `plugin_manager` can toggle it. Enabling it affects every session in the profile.
+Add a profile-level `mcp-kubernetes` row for
+[`containers/kubernetes-mcp-server`](https://github.com/containers/kubernetes-mcp-server)
+to the profile patch. Keep the row **disabled by default** so `plugin_manager` can
+toggle it; enabling it affects every session in the profile.
 
 ## Enable and disable
 
@@ -38,7 +38,7 @@ to the profile patch instead:
 
 ## Pass the kubeconfig through configuration
 
-The bundle's `mcp-kubernetes` row evaluates this expression when it activates:
+The row can evaluate this expression when it activates:
 
 ```yaml
 env: !!js "process.env.KUBERNETES_MCP_KUBECONFIG ? { KUBECONFIG: process.env.KUBERNETES_MCP_KUBECONFIG } : {}"
