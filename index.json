@@ -8,6 +8,43 @@
   },
   "plugins": [
     {
+      "name": "@sredevopsorg/dsh-code-editor",
+      "title": "Workspace code editor",
+      "description": "Browse workspace files and edit UTF-8 text files in a right-sidebar editor with save, sandbox, and conflict protection.",
+      "icon": "plugins/code-editor/icon.svg",
+      "author": "sredevopsorg",
+      "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/code-editor#readme",
+      "repository": {
+        "url": "https://github.com/sredevopsorg/dsh-plugins",
+        "directory": "plugins/code-editor"
+      },
+      "metadata": {
+        "keywords": [
+          "dsh",
+          "dsh-plugin",
+          "dsh-bundle",
+          "code-editor",
+          "workspace-files",
+          "web"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794092613,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "005da91d0bdbd31558b469173c4ff0f3e28f4697",
+            "path": "plugins/code-editor"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        }
+      ]
+    },
+    {
       "name": "@sredevopsorg/dsh-entire",
       "title": "Entire",
       "description": "Read Entire sessions, checkpoints, search results, trails, and code history.",
