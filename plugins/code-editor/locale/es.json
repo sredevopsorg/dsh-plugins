@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Editor de código del espacio de trabajo",
+    "description": "Explora los archivos del espacio de trabajo y edita archivos de texto UTF-8 en un editor de la barra lateral derecha con guardado, sandbox y protección contra conflictos."
+  }
+}

@@ -1,0 +1,5 @@
+# Code editor bundle: one Host row that registers the authenticated write
+# endpoint used by the right-sidebar editor tab.
+- insert:
+    - id: code-editor
+      name: '@sredevopsorg/dsh-code-editor'

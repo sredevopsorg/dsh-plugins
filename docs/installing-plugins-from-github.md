@@ -42,12 +42,14 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
   also fetches its two runtime dependencies (`zod`, `proper-lockfile`) from the
   npm registry.
 - **Node.js 22.19+ or 24+ and a Web profile** — only for `superagent`, whose
-  management panel and client bundle load in the Web UI.
+  management panel and client bundle load in the Web UI; `code-editor` also
+  needs a Web profile with the built-in right Sidebar.
 
 ## Pinned installs (recommended)
 
 | Plugin | Tag | Command |
 |---|---|---|
+| `code-editor` | `code-editor-v0.1.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"` |
 | `entire` | `entire-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"` |
 | `skills` | `skills-v0.1.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"` |
 | `superagent` | `superagent-v0.1.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.0&path:/plugins/superagent"` |
@@ -94,11 +96,12 @@ default; on a profile without HMR, restart DSH before the new rows load.
 
 ```bash
 dsh plugin --profile web list
-dsh --profile web --dump-config | grep -E 'entire|skills|superagent'
+dsh --profile web --dump-config | grep -E 'code-editor|entire|skills|superagent'
 ```
 
 Then in a new session, confirm the plugin's surface appears:
 
+- `code-editor` — the right Sidebar guide lists **Code editor** and opens a workspace file.
 - `entire` — the Entire tools appear in the tool list.
 - `skills` — every repository skill appears in the skill catalog (`/` lists them).
 - `superagent` — the **Superagent** sidebar entry opens its management panel.
@@ -146,7 +149,7 @@ Release tags are created automatically when a version bump merges to `main`:
 <plugin-directory>-v<package-version>
 ```
 
-Examples: `entire-v0.2.0`, `skills-v0.1.0`, `superagent-v0.1.0`.
+Examples: `code-editor-v0.1.0`, `entire-v0.2.0`, `skills-v0.1.0`, `superagent-v0.1.0`.
 
 [`.github/workflows/version-plugins.yml`](../.github/workflows/version-plugins.yml)
 runs on every push to `main`, tags each plugin whose `<dir>-v<version>` tag does
