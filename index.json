@@ -152,6 +152,19 @@
       },
       "versions": [
         {
+          "version": "0.1.1",
+          "publishTimestamp": 1794094710,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "3ffdf5d3c8632315e346d582776c574a71db9f12",
+            "path": "plugins/superagent"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        },
+        {
           "version": "0.1.0",
           "publishTimestamp": 1793785343,
           "source": {
