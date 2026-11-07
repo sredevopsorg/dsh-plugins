@@ -6,7 +6,7 @@ import { lstat, mkdir, readFile, readdir, rename, unlink, writeFile } from "node
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import s from "@deepseek-ai/schemastery";
-//#region src/core/model.ts
+// src/core/model.ts
 /** Stable key of a thread across the whole domain. */
 const threadKey = (ref) => `${ref.source}:${ref.id}`;
 /**
@@ -81,14 +81,12 @@ function waitsForPerson(ticket) {
 	if (report?.state !== "blocked" && report?.state !== "failed") return false;
 	return !ticket.inputs.some((input) => input.kind === "trigger" && input.human && !input.context && input.at > report.at);
 }
-//#endregion
-//#region src/core/ids.ts
+// src/core/ids.ts
 /** Stable content-derived identifiers; equal inputs always produce the same id. */
 function key(...values) {
 	return createHash("sha256").update(JSON.stringify(values)).digest("hex").slice(0, 32);
 }
-//#endregion
-//#region src/limits.ts
+// src/limits.ts
 /** Validation bounds shared between host schemas and management panel forms. */
 const LIMITS = {
 	ruleName: 100,
@@ -115,8 +113,7 @@ const LIMITS = {
 		max: 9e4
 	}
 };
-//#endregion
-//#region src/infra/text.ts
+// src/infra/text.ts
 /** Word counting and string formatting utilities for IM message limits and templates. */
 const words = new Intl.Segmenter("zh", { granularity: "word" });
 /** Counts word-like segments across Chinese, English, and mixed text, ignoring punctuation. */
@@ -135,8 +132,7 @@ const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, name) => v
 /** Case-insensitive comparison for GitHub logins and repository names. */
 const sameName = (a, b) => a.toLowerCase() === b.toLowerCase();
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-//#endregion
-//#region src/setup.ts
+// src/setup.ts
 /** Structured startup and configuration errors with the settings location where the operator can fix them. */
 const SETUP_PROBLEMS = {
 	foreignFile: ["deployment", "{file} was not written by dsh-superagent; move it, or choose another state directory."],
@@ -181,8 +177,7 @@ var SetupError = class extends Error {
 		};
 	}
 };
-//#endregion
-//#region src/infra/commands.ts
+// src/infra/commands.ts
 /** Subprocess wrapper for running gh, lark-cli, and git commands under the deployment's configured accounts. */
 const exec = promisify(execFile);
 const TIMEOUT_MS = 9e4;
@@ -339,8 +334,7 @@ var Commands = class Commands {
 		return this.run("git", args, cwd);
 	}
 };
-//#endregion
-//#region src/infra/environment.ts
+// src/infra/environment.ts
 /**
 * Process environment and CLI shims that bind git, gh, and lark-cli to the deployment's accounts and block disallowed commands.
 * Variables read by workers avoid `KEY|PASSWORD|SECRET|TOKEN` in their names because DSH strips credential-shaped variables from child environments.
@@ -556,8 +550,7 @@ async function verifyDirectory(directory, subprocess, signal) {
 	const local = scoped.flatMap((scope, index) => index % 2 === 0 && (scope === "local" || scope === "worktree") ? [scoped[index + 1].split("\n")[0]] : []);
 	if (local.length) throw new Error(`The git configuration of the repository in ${directory} sets ${local.join(", ")}, which the agent's git would also read; remove them.`);
 }
-//#endregion
-//#region src/deployment.ts
+// src/deployment.ts
 /** Plugin configuration and startup verification for repository access and agent CLI identities. */
 const reason = (error) => error instanceof Error ? error.message : String(error);
 const absolute = (description) => s.string().pattern(/^\//).description(`${description} Absolute path.`);
@@ -741,8 +734,7 @@ async function resolveFeishuBot(machine, feishu, probe, path = process.env.PATH 
 		name: info.bot.app_name
 	};
 }
-//#endregion
-//#region src/sources/host.ts
+// src/sources/host.ts
 /** Fixed English health templates (`{name}` placeholders); the panel localizes each `code` in the interface language. */
 const HEALTH_TEXT = {
 	setupPending: "Waiting for the deployment check",
@@ -760,8 +752,7 @@ function health(state, code, values = {}) {
 	};
 }
 const sourceContext = (host, kind) => host.context(kind);
-//#endregion
-//#region src/kv.ts
+// src/kv.ts
 /** Define a single typed KV key; external Source plugins use `record` and `family` to type their own keys. */
 const record = (key) => key;
 /** Define a KV key family whose keys join `prefix` and name parts with `:` (or a custom `format`). */
@@ -822,8 +813,7 @@ const KV = {
 		initialized: family("thread-initialized:")
 	}
 };
-//#endregion
-//#region src/sources/poll.ts
+// src/sources/poll.ts
 /** Shared polling helpers for subscribed threads, overlap-safe cursors, and timer-friendly delays. */
 /** How long a subscribed Thread with no live Ticket continues to be polled after its last Trigger or Ticket end. */
 const POLL_HORIZON_MS = 12096e5;
@@ -868,5 +858,4 @@ function pause(ms, signal) {
 		signal.addEventListener("abort", stop, { once: true });
 	});
 }
-//#endregion
 export { checkedImText as A, liveTicket as B, withoutDirectory as C, Commands as D, CliError as E, key as F, threadKey as G, readUntil as H, followupOwners as I, ticketOutcome as K, isoTime as L, sameName as M, wordCount as N, validItems as O, LIMITS as P, latestAssignment as R, verifyEnvironment as S, writeEnvironment as T, runningAssignment as U, reached as V, settled as W, WORKER_COMMANDS as _, polled as a, runAsWorker as b, sourceContext as c, GithubAccountsSchema as d, SETUP_FIELDS as f, workerProbe as g, resolveFeishuBot as h, pollThreads as i, escapeRegExp as j, SetupError as k, Config as l, resolveDeployment as m, cursorAt as n, KV as o, machineOf as p, waitsForPerson as q, pause as r, health as s, POLL_HORIZON_MS as t, FeishuBotSchema as u, agentVariables as v, workerBin as w, verifyDirectory as x, applyEnvironment as y, latestReport as z };

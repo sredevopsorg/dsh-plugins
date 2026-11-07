@@ -1,11 +1,11 @@
-import { A as checkedImText, E as CliError, F as key, G as threadKey, O as validItems, a as polled, c as sourceContext, i as pollThreads$1, n as cursorAt, o as KV, s as health, u as FeishuBotSchema } from "./poll-Dh7J1cdM.js";
+import { A as checkedImText, E as CliError, F as key, G as threadKey, O as validItems, a as polled, c as sourceContext, i as pollThreads$1, n as cursorAt, o as KV, s as health, u as FeishuBotSchema } from "./poll-CtqZ6Ntf.js";
 import { dirname, extname, join } from "node:path";
 import { z } from "zod";
 import { mkdtemp, readFile, realpath, rm, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { setTimeout as setTimeout$1 } from "node:timers/promises";
-//#region src/sources/feishu-image.ts
+// src/sources/feishu-image.ts
 /** Downloads Feishu message images and commits them as model-visible attachments during assessment. */
 /** Extracts Feishu image keys from message text so keys remain paired with the originating message; arbitrary remote IDs are not accepted. */
 function admissionImageKeys(text) {
@@ -69,8 +69,7 @@ async function readAdmissionImage(agent, commands, ref, text, imageKey, stateDir
 		});
 	}
 }
-//#endregion
-//#region src/sources/feishu-trigger.ts
+// src/sources/feishu-trigger.ts
 /** Normalizes Feishu live events, chat history items, and topic replies into domain Triggers. */
 const SOURCE = "feishu";
 /** Constructs a Feishu reply channel address; records `direct` explicitly because both group and direct chat IDs start with `oc_`. */
@@ -233,8 +232,7 @@ function topicEvent(message, chatId, direct, root) {
 		message_app_link: message.message_app_link
 	};
 }
-//#endregion
-//#region src/sources/feishu-read.ts
+// src/sources/feishu-read.ts
 /** Trigger-scoped Feishu context reader; retrieved messages are returned for model inspection without entering intake. */
 const messageId = z.string().regex(/^om_[a-zA-Z0-9_-]+$/);
 const sourceSchema = z.object({
@@ -512,8 +510,7 @@ const feishuThreadContext = {
 		messageId: message.id
 	}, message.text, key, stateDir, signal)
 };
-//#endregion
-//#region src/sources/feishu-channel.ts
+// src/sources/feishu-channel.ts
 /** Feishu or Lark AppLink that opens a chat; used when the message's own link was not delivered with the event. */
 const feishuChatLink = (brand, chatId) => `https://applink.${brand === "lark" ? "larksuite.com" : "feishu.cn"}/client/chat/open?openChatId=${encodeURIComponent(chatId)}`;
 /**
@@ -553,8 +550,7 @@ const feishuLink = (address, links) => ({
 	},
 	...address.messageId ? { triggerId: feishuTriggerId(address.messageId) } : {}
 });
-//#endregion
-//#region src/sources/feishu-loops.ts
+// src/sources/feishu-loops.ts
 /** Feishu background loops: live event stream consumer, chat/topic history backfill, chat name refresh, and subscribed thread polling. */
 const runFeishu = (ctx, signal) => Promise.allSettled([
 	watch,
@@ -891,8 +887,7 @@ async function pollThread(ctx, thread, signal, tally) {
 	}
 	ctx.state.set(KV.feishu.initialized(thread.key), true);
 }
-//#endregion
-//#region src/sources/feishu.ts
+// src/sources/feishu.ts
 const MembersSchema = z.looseObject({
 	users: z.array(z.looseObject({
 		member_id: z.string(),
@@ -1320,5 +1315,4 @@ function apply(ctx) {
 		};
 	});
 }
-//#endregion
 export { withMentionNames as S, feishuThreadId as _, name as a, feishuTriggerId as b, pollThreads as c, feishuChatLink as d, feishuRead as f, feishuRef as g, SOURCE as h, inject as i, refreshChatNames as l, readFeishuLink as m, feishuKind as n, backfillChat as o, feishuReferences as p, feishuSettings as r, consumerRetry as s, apply as t, threadRef as u, feishuTime as v, historyEvent as x, feishuTrigger as y };

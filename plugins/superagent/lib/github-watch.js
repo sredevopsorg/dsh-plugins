@@ -1,7 +1,7 @@
-import { E as CliError, F as key, M as sameName, O as validItems, c as sourceContext, d as GithubAccountsSchema, i as pollThreads$1, n as cursorAt, o as KV, r as pause, s as health, t as POLL_HORIZON_MS } from "./poll-Dh7J1cdM.js";
-import { C as issueTrigger, S as githubPage, _ as SOURCE, a as pullsOf, b as commentTrigger, c as ciFact, d as githubThreadContext, f as pullChecks, g as IssueSchema, h as CommentSchema$1, l as ciFailures, n as observePull, o as readPull, s as ciCounts, u as ciSummary, v as branchCiTrigger, w as pullTrigger, x as githubAddress, y as ciTrigger } from "./github-pull-gSbjzypm.js";
+import { E as CliError, F as key, M as sameName, O as validItems, c as sourceContext, d as GithubAccountsSchema, i as pollThreads$1, n as cursorAt, o as KV, r as pause, s as health, t as POLL_HORIZON_MS } from "./poll-CtqZ6Ntf.js";
+import { C as issueTrigger, S as githubPage, _ as SOURCE, a as pullsOf, b as commentTrigger, c as ciFact, d as githubThreadContext, f as pullChecks, g as IssueSchema, h as CommentSchema$1, l as ciFailures, n as observePull, o as readPull, s as ciCounts, u as ciSummary, v as branchCiTrigger, w as pullTrigger, x as githubAddress, y as ciTrigger } from "./github-pull-CgVJTIXO.js";
 import { z } from "zod";
-//#region src/sources/github-channel.ts
+// src/sources/github-channel.ts
 /** GitHub outbound channel: posts issue/PR comments and review thread replies under the agent account. */
 const CommentSchema = z.looseObject({
 	id: z.number(),
@@ -54,8 +54,7 @@ function githubLink(address, links) {
 		}
 	};
 }
-//#endregion
-//#region src/sources/github.ts
+// src/sources/github.ts
 /** A notification of the agent account; `subject.url` is the API address of its Issue or PR. */
 const NotificationSchema = z.looseObject({
 	repository: z.looseObject({ full_name: z.string() }),
@@ -828,5 +827,4 @@ async function pollThread(ctx, round, thread) {
 	}, since, round);
 	ctx.state.set(checkpoint, cursorAt(round.started));
 }
-//#endregion
 export { apply, commentTrigger, githubKind, inject, name, pollFailure, pollRound, pollThreads, pollTicketPulls };
