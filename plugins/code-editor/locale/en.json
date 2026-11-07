@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Workspace code editor",
+    "description": "Browse workspace files and edit UTF-8 text files in a right-sidebar editor with save, sandbox, and conflict protection."
+  }
+}

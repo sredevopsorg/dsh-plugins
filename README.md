@@ -42,6 +42,7 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
 
 | Plugin | Kind | Use it for |
 |---|---|---|
+| [`code-editor`](plugins/code-editor/README.md) | bundle + web editor | Browsing a Session's workspace and editing UTF-8 files from a right-sidebar tab, with sandbox-aware saves and optimistic conflict detection |
 | [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
 | [`skills`](plugins/skills/README.md) | bundle + 9 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, and GitHub Actions skills |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
@@ -76,6 +77,15 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
 │   ├── installing-plugins-from-github.md  # install addresses, pinning, troubleshooting
 │   └── plugin-index.md                    # publishing and maintaining index.json
 └── plugins/
+    ├── code-editor/
+    │   ├── package.json                   # name, license, exports, dsh.bundle.patch
+    │   ├── cordis.patch.yml               # inserts the authenticated write-endpoint row
+    │   ├── index.js                       # Host route: auth, workspace containment, version guard
+    │   ├── client.js                      # browser bundle: right-sidebar file browser and editor
+    │   ├── test/                          # host route and packaging tests (node --test)
+    │   ├── locale/en.json, locale/es.json
+    │   ├── icon.svg
+    │   └── README.md
     ├── entire/
     │   ├── package.json                   # name, license, exports, dsh.bundle.patch
     │   ├── cordis.patch.yml               # the plugin row + capture defaults
@@ -140,6 +150,9 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   repository (`dsh plugin …` forwards to pnpm; `path:` subdirectory installs need pnpm 9).
   No npm publish is involved. `superagent` also fetches its two runtime dependencies
   (`zod`, `proper-lockfile`) from the npm registry.
+- **A DSH Web profile with the built-in right Sidebar** — only for the `code-editor` plugin,
+  whose browser bundle contributes a right-sidebar tab and whose Host half serves the
+  browser-only workspace write endpoint.
 - **Node.js 22.19+ or 24+, `git`, GitHub CLI 2.48+, `tmux`, and Python 3.8+** — only for the
   [`superagent`](plugins/superagent/README.md) fork, whose managed-service script and
   executor sessions need them. It requires a Web profile (the management panel is a web
@@ -388,9 +401,11 @@ A DSH plugin is an npm package that Cordis loads; a **bundle** additionally decl
 Install and select it into a profile — from Discover, from GitHub with a pinned release tag, or from a local checkout while developing:
 
 ```bash
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.0&path:/plugins/superagent"
+dsh plugin --profile web add ./plugins/code-editor # local checkout
 dsh plugin --profile web add ./plugins/entire   # local checkout
 dsh plugin --profile web list
 dsh --profile web --dump-config                 # inspect the composed tree, no boot
@@ -520,6 +535,8 @@ node scripts/validate-market-index.mjs --strict # unlisted release tags become f
 Plugin package checks run from inside each package:
 
 ```bash
+(cd plugins/code-editor && npm test) # host route + packaging tests (node --test)
+
 (cd plugins/skills && npm test)      # provider + frontmatter tests (node --test)
 
 (cd plugins/superagent && pnpm install --frozen-lockfile && pnpm check)
@@ -553,6 +570,10 @@ Beyond the validators:
   setup asks for it. `cd plugins/superagent && pnpm check` runs the typecheck, test suites
   and build. Its deployment, Feishu setup and capture caveats are in its README, `SETUP.md`
   and [`docs/entire-dsh-audit.md`](docs/entire-dsh-audit.md).
+- For the `code-editor` plugin: install it into a scratch Web profile, open the right Sidebar
+  guide, pick **Code editor**, edit and save a UTF-8 workspace file, and confirm the conflict
+  banner after changing that file on disk while an unsaved draft exists.
+  `cd plugins/code-editor && npm test` covers the Host route and package contract.
 - For the `skills` plugin: install it into a scratch profile, restart/rebuild the catalog,
   and confirm all 9 skills are listed with parsed descriptions; `cd plugins/skills && npm test`
   asserts the same thing without a running DSH. `npm pack --dry-run --json` in
@@ -597,6 +618,7 @@ make the version appear in Discover. Never move a published tag — release a ne
 When the versioning workflow is unavailable, tag by hand after the bump merges:
 
 ```bash
+node scripts/release-tag.mjs --plugin code-editor --push
 node scripts/release-tag.mjs --plugin entire --push
 node scripts/release-tag.mjs --plugin skills --push
 node scripts/release-tag.mjs --plugin superagent --push
