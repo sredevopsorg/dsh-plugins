@@ -1,0 +1,5 @@
+check for the new plugin dsh-code-editor, update it so it's compatible with the whole repo's logic. Ask clarifications as needed.
+
+---
+
+create pr
