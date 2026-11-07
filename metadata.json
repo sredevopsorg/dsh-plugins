@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M6W5SX11MCFH8S5PEDWZ4V1J",
+  "strategy": "manual-commit",
+  "branch": "fix/superagent-dependabot-alerts",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "docs/installing-plugins-from-github.md",
+    "plugins/superagent/README.md",
+    "plugins/superagent/lib/client.js",
+    "plugins/superagent/lib/feishu-B8zs3coJ.js",
+    "plugins/superagent/lib/feishu-rAGM9U9b.js",
+    "plugins/superagent/lib/feishu-watch.d.ts",
+    "plugins/superagent/lib/feishu-watch.js",
+    "plugins/superagent/lib/github-pull-CgVJTIXO.js",
+    "plugins/superagent/lib/github-pull-gSbjzypm.js",
+    "plugins/superagent/lib/github-watch.d.ts",
+    "plugins/superagent/lib/github-watch.js",
+    "plugins/superagent/lib/index.d.ts",
+    "plugins/superagent/lib/index.js",
+    "plugins/superagent/lib/intake-BntR4bhz.d.ts",
+    "plugins/superagent/lib/intake-DlEkHhs0.d.ts",
+    "plugins/superagent/lib/kind-CC2z1Ko1.d.ts",
+    "plugins/superagent/lib/kind-l1fYLdvL.d.ts",
+    "plugins/superagent/lib/poll-CtqZ6Ntf.js",
+    "plugins/superagent/lib/poll-Dh7J1cdM.js",
+    "plugins/superagent/package.json",
+    "plugins/superagent/pnpm-lock.yaml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 142257,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 8645248,
+    "output_tokens": 69160,
+    "api_call_count": 79
+  },
+  "redaction": {
+    "replacements": 0,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 0,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
