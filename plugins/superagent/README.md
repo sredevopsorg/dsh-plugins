@@ -15,7 +15,7 @@ It is also a way of working with an agent: **take as little human attention as p
 Install from this repository, pinned to the release tag (the tag is immutable, so the command reproduces the same package contents):
 
 ```sh
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.0&path:/plugins/superagent"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.1&path:/plugins/superagent"
 ```
 
 The package ships its built `lib/` directory, so **no build step runs at install time** and the Git dependency needs no toolchain beyond Node and pnpm. The same spec works with the `plugin_manager` tool's `install_bundle` and from the repository's plugin index (Discover).
@@ -119,7 +119,7 @@ Optional end-to-end install check into a scratch DSH profile, from the packed ta
 
 ```sh
 npm pack --pack-destination /tmp
-DSH_HOME=/tmp/dsh-scratch dsh plugin --profile scratch add /tmp/sredevopsorg-dsh-superagent-0.1.0.tgz
+DSH_HOME=/tmp/dsh-scratch dsh plugin --profile scratch add /tmp/sredevopsorg-dsh-superagent-0.1.1.tgz
 DSH_HOME=/tmp/dsh-scratch dsh --profile scratch --dump-config
 ```
 

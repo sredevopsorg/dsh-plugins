@@ -1,6 +1,6 @@
-import { B as liveTicket, F as key, M as sameName, O as validItems, j as escapeRegExp } from "./poll-Dh7J1cdM.js";
+import { B as liveTicket, F as key, M as sameName, O as validItems, j as escapeRegExp } from "./poll-CtqZ6Ntf.js";
 import { z } from "zod";
-//#region src/sources/github-trigger.ts
+// src/sources/github-trigger.ts
 /** Normalizes GitHub issues, pull requests, comments, reviews, and CI transitions into domain Triggers. */
 const SOURCE = "github";
 /** GitHub reply address: issue/PR conversation, or a review thread when `url` points at a discussion comment. */
@@ -209,8 +209,7 @@ function ciTrigger(pr, revision, summary) {
 		}
 	};
 }
-//#endregion
-//#region src/sources/github-read.ts
+// src/sources/github-read.ts
 /** Read-only GitHub repository, conversation, and CI check inspection for assessments and workers. */
 const CheckSchema = z.looseObject({
 	name: z.string(),
@@ -466,8 +465,7 @@ const githubThreadContext = {
 		};
 	}
 };
-//#endregion
-//#region src/sources/github-pull.ts
+// src/sources/github-pull.ts
 /** Pull request binding, lifecycle observation, and terminal IM notification helpers. */
 const PullSchema = z.looseObject({
 	title: z.string().optional(),
@@ -592,5 +590,4 @@ function pullEndNotices(ticket, request, repository) {
 		ticketId: ticket.id
 	}));
 }
-//#endregion
 export { issueTrigger as C, githubPage as S, SOURCE as _, pullsOf as a, commentTrigger as b, ciFact as c, githubThreadContext as d, pullChecks as f, IssueSchema as g, CommentSchema as h, pullOf as i, ciFailures as l, readRepositoryPath as m, observePull as n, readPull as o, readGithub as p, pullEndNotices as r, ciCounts as s, claimPull as t, ciSummary as u, branchCiTrigger as v, pullTrigger as w, githubAddress as x, ciTrigger as y };

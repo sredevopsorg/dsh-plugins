@@ -1,6 +1,6 @@
-import { A as checkedImText, B as liveTicket, C as withoutDirectory, D as Commands, F as key, G as threadKey, H as readUntil, I as followupOwners, K as ticketOutcome, L as isoTime, M as sameName, N as wordCount, P as LIMITS, R as latestAssignment, S as verifyEnvironment, T as writeEnvironment, U as runningAssignment, V as reached, W as settled, _ as WORKER_COMMANDS, b as runAsWorker, f as SETUP_FIELDS, g as workerProbe, h as resolveFeishuBot, k as SetupError, l as Config, m as resolveDeployment, o as KV, p as machineOf, q as waitsForPerson, s as health, v as agentVariables, w as workerBin, x as verifyDirectory, y as applyEnvironment, z as latestReport } from "./poll-Dh7J1cdM.js";
-import { i as pullOf, m as readRepositoryPath, o as readPull, p as readGithub, r as pullEndNotices, t as claimPull } from "./github-pull-gSbjzypm.js";
-import { b as feishuTriggerId, d as feishuChatLink, f as feishuRead, g as feishuRef, m as readFeishuLink, p as feishuReferences, r as feishuSettings } from "./feishu-rAGM9U9b.js";
+import { A as checkedImText, B as liveTicket, C as withoutDirectory, D as Commands, F as key, G as threadKey, H as readUntil, I as followupOwners, K as ticketOutcome, L as isoTime, M as sameName, N as wordCount, P as LIMITS, R as latestAssignment, S as verifyEnvironment, T as writeEnvironment, U as runningAssignment, V as reached, W as settled, _ as WORKER_COMMANDS, b as runAsWorker, f as SETUP_FIELDS, g as workerProbe, h as resolveFeishuBot, k as SetupError, l as Config, m as resolveDeployment, o as KV, p as machineOf, q as waitsForPerson, s as health, v as agentVariables, w as workerBin, x as verifyDirectory, y as applyEnvironment, z as latestReport } from "./poll-CtqZ6Ntf.js";
+import { i as pullOf, m as readRepositoryPath, o as readPull, p as readGithub, r as pullEndNotices, t as claimPull } from "./github-pull-CgVJTIXO.js";
+import { b as feishuTriggerId, d as feishuChatLink, f as feishuRead, g as feishuRef, m as readFeishuLink, p as feishuReferences, r as feishuSettings } from "./feishu-B8zs3coJ.js";
 import { Service } from "@deepseek-ai/cordis";
 import { chmodSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { MessageId, ReasoningEffortId, freezeMessage } from "@deepseek-ai/dsh-llm";
 import { scopeParentOf } from "@deepseek-ai/dsh-scope";
-//#region src/core/errors.ts
+// src/core/errors.ts
 /** User-facing error codes mapped to their category ('missing' or 'refused') and English message template. */
 const USER_ERRORS = {
 	unknownTicket: ["missing", "Unknown ticket"],
@@ -76,8 +76,7 @@ var UserError = class extends Error {
 		this.missing = kind === "missing";
 	}
 };
-//#endregion
-//#region src/core/part.ts
+// src/core/part.ts
 /** Shared base class and configuration for Engine domain parts. */
 /**
 * Base class for Intake, Evals, Tickets, Assignments, and Replies providing shared access to repositories, policy, clock, and event emission.
@@ -185,8 +184,7 @@ var EnginePart = class {
 		return reached(ticket, trigger, (k) => this.repo.threads.get(k), context);
 	}
 };
-//#endregion
-//#region src/core/stage.ts
+// src/core/stage.ts
 /** Ticket stage classification and retry eligibility (docs/003). */
 /** Classifies a ticket's stage; the rules follow the table in docs/003 in order, where the first matching row wins. */
 function ticketStage(ticket) {
@@ -220,8 +218,7 @@ function ticketStage(ticket) {
 function canRetry(ticket) {
 	return !ticket.ended && (waitsForPerson(ticket) || !!ticket.delivery);
 }
-//#endregion
-//#region src/core/tickets.ts
+// src/core/tickets.ts
 /** Tickets: their lifecycle from an accept to their end, their Subscriptions and their Inputs. */
 const sameChannel = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 /** Whether an Input is a message no person wrote, such as CI's, a bot's, or the main Session's note. */
@@ -731,8 +728,7 @@ var Tickets = class extends EnginePart {
 		this.repo.threads.save(thread);
 	}
 };
-//#endregion
-//#region src/core/assignments.ts
+// src/core/assignments.ts
 /** What the Executor and its workers report about the Assignments that run tickets. */
 const RECOVERY_NOTE = "The host restarted during this ticket. Inspect the current worktree, git history and GitHub state before continuing. Do not repeat an already completed external operation. Finish the original assignment and report its status.";
 /**
@@ -876,8 +872,7 @@ var Assignments = class extends EnginePart {
 		return liveTicket(ticket) && runningAssignment(ticket)?.id === assignmentId ? ticket : void 0;
 	}
 };
-//#endregion
-//#region src/core/reasons.ts
+// src/core/reasons.ts
 /**
 * Structured reason codes and templates for decisions, filtered triggers, and ended assignments.
 * Policy gates and source scopes may also emit their own literal reason codes.
@@ -915,8 +910,7 @@ function reasonText(reasons) {
 		return reason.triggerId ? `${reason.triggerId}: ${text}` : text;
 	}).join("; ");
 }
-//#endregion
-//#region src/core/evals.ts
+// src/core/evals.ts
 /** Evals: the Thread-level assessments of queued Triggers, and the Decisions they end with. */
 /** An outcome's reason: a code it carries, else the words its assessor or person wrote. */
 const reasonOf = (reason) => [typeof reason === "string" ? said(reason) : reason];
@@ -1399,8 +1393,7 @@ var Evals = class extends EnginePart {
 		return decision;
 	}
 };
-//#endregion
-//#region src/core/intake.ts
+// src/core/intake.ts
 /** Trigger ingestion, thread correlation, subscription fan-out, and evaluation queuing. */
 /**
 * Ingests incoming triggers from Sources, deduplicating and filtering them against SourceScope before recording thread correlations.
@@ -1475,8 +1468,7 @@ var Intake = class extends EnginePart {
 		return "stored";
 	}
 };
-//#endregion
-//#region src/core/replies.ts
+// src/core/replies.ts
 /** The Engine's messages to Channels, each by the rule that allows it. */
 /**
 * Replies writes the Engine's messages to Channels through the Outbox port: an acknowledgement, the answer to a person's
@@ -1579,8 +1571,7 @@ var Replies = class extends EnginePart {
 		return this.source(ticket)?.channel ?? ticket.channels[0];
 	}
 };
-//#endregion
-//#region src/core/engine.ts
+// src/core/engine.ts
 /** The domain Engine: the single entry point of the core, and the role interfaces its callers receive. */
 /**
 * Single transactional entry point for mutating Triggers, Threads, Decisions, Tickets, and Assignments.
@@ -1852,8 +1843,7 @@ var Engine = class {
 		});
 	}
 };
-//#endregion
-//#region src/core/memory.ts
+// src/core/memory.ts
 /** In-memory repository implementation for testing and ephemeral engine instances. */
 const clone = (value) => structuredClone(value);
 /**
@@ -1921,16 +1911,14 @@ var MemoryRepositories = class {
 		byThread: (key) => [...this.decisionRows.values()].filter((decision) => decision.threadKey === key).map(clone)
 	};
 };
-//#endregion
-//#region src/admission.ts
+// src/admission.ts
 /** Default admission rules (matching pre-table behavior): unaddressed messages from listed senders are inferred candidates; unlisted senders are ignored. */
 const ADMISSION_DEFAULTS = {
 	listedUnaddressed: "inferred",
 	unlistedAddressed: "ignore",
 	unlistedUnaddressed: "ignore"
 };
-//#endregion
-//#region src/policy.ts
+// src/policy.ts
 /**
 * Runtime settings schemas, assessment validation, and policy gate evaluation.
 * Who may originate work is configured per Source in that Source's own identities; the Policy never maps a person across Sources.
@@ -2313,8 +2301,7 @@ function settingsPolicy(settings, sources) {
 		}
 	};
 }
-//#endregion
-//#region src/infra/health.ts
+// src/infra/health.ts
 /**
 * Central registry of component health entries, enforcing single-writer ownership per entry name.
 * Claimed by Runtime, Effects, Sessions, DshExecutor, Settings, and SourceRegistry, and read by management HTTP routes.
@@ -2344,8 +2331,7 @@ var HealthBoard = class {
 		return this.entries;
 	}
 };
-//#endregion
-//#region src/sources/registry.ts
+// src/sources/registry.ts
 /**
 * Manages registered SourceKind plugins, validates their instance and policy configurations, and implements SourceScope for the Engine.
 * Claims each registered kind's health entries on HealthBoard and mediates access to source channels, links, environment variables, and thread context readers for Runtime, Settings, Outbox, and MasterAssessor.
@@ -2550,8 +2536,7 @@ var SourceRegistry = class {
 		};
 	}
 };
-//#endregion
-//#region src/app/execution-environment.ts
+// src/app/execution-environment.ts
 /** Execution environment variables exposed to prepare commands and documented in worker Session instructions; never contains credentials. */
 /** Variables registered by the Executor; `ticket` entries are populated only when a ticket is present. */
 const EXECUTOR_VARIABLES = [
@@ -2649,8 +2634,7 @@ function ticketEnvironment(input) {
 function environmentLines(variables) {
 	return variables.map((variable) => `- ${variable.key} = ${JSON.stringify(variable.value)}: ${variable.description.en}.`).join("\n");
 }
-//#endregion
-//#region src/app/effects.ts
+// src/app/effects.ts
 /**
 * Signals that an effect cannot run right now, such as when processing is paused or all worker slots are full.
 * Effects reschedules the row after the initial retry delay without incrementing its failure count, and DshExecutor throws it from launch and delivery handlers.
@@ -2813,8 +2797,7 @@ var Effects = class {
 		});
 	}
 };
-//#endregion
-//#region src/sources/admission-context.ts
+// src/sources/admission-context.ts
 /** Selects the first five thread messages plus five messages on either side of `sourceId`, recording omitted gap counts. */
 function threadWindow(messages, sourceId) {
 	const trigger = messages.findIndex((message) => message.id === sourceId);
@@ -2869,8 +2852,7 @@ async function admissionContext(context, commands, maxPages) {
 		...status ? { status } : {}
 	};
 }
-//#endregion
-//#region src/app/cards.ts
+// src/app/cards.ts
 /** Compact, bounded model-facing projections of triggers, tickets, threads, and decisions; full texts stay behind readable resources. */
 /** Collapses whitespace and truncates text for display previews while keeping code, angle brackets, and links intact for model readers. */
 function preview$1(text) {
@@ -3039,8 +3021,7 @@ function relatedTickets(tickets) {
 		tickets_total: tickets.length
 	};
 }
-//#endregion
-//#region src/infra/paths.ts
+// src/infra/paths.ts
 /** Resolves packaged asset paths from either the source tree or the compiled lib/ output. */
 /** Package names this fork is installed under: the scoped npm name, and the upstream name of the vendored prototype. */
 const PACKAGE_NAMES = /* @__PURE__ */ new Set(["@sredevopsorg/dsh-superagent", "dsh-superagent"]);
@@ -3058,8 +3039,7 @@ function packageRoot() {
 	throw new Error("dsh-superagent package root not found");
 }
 const packagePath = (...parts) => join(packageRoot(), ...parts);
-//#endregion
-//#region src/app/skill-files.ts
+// src/app/skill-files.ts
 /** Loads packaged built-in skill definitions and prompt templates from disk. */
 /**
 * Reads a packaged text file with normalized Unix line endings.
@@ -3101,8 +3081,7 @@ const bundledSkills = {
 function promptFile(name) {
 	return packaged("prompts", `${name}.md`).text.trim().split(/\n(?:[ \t]*\n)+/).map((paragraph) => paragraph.split("\n").map((line) => line.trim()).join(" ")).join("\n");
 }
-//#endregion
-//#region src/app/context.ts
+// src/app/context.ts
 /** Built-in prompt sections, role policies, and transcript projections for orchestrator and worker Sessions. */
 /** Built-in host-delivery and tool-usage rules shared by all Sessions; a team may override them (`builtInParts`). */
 const sharedPrompt = promptFile("shared");
@@ -3147,8 +3126,7 @@ function transcriptEntry(event) {
 		}
 	};
 }
-//#endregion
-//#region src/app/views/text.ts
+// src/app/views/text.ts
 /** Text sanitization and formatting helpers for plain-text previews and HTML-free Markdown in views. */
 const ENTITIES = {
 	amp: "&",
@@ -3189,8 +3167,7 @@ function preview(text, length = 160) {
 	return plain(readable$1(text)).slice(0, length);
 }
 const attribute = (value) => typeof value === "string" && value ? value : void 0;
-//#endregion
-//#region src/app/views/records.ts
+// src/app/views/records.ts
 /** Shared view projections for triggers, tickets, threads, decisions, and channel links. */
 const page = (items, offset, limit) => ({
 	items: items.slice(offset, offset + limit),
@@ -3511,8 +3488,7 @@ function decisionView(view, decision) {
 		ticketTitle: decision.ticketId ? store.tickets.get(decision.ticketId)?.title : void 0
 	};
 }
-//#endregion
-//#region src/app/links.ts
+// src/app/links.ts
 /** Resolves and caches a trigger's external message URL, falling back to a readable resource path when lookup fails. */
 async function sourceLink(host, trigger, signal) {
 	if (trigger.url) return { source_url: trigger.url };
@@ -3568,8 +3544,7 @@ async function candidateCard(host, candidate) {
 		next_action: candidate.strength === "explicit" ? "Route it with orchestrator_route as dispatch says: accept, attach, stop or ignore." : "Ignore it with orchestrator_route if the card shows it touches no enabled rule; else assess it with orchestrator_eval, orchestrator_eval_read, then orchestrator_eval_decide."
 	};
 }
-//#endregion
-//#region src/app/notices.ts
+// src/app/notices.ts
 /** Formats background notices and steering relays delivered to the main Session via the effect queue. */
 /** Builds a notice for a saved prompt configuration revision, coalescing under `'prompts'`. */
 const promptsNotice = (revision) => [
@@ -3763,8 +3738,7 @@ function reportRelay(ticket, report) {
 	if (report.state === "progress" && !report.answers) return void 0;
 	return resultRelay(ticket, report.state, report.summary, report.answers);
 }
-//#endregion
-//#region src/app/versions.ts
+// src/app/versions.ts
 /**
 * Manages numbered snapshots of a versioned record in the `Store` key-value table with a pointer key tracking the active revision.
 * Each save writes a new snapshot and advances the pointer atomically, keeping full history without duplicating the active record.
@@ -3807,8 +3781,7 @@ var Versions = class {
 		return this.store.keys(this.family).flatMap((name) => this.store.get(name) ?? []).sort((a, b) => b.revision - a.revision).slice(0, limit);
 	}
 };
-//#endregion
-//#region src/app/prompts.ts
+// src/app/prompts.ts
 /** Manages versioned role prompts, behavioral policies, and operational skills independently of access settings. */
 /** Prompt sections the team writes; the built-in parts follow dsh-superagent's text until the team overrides them. */
 const TEAM_SECTIONS = [
@@ -4181,8 +4154,7 @@ async function savePrompts(host, config, baseRevision, origin) {
 		context_delivery: await host.sessions.delivery("prompts")
 	};
 }
-//#endregion
-//#region src/app/resources.ts
+// src/app/resources.ts
 /** Resource descriptors exposed via orchestrator_read, marking which resources worker sessions may also read for their own ticket. */
 const RESOURCES = [
 	{
@@ -4599,8 +4571,7 @@ async function readResource(host, resource, offset, limit, ticketId, signal) {
 		...signal ? { signal } : {}
 	});
 }
-//#endregion
-//#region src/app/tools/tool.ts
+// src/app/tools/tool.ts
 /** Shared tool primitives and schemas for the main and executor Sessions. */
 const tool = (definition) => definition;
 /** Human-facing acknowledgement text, constrained to `IM_WORDS` regardless of which channel it is posted to. */
@@ -4621,8 +4592,7 @@ function readTool(description, executor, read) {
 		execute: async (args, signal) => read(args.resource, args.offset, args.limit, signal)
 	});
 }
-//#endregion
-//#region src/app/assessment.ts
+// src/app/assessment.ts
 /** Schema for a short lowercase kebab-case English ticket worktree name (1–4 words, at most 32 characters). */
 const WorktreeNameSchema = z.string().max(32).regex(/^[a-z]+(?:-[a-z0-9]+){0,3}$/, "Use 1–4 short English words in lowercase kebab-case, at most 32 characters").describe("Meaningful short English ticket name, e.g. fix-plan-color. Translate Chinese titles into English; no Chinese, pinyin or generic ticket names. 1–4 lowercase words in kebab-case, at most 32 characters.");
 /** Schema for the main Session's proactive candidate assessment decision (`orchestrator_eval_decide`). */
@@ -4987,8 +4957,7 @@ var MasterAssessor = class {
 		this.controller.abort();
 	}
 };
-//#endregion
-//#region src/executor/background.ts
+// src/executor/background.ts
 /** How long a stop waits for a killed job to end, collecting its end so the worker is not woken to hear of it. */
 const KILL_WAIT_MS = 1e4;
 /** How long a release of subagents may take; it can hold up a shutdown, so DSH's own callers bound it too. */
@@ -5151,8 +5120,7 @@ async function stopBackground(ctx, sessionId, reason, keepInbox = false) {
 	});
 	if (failures.length) throw new AggregateError(failures, `Stopping the background work of ${sessionId} failed`);
 }
-//#endregion
-//#region src/executor/dsh.ts
+// src/executor/dsh.ts
 const now$3 = () => (/* @__PURE__ */ new Date()).toISOString();
 /** Returns the worker session ID (`worker-<ticketId>`) for a ticket. */
 const workerSessionId = (ticketId) => `worker-${ticketId}`;
@@ -6779,8 +6747,7 @@ function assessmentTriggers(store) {
 		store.db.prepare(`INSERT INTO effect (kind, key, value, seq, due, since) VALUES ('assessment', ?, ?, ?, ?, ?) ON CONFLICT(kind, key) DO NOTHING`).run(evaluation.id, JSON.stringify({ triggerId: evaluation.triggerIds[0] }), ++seq, Date.now(), (/* @__PURE__ */ new Date()).toISOString());
 	}
 }
-//#endregion
-//#region src/app/store-read.ts
+// src/app/store-read.ts
 function storeReads(db) {
 	const values = (sql, ...parameters) => db.prepare(sql).all(...parameters).map((row) => JSON.parse(String(row.value)));
 	return {
@@ -6867,8 +6834,7 @@ function storeReads(db) {
 		subscribedThreads: (source) => source ? values("SELECT value FROM thread WHERE subscribed = ? ORDER BY rowid", source) : values("SELECT value FROM thread INDEXED BY thread_subscribed WHERE subscribed IS NOT NULL ORDER BY rowid")
 	};
 }
-//#endregion
-//#region src/app/store.ts
+// src/app/store.ts
 /** SQLite persistence for domain aggregates, key-value state, settings history, and the channel outbox. */
 /**
 * Generated columns and partial indexes defining active working sets so passes scan only active rows.
@@ -7213,8 +7179,7 @@ var Store = class {
 		withdraw: (id) => Number(this.db.prepare("DELETE FROM outbox WHERE id = ? AND value ->> '$.status' = 'pending'").run(id).changes) > 0
 	};
 };
-//#endregion
-//#region src/app/views/sources.ts
+// src/app/views/sources.ts
 /** Source status view: health, 24-hour trigger counts, and recently filtered or dropped messages per Source instance. */
 /** Resolves health entries for a Source instance, treating stale `sourceOff` entries on an enabled Source as `starting`. */
 function sourceHealth(sources, instance, health) {
@@ -7305,8 +7270,7 @@ function droppedReplies({ store, links }) {
 		};
 	});
 }
-//#endregion
-//#region src/app/views/tickets.ts
+// src/app/views/tickets.ts
 /** Ticket list, ticket detail, mandate basis formatting, and executor load views. */
 /**
 * Extracts displayable mandate admission facts in reading order (omitting the receiving scope, which is stored
@@ -7430,8 +7394,7 @@ function ticketDetail(host, id) {
 		}))
 	};
 }
-//#endregion
-//#region src/app/views/overview.ts
+// src/app/views/overview.ts
 /** Overview view: active system problems, tickets awaiting human action, executor load, and 24-hour trigger flow. */
 /** Threads whose latest decision since `since` is an undismissed `unavailable` eval and that are neither evaluating nor queued. */
 function unjudged(store, since) {
@@ -7546,8 +7509,7 @@ function overview(host, health, policyVersionValue, load, setup) {
 		policyVersion: policyVersionValue
 	};
 }
-//#endregion
-//#region src/app/cache.ts
+// src/app/cache.ts
 /**
 * In-memory LRU cache bounded by total UTF-16 code units, always retaining the most recently inserted entry.
 * Runtime uses separate instances to cache paginated resource snapshots for `orchestrator_read` and resolved Feishu message links for search and cards.
@@ -7583,8 +7545,7 @@ var TextCache = class {
 		return this.texts.entries();
 	}
 };
-//#endregion
-//#region src/app/api.ts
+// src/app/api.ts
 const TICKET_FILTERS = [
 	"open",
 	"person",
@@ -7598,8 +7559,7 @@ const THREAD_FILTERS = [
 	"recent",
 	"all"
 ];
-//#endregion
-//#region src/app/role-models.ts
+// src/app/role-models.ts
 /** Resolve a configured route through the live provider; catalog membership is not a restriction. */
 async function resolveRoleModel(ctx, model) {
 	const value = await ctx.llm.resolveCallConfig({
@@ -7653,8 +7613,7 @@ async function initializeRoleModel(ctx, agent, model) {
 	});
 	await ctx.sessionPersistence.flush();
 }
-//#endregion
-//#region src/app/setup.ts
+// src/app/setup.ts
 const setupFields = (settings) => JSON.stringify(Object.entries(SETUP_FIELDS).map(([id, keys]) => keys.map((key) => settings.sources[id]?.config[key] ?? "")));
 const setupChanged = (before, after) => setupFields(before) !== setupFields(after);
 /**
@@ -7755,8 +7714,7 @@ var Setup = class {
 		return resolved;
 	}
 };
-//#endregion
-//#region src/app/settings.ts
+// src/app/settings.ts
 /**
 * Indicates an optimistic concurrency conflict when saving or syncing a settings block against a stale revision.
 * Thrown by `Settings.save` and `Settings.sync` and translated into an HTTP 409 response by the management routes.
@@ -8088,8 +8046,7 @@ var Settings = class {
 		return { added: Object.entries(after).filter(([key]) => !(key in before)).map(([, name]) => name).sort((a, b) => a.localeCompare(b)) };
 	}
 };
-//#endregion
-//#region src/app/settings-history.ts
+// src/app/settings-history.ts
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 function fieldChanges(id, fields, a, b, part) {
 	const changes = [];
@@ -8251,8 +8208,7 @@ function policyHistory(store, sources, policyVersionValue) {
 		})
 	};
 }
-//#endregion
-//#region src/app/views/settings.ts
+// src/app/views/settings.ts
 /** Settings view combining versioned configuration blocks, per-source forms and policy metadata, and execution environment details. */
 function policyOf(sources, id, health) {
 	const policy = sources.kind(id)?.policy;
@@ -8320,8 +8276,7 @@ function settingsView(store, sources, health, setup, stateDir) {
 		}
 	};
 }
-//#endregion
-//#region src/app/views/threads.ts
+// src/app/views/threads.ts
 /** Thread list, timeline detail, cross-entity search, and decision list views. */
 function threadList(host, filter, offset, limit) {
 	const { store } = host;
@@ -8432,8 +8387,7 @@ function decisionList(host, kinds, offset, limit, since = "") {
 		next_offset: more ? offset + limit : null
 	};
 }
-//#endregion
-//#region src/app/http.ts
+// src/app/http.ts
 /**
 * Represents a client-facing 400 or 404 error raised during management route parsing or lookup.
 * Route handlers throw it when request bodies are malformed or target records are missing, and registerHttp serializes its status and message in the HTTP response.
@@ -8764,8 +8718,7 @@ function registerHttp(ctx, runtime) {
 		for (const dispose of disposers) dispose();
 	};
 }
-//#endregion
-//#region src/app/outbox.ts
+// src/app/outbox.ts
 /**
 * Persists outbound channel messages as receipts and delivers them sequentially through `Effects` and `SourceRegistry`.
 * Implements the core `Outbox` port for `Engine` and source contexts, ensuring per-conversation ordering for each ticket until an earlier message fails repeatedly.
@@ -8815,8 +8768,7 @@ var Outbox = class {
 		store.receipts.settle(receipt, result === "gone" ? "channelGone" : "sent");
 	}
 };
-//#endregion
-//#region src/app/passes.ts
+// src/app/passes.ts
 const now$1 = () => (/* @__PURE__ */ new Date()).toISOString();
 /**
 * Schedules and serializes orchestration passes that kick due `Effects` and advance `Engine` evaluations.
@@ -8891,8 +8843,7 @@ var Passes = class {
 		this.host.engine.evaluateDue();
 	}
 };
-//#endregion
-//#region \0@oxc-project+runtime@0.148.0/helpers/esm/usingCtx.js
+// \0@oxc-project+runtime@0.156.0/helpers/esm/usingCtx.js
 function _usingCtx() {
 	var r = "function" == typeof SuppressedError ? SuppressedError : function(r, e) {
 		var n = Error();
@@ -8947,8 +8898,7 @@ function _usingCtx() {
 		}
 	};
 }
-//#endregion
-//#region src/app/delivery.ts
+// src/app/delivery.ts
 /** The id of the message delivered under `requestId`, the same on every retry. */
 const messageId = (requestId) => MessageId(`dsh-superagent:${requestId}`);
 /** Extracts the idempotency key from current or legacy plugin message sources. */
@@ -9048,8 +8998,7 @@ var AgentDelivery = class {
 		await this.ctx.sessionPersistence.flush();
 	}
 };
-//#endregion
-//#region src/app/retry-health.ts
+// src/app/retry-health.ts
 const record = (value) => value !== null && typeof value === "object" && !Array.isArray(value) ? value : void 0;
 const ordinal = (value) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 /** Identify model budget exhaustion from structured failure metadata without inspecting assistant message content. */
@@ -9175,8 +9124,7 @@ var RetryHealth = class {
 		};
 	}
 };
-//#endregion
-//#region src/app/sessions.ts
+// src/app/sessions.ts
 /** The agent presets Executor Sessions and the main Session are created with, which the bundle's patch defines. */
 const WORKER_PRESET = "dsh-superagent-worker";
 const ROUTER_PRESET = "dsh-superagent-router";
@@ -9567,8 +9515,7 @@ var Sessions = class {
 		for (const agent of [...this.bindings.keys()]) this.release(agent);
 	}
 };
-//#endregion
-//#region src/app/source-context.ts
+// src/app/source-context.ts
 /**
 * Builds the context for one Source kind. Health reports are restricted to entries declared by the kind and
 * bound to the active registration, becoming no-ops once unregistered.
@@ -9631,8 +9578,7 @@ function sourceContextOf(deps, kind) {
 		}
 	};
 }
-//#endregion
-//#region src/app/tools/main.ts
+// src/app/tools/main.ts
 const RoutingNoteSchema = z.string().trim().refine((text) => wordCount(text) <= 30, `Routing note must not exceed 30 words (Chinese uses word segmentation). Shorten it; do not split it across deliveries.`).describe(`Optional routing background or explicit human constraint, at most 30 words. Never add implementation instructions or replace the original source.`);
 /** Schedules an Engine pass to execute the recorded routing decision and formats the tool response. */
 function routed(host, result) {
@@ -10015,8 +9961,7 @@ function mainTools(host, agent) {
 		})
 	];
 }
-//#endregion
-//#region src/app/tools/executor.ts
+// src/app/tools/executor.ts
 /** Executor Session tools for reading ticket context, acknowledging requests, managing threads, handing back out-of-scope triggers, and reporting status. */
 function executorTools(host, ticket) {
 	const ticketId = ticket.id;
@@ -10136,8 +10081,7 @@ function executorTools(host, ticket) {
 		})
 	];
 }
-//#endregion
-//#region src/app/runtime.ts
+// src/app/runtime.ts
 /** Application composition root and lifecycle manager for dsh-superagent. */
 const now = () => (/* @__PURE__ */ new Date()).toISOString();
 /**
@@ -10579,8 +10523,7 @@ var Runtime = class extends Service {
 		}
 	}
 };
-//#endregion
-//#region src/index.ts
+// src/index.ts
 const name = "dsh-superagent";
 const inject = [
 	"agents",
@@ -10614,5 +10557,4 @@ async function apply(ctx, config) {
 	await runtime.ready;
 	ctx.logger.info(runtime.configured() ? "dsh-superagent ready; the Superagent sidebar entry opens the management panel" : `dsh-superagent is waiting for setup: ${runtime.setupProblem?.detail ?? ""}`);
 }
-//#endregion
 export { Config, Engine, MemoryRepositories, REASONS, USER_ERRORS, UserError, apply, canRetry, followupOwners, inject, isoTime, key, latestAssignment, latestReport, liveTicket, name, reached, readUntil, reasonText, runningAssignment, said, settled, threadKey, ticketOutcome, ticketStage, waitsForPerson };
