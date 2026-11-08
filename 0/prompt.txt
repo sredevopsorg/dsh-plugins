@@ -1,0 +1,5 @@
+/github-actions-security-audit use dsh 0.2.2-rc.1 for all tests, actions and workflows currently used. Also implement best practices on actions versions and permissions. Ask clarifications as needed. When completed, create a PR with changes
+
+---
+
+continue
