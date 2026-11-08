@@ -54,7 +54,7 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 | `code-editor` | `code-editor-v0.1.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"` |
 | `entire` | `entire-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"` |
 | `skills` | `skills-v0.1.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"` |
-| `superagent` | `superagent-v0.1.1` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.1&path:/plugins/superagent"` |
+| `superagent` | `superagent-v0.1.2` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"` |
 
 Replace `web` with the profile you use. The tag is immutable: a new release gets
 a new tag and a new version, so an install command always reproduces the same
@@ -151,7 +151,7 @@ Release tags are created automatically when a version bump merges to `main`:
 <plugin-directory>-v<package-version>
 ```
 
-Examples: `code-editor-v0.1.0`, `entire-v0.2.0`, `skills-v0.1.0`, `superagent-v0.1.1`.
+Examples: `code-editor-v0.1.0`, `entire-v0.2.0`, `skills-v0.1.0`, `superagent-v0.1.2`.
 
 [`.github/workflows/version-plugins.yml`](../.github/workflows/version-plugins.yml)
 runs on every push to `main`, tags each plugin whose `<dir>-v<version>` tag does

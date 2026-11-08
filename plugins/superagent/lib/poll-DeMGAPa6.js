@@ -5,6 +5,7 @@ import { z } from "zod";
 import { lstat, mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { homedir } from "node:os";
 import s from "@deepseek-ai/schemastery";
 // src/core/model.ts
 /** Stable key of a thread across the whole domain. */
@@ -554,9 +555,28 @@ async function verifyDirectory(directory, subprocess, signal) {
 /** Plugin configuration and startup verification for repository access and agent CLI identities. */
 const reason = (error) => error instanceof Error ? error.message : String(error);
 const absolute = (description) => s.string().pattern(/^\//).description(`${description} Absolute path.`);
+/**
+* The DeepSeek Harness home, with the harness's own precedence: `$DSH_HOME` when set and not blank, else `~/.dsh`.
+* Read from the environment at use time so tests can point a checkout at a scratch home.
+*/
+function dshHome(env = process.env) {
+	const configured = env.DSH_HOME?.trim();
+	return configured ? resolve(configured) : join(homedir(), ".dsh");
+}
+/**
+* State directory a profile uses when it configures none: `<DSH home>/state/superagent/<profile>`.
+*
+* A bundle installed into any profile must start and serve its management panel before the operator has configured
+* anything, so `stateDir` is optional instead of failing validation at load time. Scoping the fallback by profile keeps
+* two profiles that both load the bundle, such as a Web profile and a dedicated one, from contending for the same state
+* lock and database. A profile that sets `stateDir` in `cordis.patch.yml` always wins.
+*/
+function defaultStateDir({ home, profile } = {}) {
+	return join(home?.trim() || dshHome(), "state", "superagent", profile?.trim() || "default");
+}
 /** Plugin configuration of the dsh-superagent entry. Volatile fields apply without a restart because dsh-superagent reads them on each use; changing `stateDir` remounts the plugin. */
 const Config = s.object({
-	stateDir: absolute("Directory for the database, locks, worker shims, the agent's git configuration and, by default, the ticket directories.").required(),
+	stateDir: absolute("Directory for the database, locks, worker shims, the agent's git configuration and, by default, the ticket directories. Defaults to <DSH home>/state/superagent/<profile>."),
 	promptMaxChars: s.number().min(LIMITS.promptMaxChars.min).max(LIMITS.promptMaxChars.max).step(1).default(1e5).description("Largest saved prompt configuration, in characters.").volatile(),
 	admissionContextMaxPages: s.number().min(LIMITS.admissionContextMaxPages.min).max(LIMITS.admissionContextMaxPages.max).step(1).default(10).description("Pages of thread context one assessment may read.").volatile(),
 	admissionContextTimeoutMs: s.number().min(LIMITS.admissionContextTimeoutMs.min).max(LIMITS.admissionContextTimeoutMs.max).step(1).default(15e3).description("Time limit of one context read during an assessment, in milliseconds.").volatile()
@@ -572,12 +592,12 @@ const MOVED = {
 	blockedCommands: "in the Execution settings"
 };
 /** Read machine settings and reject unknown configuration keys (naming where deprecated keys moved). */
-function machineOf(config) {
+function machineOf(config, defaults = {}) {
 	const unknown = Object.keys(config).filter((key) => !(key in (Config.dict ?? {})));
 	if (unknown.length) throw new Error(`dsh-superagent configuration has keys it does not use: ${unknown.map((key) => MOVED[key] ? `${key} (now ${MOVED[key]})` : key).join(", ")}; docs/006-deployment.md lists the keys`);
 	const { stateDir, promptMaxChars, admissionContextMaxPages, admissionContextTimeoutMs } = config;
 	return {
-		stateDir,
+		stateDir: stateDir ?? defaultStateDir(defaults),
 		promptMaxChars,
 		admissionContextMaxPages,
 		admissionContextTimeoutMs

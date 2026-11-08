@@ -1,6 +1,6 @@
 {
   "name": "@sredevopsorg/dsh-superagent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A proactive agent for one GitHub repository, as a DSH (DeepSeek Harness) bundle: it listens to GitHub and optionally Feishu, evaluates requests under a Policy, turns authorized ones into Tickets, and executes each in its own DSH Session.",
   "license": "MIT",
   "author": "DeepSeek Harness Team <team@dsh.dev>",
