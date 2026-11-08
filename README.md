@@ -15,7 +15,7 @@ The repository publishes two things:
 
 The repository also publishes [`index.json`](index.json), a **format-1 plugin market index** that [@deepseek-ai/dsh-experimental-plugin-market-bundle](https://github.com/deepseek-ai/deepseek-harness) reads in the Web **Plugins → Discover** tab.
 
-> Verified against `@deepseek-ai/dsh` **0.2.x**, currently **`0.2.1-rc.2`**. The CLI version gate is strict, so check `dsh --version` before reporting plugin issues. Bundle patches are checked against the installed DSH by `scripts/validate-bundles.mjs`.
+> Verified against `@deepseek-ai/dsh` **0.2.x**, currently **`0.2.2-rc.1`**. The CLI version gate is strict, so check `dsh --version` before reporting plugin issues. Bundle patches are checked against the installed DSH by `scripts/validate-bundles.mjs`.
 
 ---
 
@@ -66,11 +66,14 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
 │   ├── validate-market-index.mjs          # plugin index format and pinning check (CI)
 │   ├── build-market-index.mjs             # regenerate index.json from release tags
 │   └── release-tag.mjs                    # validate and tag one plugin release
-├── .github/workflows/
-│   ├── ci.yml
-│   ├── compat-canary.yml
-│   ├── release.yml                        # tag-driven release + index update PR
-│   └── version-plugins.yml                # tag merged plugin versions, dispatch releases
+├── .github/
+│   ├── CODEOWNERS                         # review gate for workflow changes
+│   ├── dependabot.yml                     # weekly GitHub Actions pin updates
+│   └── workflows/
+│       ├── ci.yml
+│       ├── compat-canary.yml
+│       ├── release.yml                    # tag-driven release + index update PR
+│       └── version-plugins.yml            # tag merged plugin versions, dispatch releases
 ├── docs/
 │   ├── ghost-themes.md                    # repo doc — NOT a skill
 │   ├── entire-dsh-audit.md                # root-cause audit of the Entire/DSH capture automation
@@ -552,7 +555,7 @@ Plugin package checks run from inside each package:
 
 `validate-market-index.mjs` validates `index.json` against the DSH installation's format-1 validator, checks that every listed version is a release tag pinned to its commit, committer time, name, version, and `engines.dsh`, and fails when the file differs from `build-market-index.mjs` output. It treats a not-yet-published release tag as a warning: the release workflow opens the index update. Use a full checkout with tags (`fetch-depth: 0`), as CI does.
 
-[CI](.github/workflows/ci.yml) runs all four validators, installs the plugins that have a lockfile, rebuilds `superagent` and fails when its committed `lib/` drifts, and runs the plugin unit tests on every branch push and pull request; a weekly canary runs the bundle and index validators against the newest published DSH; [`version-plugins.yml`](.github/workflows/version-plugins.yml) tags merged versions and dispatches [`release.yml`](.github/workflows/release.yml).
+[CI](.github/workflows/ci.yml) runs all four validators, installs the plugins that have a lockfile, rebuilds `superagent` and fails when its committed `lib/` drifts, and runs the plugin unit tests on every branch push and pull request; a weekly compatibility run repeats the strict bundle and index validators against the pinned DSH release; [`version-plugins.yml`](.github/workflows/version-plugins.yml) tags merged versions and dispatches [`release.yml`](.github/workflows/release.yml). Every workflow installs and verifies `@deepseek-ai/dsh@0.2.2-rc.1`, pins third-party actions to full commit SHAs, and grants write permissions only to the job that needs them. Dependabot keeps the action pins current, and CODEOWNERS asks the maintainer to review workflow changes.
 
 Beyond the validators:
 

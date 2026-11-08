@@ -32,9 +32,11 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 
 ## Requirements
 
-- **DSH `^0.2.1-rc.2`** — the `engines.dsh` gate in every package, and the
-  version checked by CI. The Discover flow additionally needs the experimental
-  **Custom plugin indexes** bundle enabled in the Web profile.
+- **DSH `^0.2.1-rc.2`** — the `engines.dsh` gate in every package. CI, release,
+  and versioning install and verify `@deepseek-ai/dsh@0.2.2-rc.1`; DSH's gate is
+  prerelease-inclusive, so the pinned release satisfies the range. The Discover
+  flow additionally needs the experimental **Custom plugin indexes** bundle
+  enabled in the Web profile.
 - **Git** on `PATH` and network access to GitHub. DSH checks a GitHub address
   with `git ls-remote` before pnpm starts.
 - **pnpm 9 or newer**, which DSH invokes for `dsh plugin` operations. No build

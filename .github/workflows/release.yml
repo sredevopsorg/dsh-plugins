@@ -24,25 +24,38 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+env:
+  DSH_VERSION: "0.2.2-rc.1"
 
 jobs:
   release:
     name: Publish plugin release
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The index is rebuilt from the full tag list, including this tag.
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
 
-      - name: Install the pinned DSH
-        run: npm install --global @deepseek-ai/dsh@0.2.1-rc.2
+      - name: Install and verify the pinned DSH
+        run: |
+          npm install --global "@deepseek-ai/dsh@${DSH_VERSION}"
+          installed="$(dsh --version)"
+          if [ "$installed" != "$DSH_VERSION" ]; then
+            echo "::error::expected DSH ${DSH_VERSION}, got ${installed}"
+            exit 1
+          fi
 
       - name: Validate the release tag and packages
         run: |
@@ -50,7 +63,28 @@ jobs:
             refs/tags/*) ;;
             *) echo "::error::release must run for a tag ref, not $GITHUB_REF"; exit 1 ;;
           esac
-          node scripts/validate-github-install.mjs --strict --tag "$GITHUB_REF_NAME"
+          tag="$GITHUB_REF_NAME"
+          if [[ ! "$tag" =~ ^([a-z0-9][a-z0-9-]*)-v([0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?)$ ]]; then
+            echo "::error::invalid release tag: $tag"
+            exit 1
+          fi
+          plugin="${BASH_REMATCH[1]}"
+          version="${BASH_REMATCH[2]}"
+          if [ ! -f "plugins/${plugin}/package.json" ]; then
+            echo "::error::plugins/${plugin}/package.json is missing"
+            exit 1
+          fi
+          package_version="$(node -e 'const m = require(process.argv[1]); process.stdout.write(m.version)' "$PWD/plugins/${plugin}/package.json")"
+          if [ "$package_version" != "$version" ]; then
+            echo "::error::tag ${tag} does not match plugins/${plugin}/package.json version ${package_version}"
+            exit 1
+          fi
+          {
+            echo "TAG=${tag}"
+            echo "PLUGIN=${plugin}"
+            echo "VERSION=${version}"
+          } >> "$GITHUB_ENV"
+          node scripts/validate-github-install.mjs --strict --tag "$tag"
           node scripts/validate-skills.mjs
           node scripts/validate-bundles.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
 
@@ -58,19 +92,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          plugin="${GITHUB_REF_NAME%-v*}"
-          version="${GITHUB_REF_NAME:${#plugin}+2}"
-          spec="github:sredevopsorg/dsh-plugins#${GITHUB_REF_NAME}&path:/plugins/${plugin}"
-          dsh_range="$(node -e "process.stdout.write(require('./plugins/${plugin}/package.json').engines?.dsh ?? '')")"
+          spec="github:sredevopsorg/dsh-plugins#${TAG}&path:/plugins/${PLUGIN}"
+          dsh_range="$(node -e 'const m = require(process.argv[1]); process.stdout.write(m.engines?.dsh ?? "")' "$PWD/plugins/${PLUGIN}/package.json")"
           if [ -z "$dsh_range" ]; then dsh_range="the target DSH release"; fi
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            echo "release $GITHUB_REF_NAME already exists; leaving it untouched"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release ${TAG} already exists; leaving it untouched"
             exit 0
           fi
           notes="$(printf '%s\n' \
             "This is by an automated agent, not a human." \
             "" \
-            "Install ${plugin} ${version} into a DSH profile:" \
+            "Install ${PLUGIN} ${VERSION} into a DSH profile:" \
             "" \
             "  dsh plugin --profile web add \"${spec}\"" \
             "" \
@@ -82,31 +114,30 @@ jobs:
             "" \
             "Requires DSH ${dsh_range}, Git, and pnpm 9 or newer." \
             "" \
-            "See https://github.com/sredevopsorg/dsh-plugins/blob/main/plugins/${plugin}/README.md")"
-          gh release create "$GITHUB_REF_NAME" --verify-tag --title "${plugin} ${version}" --notes "$notes"
+            "See https://github.com/sredevopsorg/dsh-plugins/blob/main/plugins/${PLUGIN}/README.md")"
+          gh release create "$TAG" --verify-tag --title "${PLUGIN} ${VERSION}" --notes "$notes"
 
       - name: Publish the plugin index
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          plugin="${GITHUB_REF_NAME%-v*}"
-          version="${GITHUB_REF_NAME:${#plugin}+2}"
           node scripts/build-market-index.mjs
           node scripts/validate-market-index.mjs --strict --dsh-root "$(npm root -g)/@deepseek-ai"
           if git diff --quiet -- index.json; then
-            echo "index.json already lists ${GITHUB_REF_NAME}; nothing to publish"
+            echo "index.json already lists ${TAG}; nothing to publish"
             exit 0
           fi
           # A queued release run may find the same index already published by the
           # pull request an earlier release opened; do not open a duplicate.
-          for existing in $(git ls-remote --heads origin 'refs/heads/market/publish-*' | sed 's#.*refs/heads/##'); do
+          while IFS= read -r existing; do
+            [ -n "$existing" ] || continue
             if git fetch --quiet --depth=1 origin "refs/heads/${existing}" >/dev/null 2>&1 \
               && git show FETCH_HEAD:index.json | cmp -s - index.json; then
               echo "branch ${existing} already publishes this index; nothing to do"
               exit 0
             fi
-          done
-          branch="market/publish-${GITHUB_REF_NAME}"
+          done < <(git ls-remote --heads origin 'refs/heads/market/publish-*' | sed 's#.*refs/heads/##')
+          branch="market/publish-${TAG}"
           if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
             echo "branch ${branch} already exists; an update pull request is open"
             exit 0
@@ -115,14 +146,14 @@ jobs:
           git config user.email "292528627+sredevopsorgagents@users.noreply.github.com"
           git switch --create "$branch"
           git add index.json
-          git commit -m "chore(market): publish ${GITHUB_REF_NAME} in the plugin index"
-          git push origin "$branch"
+          git commit -m "chore(market): publish ${TAG} in the plugin index"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$branch"
           body="$(printf '%s\n' \
             "This is by an automated agent, not a human." \
             "" \
-            "Republishes index.json with the release ${GITHUB_REF_NAME}, so the Web Plugins -> Discover tab lists ${plugin} ${version} after this merges." \
+            "Republishes index.json with the release ${TAG}, so the Web Plugins -> Discover tab lists ${PLUGIN} ${VERSION} after this merges." \
             "" \
             "Generated by \`.github/workflows/release.yml\` with \`node scripts/build-market-index.mjs\`.")"
           gh pr create --base main --head "$branch" \
-            --title "chore(market): publish ${GITHUB_REF_NAME} in the plugin index" \
+            --title "chore(market): publish ${TAG} in the plugin index" \
             --body "$body"
