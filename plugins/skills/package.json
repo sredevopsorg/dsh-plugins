@@ -1,6 +1,6 @@
 {
   "name": "@sredevopsorg/dsh-skills",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Every sredevopsorg agent skill (architecture, fullstack, Supabase/Postgres, Ghost themes, Helm, Kubernetes, Kustomize, GitHub Actions security) as one installable DSH plugin.",
   "license": "MIT",
   "repository": {
