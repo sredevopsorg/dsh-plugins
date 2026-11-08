@@ -1,10 +1,10 @@
 import { execFile } from 'node:child_process'
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Config, executable, machineOf, resolveDeployment, resolveFeishuBot, type Machine, type Probe } from '../src/deployment.ts'
+import { Config, defaultStateDir, dshHome, executable, machineOf, resolveDeployment, resolveFeishuBot, type Machine, type Probe } from '../src/deployment.ts'
 import { gitEnv } from './fixtures/git.ts'
 
 const exec = promisify(execFile)
@@ -40,13 +40,22 @@ afterEach(() => { rmSync(dir, { recursive: true, force: true }) })
 vi.setConfig({ testTimeout: 30_000 })
 
 describe('configuration schema', () => {
-  it('requires only the state directory and reads the editable fields through references', () => {
-    expect(() => Config({})).toThrow('stateDir')
+  it('defaults the state directory under the hosting profile so an install starts without configuration', () => {
+    // The harness reads $DSH_HOME when set and not blank, else ~/.dsh; a trailing slash or surrounding space is normalized away.
+    expect(dshHome({})).toBe(join(homedir(), '.dsh'))
+    expect(dshHome({ DSH_HOME: '  /srv/dsh  ' })).toBe('/srv/dsh')
+    expect(dshHome({ DSH_HOME: '   ' })).toBe(dshHome({}))
+    expect(defaultStateDir()).toBe(join(dshHome(), 'state', 'superagent', 'default'))
+    expect(defaultStateDir({ home: '/srv/dsh', profile: 'web' })).toBe('/srv/dsh/state/superagent/web')
+    expect(machineOf(Config({})).stateDir).toBe(defaultStateDir())
+    expect(machineOf(Config({}), { home: '/srv/dsh', profile: 'web' }).stateDir).toBe('/srv/dsh/state/superagent/web')
     const read = machineOf(Config({ stateDir: join(dir, 'state') }))
     // Limits are volatile references that the loader updates in place and callers read when used.
     expect({ ...read, promptMaxChars: read.promptMaxChars.get(), admissionContextMaxPages: read.admissionContextMaxPages.get(),
       admissionContextTimeoutMs: read.admissionContextTimeoutMs.get() })
       .toEqual({ stateDir: join(dir, 'state'), promptMaxChars: 100000, admissionContextMaxPages: 10, admissionContextTimeoutMs: 15000 })
+    // An explicit stateDir still wins, and must be an absolute path without shell shorthand.
+    expect(Config(minimal()).stateDir).toBe(join(dir, 'state'))
     expect(() => Config(minimal({ stateDir: 'relative/dir' }))).toThrow()
     expect(() => Config(minimal({ stateDir: '~/dir' }))).toThrow()
   })

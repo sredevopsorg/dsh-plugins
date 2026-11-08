@@ -15,7 +15,7 @@ It is also a way of working with an agent: **take as little human attention as p
 Install from this repository, pinned to the release tag (the tag is immutable, so the command reproduces the same package contents):
 
 ```sh
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.1&path:/plugins/superagent"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 ```
 
 The package ships its built `lib/` directory, so **no build step runs at install time** and the Git dependency needs no toolchain beyond Node and pnpm. The same spec works with the `plugin_manager` tool's `install_bundle` and from the repository's plugin index (Discover).
@@ -36,11 +36,11 @@ The bundle then activates automatically in the profile (`dsh plugin add` reconci
 - Node.js `^22.19.0 || >=24.0.0` and pnpm 9 or newer (for installation; the plugin itself runs under DSH).
 - Git 2.32+, GitHub CLI 2.48+, tmux, and Python 3.8+ for the managed-service script and for the agent's work.
 - A DSH model provider configured for the profile.
-- The plugin **refuses to start without a `stateDir`** in its configuration (see [Configuration](#configuration)).
+- A `stateDir` configuration is optional: each profile that does not set one gets `<DSH home>/state/superagent/<profile>`, so an install starts and serves its panel before setup (see [Configuration](#configuration)).
 
 ### Configuration
 
-The bundle inserts the `dsh-superagent` row, the `dsh-superagent-github` Source, a disabled `dsh-superagent-feishu` Source, and the worker/router agent presets. Provide the state directory in the profile's `cordis.patch.yml`, using the row id from the bundle patch (ids are unchanged from upstream):
+The bundle inserts the `dsh-superagent` row, the `dsh-superagent-github` Source, a disabled `dsh-superagent-feishu` Source, and the worker/router agent presets. Installation is enough to start the plugin and open its panel: when the profile does not configure `stateDir`, it defaults to `<DSH home>/state/superagent/<profile>`, scoped so two profiles can load the bundle without contending for one state lock. A dedicated profile should pin its directory explicitly in the profile's `cordis.patch.yml`, using the row id from the bundle patch (ids are unchanged from upstream):
 
 ```yaml
 - id: dsh-superagent
@@ -50,6 +50,8 @@ The bundle inserts the `dsh-superagent` row, the `dsh-superagent-github` Source,
 - id: dsh-superagent-feishu
   disabled: false
 ```
+
+An explicit `stateDir` always wins over the default and cannot be changed from the panel, so choose a stable path a dedicated deployment can back up.
 
 See [examples/profile.cordis.patch.yml](examples/profile.cordis.patch.yml) and [docs/006-deployment.md](docs/006-deployment.md) for every configuration key, account setup, upgrades, and troubleshooting.
 
@@ -119,7 +121,7 @@ Optional end-to-end install check into a scratch DSH profile, from the packed ta
 
 ```sh
 npm pack --pack-destination /tmp
-DSH_HOME=/tmp/dsh-scratch dsh plugin --profile scratch add /tmp/sredevopsorg-dsh-superagent-0.1.1.tgz
+DSH_HOME=/tmp/dsh-scratch dsh plugin --profile scratch add /tmp/sredevopsorg-dsh-superagent-0.1.2.tgz
 DSH_HOME=/tmp/dsh-scratch dsh --profile scratch --dump-config
 ```
 

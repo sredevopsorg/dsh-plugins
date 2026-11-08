@@ -22,7 +22,7 @@ function context() {
     inject: vi.fn((_services: string[], callback: (child: unknown) => void) => { callback({ effect: (effect: () => unknown) => effect(), settings: { configure } }) }),
     effect: vi.fn(),
     fiber: { restart: vi.fn(async () => {}) },
-    get: vi.fn((name: string) => name === 'settings' ? { describe } : undefined),
+    get: vi.fn((name: string) => name === 'settings' ? { describe } : name === 'profileContext' ? { home: '/srv/dsh', name: 'web' } : undefined),
     logger: { info: vi.fn(), error: vi.fn() },
   }
   return { ctx, handlers, configure, describe }
@@ -52,6 +52,12 @@ it('asks DSH to read its settings entry again once a restart it started finished
   expect(describe).not.toHaveBeenCalled()
   finish()
   await vi.waitFor(() => { expect(describe).toHaveBeenCalledTimes(1) })
+})
+
+it('scopes the fallback state directory to the hosting profile when none is configured', async () => {
+  const { ctx } = context()
+  await apply(ctx as never, Config({}))
+  expect(runtimes.at(-1)!.machine.stateDir).toBe('/srv/dsh/state/superagent/web')
 })
 
 it('refuses keys of the previous configuration before registering anything', async () => {

@@ -1,5 +1,7 @@
 # Example profile configuration ($DSH_HOME/profiles/<profile>/cordis.patch.yml).
 # Replace <placeholders> before first start; see docs/006-deployment.md.
+# `stateDir` is optional: without it the plugin uses <DSH home>/state/superagent/<profile>. Pin it explicitly for a
+# dedicated deployment, because the database and worker files under it are what operators back up.
 - id: webserver
   config:
     host: 127.0.0.1
