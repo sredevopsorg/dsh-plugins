@@ -44,6 +44,7 @@ catalog is rebuilt at startup.
 | [`ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | Wiring a Ghost theme to Vite, Tailwind CSS, and React/Vue/Svelte islands |
 | [`helm-chart-development`](skills/helm-chart-development/SKILL.md) | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
 | [`kubernetes-kubectl-operations`](skills/kubernetes-kubectl-operations/SKILL.md) | Safe kubectl operations, cluster triage, and opt-in Kubernetes MCP inspection |
+| [`kustomize`](skills/kustomize/SKILL.md) | Base/overlay layout, strategic and JSON patches, generators, images, components, replacements, remote bases, rendering for GitOps |
 | [`github-actions-security-audit`](skills/github-actions-security-audit/SKILL.md) | Auditing and hardening GitHub Actions workflows: token permissions, script injection, `pull_request_target`, action pinning, runners, supply chain |
 
 Every skill is model- and user-invocable (no `disable-model-invocation` /
@@ -140,5 +141,5 @@ npm pack --dry-run --json                            # all SKILL.md + references
 dsh --profile web --dump-config                      # composes without booting
 ```
 
-The provider test asserts the package lists all 9 skills, that each parsed name matches
+The provider test asserts the package lists all 10 skills, that each parsed name matches
 its directory, that each body loads, and that referenced resources are packaged.

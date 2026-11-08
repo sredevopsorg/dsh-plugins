@@ -46,7 +46,8 @@ test("the plugin is a bundled skill provider with the repo packaging contract", 
 
 test("every packaged skill parses with the filesystem-provider frontmatter contract", async () => {
   const directories = await skillDirectories();
-  assert.equal(directories.length, 9, "this package ships the repository's 9 skills");
+  assert.ok(directories.length >= 10, "this package ships the repository's skills");
+  assert.ok(directories.includes("kustomize"), "this package ships the kustomize skill");
   for (const directory of directories) {
     const raw = await readFile(join(skillsDir, directory, "SKILL.md"), "utf8");
     const parsed = parseSkillFile(raw);
@@ -66,7 +67,7 @@ test("the provider lists all packaged skills with parsed metadata and resource b
   const candidates = await provider.list({});
 
   assert.equal(provider.name, "dsh-skills");
-  assert.equal(candidates.length, 9);
+  assert.equal(candidates.length, (await skillDirectories()).length);
   assert.deepEqual(
     candidates.map((candidate) => candidate.name),
     (await skillDirectories()).sort(),
@@ -98,6 +99,7 @@ test("resources referenced by a skill live inside its packaged resource base", a
     "ghost-theme-modern-frontend": ["references/vite-tailwind-pipeline.md", "scripts/scaffold-theme.mjs", "scripts/verify-theme.sh"],
     "helm-chart-development": ["references/template-language.md", "scripts/verify-chart.mjs"],
     "kubernetes-kubectl-operations": ["references/inspect-and-debug.md", "scripts/verify-kube-access.sh"],
+    "kustomize": ["references/patches-and-transforms.md", "scripts/verify-kustomize.mjs"],
     "supabase": ["references/skill-feedback.md", "assets/feedback-issue-template.md"],
     "supabase-postgres-best-practices": ["references/security-rls-basics.md"],
   };

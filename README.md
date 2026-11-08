@@ -23,7 +23,7 @@ The repository also publishes [`index.json`](index.json), a **format-1 plugin ma
 
 ### Skills
 
-All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. Install it
+All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. Install it
 (see [Installing the skills](#installing-the-skills)) and the catalog lists every row below.
 
 | Skill | Surface | Use it for |
@@ -36,6 +36,7 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
 | [`ghost-theme-modern-frontend`](plugins/skills/skills/ghost-theme-modern-frontend/SKILL.md) | model + user | Wiring a Ghost theme to Vite, Tailwind CSS, and React/Vue/Svelte islands |
 | [`helm-chart-development`](plugins/skills/skills/helm-chart-development/SKILL.md) | model + user | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
 | [`kubernetes-kubectl-operations`](plugins/skills/skills/kubernetes-kubectl-operations/SKILL.md) | model + user | Safe kubectl operations, cluster triage, and opt-in Kubernetes MCP inspection |
+| [`kustomize`](plugins/skills/skills/kustomize/SKILL.md) | model + user | Kubernetes configuration customization: base/overlay layout, strategic and JSON patches, generators, images, components, replacements, remote bases, GitOps rendering |
 | [`github-actions-security-audit`](plugins/skills/skills/github-actions-security-audit/SKILL.md) | model + user | Auditing and hardening GitHub Actions workflows: token permissions, script injection, `pull_request_target`, action pinning, runners, supply chain |
 
 ### Plugins and tools
@@ -45,7 +46,7 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
 | [`code-editor`](plugins/code-editor/README.md) | bundle + web editor | Browsing a Session's workspace and editing UTF-8 files from a right-sidebar tab, with sandbox-aware saves and optimistic conflict detection |
 | [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
 | [`peak-rate-footer`](plugins/peak-rate-footer/README.md) | bundle + web footer | A green/orange footer showing whether DeepSeek API usage is currently billed at peak or off-peak rates, with a local clock, next-change countdown, and in-footer time-zone picker |
-| [`skills`](plugins/skills/README.md) | bundle + 9 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, and GitHub Actions skills |
+| [`skills`](plugins/skills/README.md) | bundle + 10 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, Kustomize, and GitHub Actions skills |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
 
 ---
@@ -125,7 +126,7 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
         ├── locale/en.json
         ├── icon.svg
         ├── README.md
-        └── skills/                        # the 9 packaged skills — add new skills here
+        └── skills/                        # the 10 packaged skills — add new skills here
             ├── software-architecture/SKILL.md
             ├── fullstack-development/SKILL.md
             ├── supabase/{SKILL.md,references/,assets/}
@@ -133,6 +134,7 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
             ├── ghost-theme-development/{SKILL.md,references/}
             ├── ghost-theme-modern-frontend/{SKILL.md,references/,scripts/}
             ├── kubernetes-kubectl-operations/{SKILL.md,references/,scripts/}
+            ├── kustomize/{SKILL.md,references/,scripts/}
             ├── helm-chart-development/{SKILL.md,references/,scripts/}
             └── github-actions-security-audit/SKILL.md
 ```
@@ -155,6 +157,12 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   dedicated, preferably read-only kubeconfig; when the optional Kubernetes MCP row is
   enabled, it passes that value to the server as `KUBECONFIG`. Without it, the server
   uses `KUBECONFIG` or `~/.kube/config`.
+- **`kustomize` or `kubectl`** — only for `kustomize`. Rendering
+  (`kustomize build <dir>`, or `kubectl kustomize <dir>` when only `kubectl` is
+  installed) needs no cluster and no network for local bases;
+  `scripts/verify-kustomize.mjs` renders each root and validates the manifest stream.
+  Pin the same major.minor across local, CI, and GitOps agents: `kubectl` embeds its
+  own Kustomize and the two release lines drift independently.
 - **Entire CLI** (`entire`) on `PATH` — only for the `entire` plugin. It records agent sessions and
   checkpoints and backs every tool; session capture additionally needs the `entire-agent-dsh`
   binary and `entire agent add dsh` in the target repository. Search, trails, and recap also need
@@ -591,10 +599,11 @@ Beyond the validators:
   banner after changing that file on disk while an unsaved draft exists.
   `cd plugins/code-editor && npm test` covers the Host route and package contract.
 - For the `skills` plugin: install it into a scratch profile, restart/rebuild the catalog,
-  and confirm all 9 skills are listed with parsed descriptions; `cd plugins/skills && npm test`
+  and confirm all 10 skills are listed with parsed descriptions; `cd plugins/skills && npm test`
   asserts the same thing without a running DSH. `npm pack --dry-run --json` in
   `plugins/skills` proves the skills ship in the tarball.
 - For Kubernetes: `bash plugins/skills/skills/kubernetes-kubectl-operations/scripts/verify-kube-access.sh --kubeconfig "$KUBERNETES_MCP_KUBECONFIG" --require-read-only` is a read-only access preflight; it warns when the context can write, in which case the Kubernetes MCP should not be enabled for exploratory inspection.
+- For Kustomize: `node plugins/skills/skills/kustomize/scripts/verify-kustomize.mjs <overlay-dir>` renders the overlay and validates the output before an apply or GitOps sync; pass `--no-kubectl` to skip the server-side/client dry-run step entirely.
 - For Ghost themes: `bash plugins/skills/skills/ghost-theme-modern-frontend/scripts/verify-theme.sh <theme-dir>`.
 - For the plugin index: add
   `https://raw.githubusercontent.com/sredevopsorg/dsh-plugins/main/index.json` as a Discover
@@ -655,5 +664,6 @@ Released under the [MIT License](LICENSE). Third-party attribution is listed in
 - `helm-chart-development` is grounded in the official Helm documentation — the [Chart Template Developer's Guide](https://helm.sh/docs/chart_template_guide/), [Charts](https://helm.sh/docs/topics/charts/), [Best Practices](https://helm.sh/docs/charts_best_practices/) and [Hooks](https://helm.sh/docs/charts_hooks/) — which is published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Examples and function signatures were verified against Helm 4.3.
 - `github-actions-security-audit` is grounded in GitHub's [Secure use reference](https://docs.github.com/en/actions/reference/security/secure-use) (GitHub Docs, CC-BY-4.0).
 - `kubernetes-kubectl-operations` is grounded in the official Kubernetes documentation at <https://kubernetes.io/docs/> (source: <https://github.com/kubernetes/website>), published under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), and the `containers/kubernetes-mcp-server` documentation (Apache-2.0).
+- `kustomize` is grounded in the [Kustomize project documentation](https://kustomize.io/) and the Kubernetes tasks [Declarative management using Kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) and [Managing Secrets using Kustomize](https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kustomize/) (Kubernetes Docs, CC-BY-4.0).
 - `plugins/superagent` is a fork of the DeepSeek Harness research prototype [deepseek-ai/dsh-superagent-prototype](https://github.com/deepseek-ai/dsh-superagent-prototype) (MIT, upstream commit `8c32a9d`). Upstream copyright remains with the DeepSeek Harness Team; the fork's changes are listed in its README and [NOTICE.md](NOTICE.md).
-- The nine skills are vendored unchanged inside the [`skills`](plugins/skills/README.md) plugin package; moving them did not change their provenance.
+- The ten skills are vendored unchanged inside the [`skills`](plugins/skills/README.md) plugin package; moving them did not change their provenance.
