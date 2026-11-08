@@ -12,26 +12,37 @@ on:
 permissions:
   contents: read
 
+env:
+  DSH_VERSION: "0.2.2-rc.1"
+
 jobs:
   validate:
     name: Skills, bundles, and plugin index
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The plugin index validator reads release tags and the commits they
           # pin, so the checkout needs the full history and tags.
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
 
       # The validators resolve `yaml`, `semver`, and the plugin market index
       # validator from the DSH installation, so the repository itself stays
       # dependency-free.
-      - name: Install the pinned DSH
-        run: npm install --global @deepseek-ai/dsh@0.2.1-rc.2
+      - name: Install and verify the pinned DSH
+        run: |
+          npm install --global "@deepseek-ai/dsh@${DSH_VERSION}"
+          installed="$(dsh --version)"
+          if [ "$installed" != "$DSH_VERSION" ]; then
+            echo "::error::expected DSH ${DSH_VERSION}, got ${installed}"
+            exit 1
+          fi
 
       - name: Validate skills
         run: node scripts/validate-skills.mjs
