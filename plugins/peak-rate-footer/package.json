@@ -1,0 +1,67 @@
+{
+  "name": "@sredevopsorg/dsh-peak-rate-footer",
+  "version": "0.1.0",
+  "description": "A slim Web GUI footer showing whether DeepSeek API usage is billed at peak or off-peak rates, with a configurable local clock.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/peak-rate-footer"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/peak-rate-footer#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "test/*.test.mjs"
+  ],
+  "scripts": {
+    "check": "node --check index.js && node --check client.js && node --check test/schedule.test.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "deepseek",
+    "pricing",
+    "peak",
+    "off-peak",
+    "rate",
+    "footer",
+    "web"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-renderer"
+      ]
+    }
+  }
+}

@@ -44,6 +44,7 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
 |---|---|---|
 | [`code-editor`](plugins/code-editor/README.md) | bundle + web editor | Browsing a Session's workspace and editing UTF-8 files from a right-sidebar tab, with sandbox-aware saves and optimistic conflict detection |
 | [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
+| [`peak-rate-footer`](plugins/peak-rate-footer/README.md) | bundle + web footer | A green/orange footer showing whether DeepSeek API usage is currently billed at peak or off-peak rates, with a local clock, next-change countdown, and in-footer time-zone picker |
 | [`skills`](plugins/skills/README.md) | bundle + 9 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, and GitHub Actions skills |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
 
@@ -96,6 +97,15 @@ All nine skills ship in the single [`skills`](plugins/skills/README.md) plugin. 
     │   ├── lib/                           # commands, policy, exec, config, text, session bridge
     │   ├── test/                          # unit tests (node --test)
     │   ├── locale/en.json
+    │   ├── icon.svg
+    │   └── README.md
+    ├── peak-rate-footer/
+    │   ├── package.json                   # name, license, exports, dsh.bundle.patch, dsh.client
+    │   ├── cordis.patch.yml               # inserts the Host row whose Client half fills shell.bottom
+    │   ├── index.js                       # empty Host half; the Client module owns rendering
+    │   ├── client.js                      # schedule, holiday data, local clock, time-zone picker
+    │   ├── test/schedule.test.mjs         # peak/holiday/transition/time-zone tests (node --test)
+    │   ├── locale/en.json, locale/es.json, locale/zh.json
     │   ├── icon.svg
     │   └── README.md
     ├── superagent/                        # vendored fork of deepseek-ai/dsh-superagent-prototype
@@ -153,9 +163,10 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   repository (`dsh plugin …` forwards to pnpm; `path:` subdirectory installs need pnpm 9).
   No npm publish is involved. `superagent` also fetches its two runtime dependencies
   (`zod`, `proper-lockfile`) from the npm registry.
-- **A DSH Web profile with the built-in right Sidebar** — only for the `code-editor` plugin,
-  whose browser bundle contributes a right-sidebar tab and whose Host half serves the
-  browser-only workspace write endpoint.
+- **A DSH Web profile** — only for the Web plugins: the built-in right Sidebar for
+  `code-editor`, whose browser bundle contributes a right-sidebar tab and whose Host half
+  serves the browser-only workspace write endpoint, and the built-in bottom frame seat for
+  `peak-rate-footer`, whose Client module contributes the rate-status footer.
 - **Node.js 22.19+ or 24+, `git`, GitHub CLI 2.48+, `tmux`, and Python 3.8+** — only for the
   [`superagent`](plugins/superagent/README.md) fork, whose managed-service script and
   executor sessions need them. It requires a Web profile (the management panel is a web
@@ -406,10 +417,12 @@ Install and select it into a profile — from Discover, from GitHub with a pinne
 ```bash
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#peak-rate-footer-v0.1.0&path:/plugins/peak-rate-footer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 dsh plugin --profile web add ./plugins/code-editor # local checkout
 dsh plugin --profile web add ./plugins/entire   # local checkout
+dsh plugin --profile web add ./plugins/peak-rate-footer # local checkout
 dsh plugin --profile web list
 dsh --profile web --dump-config                 # inspect the composed tree, no boot
 ```

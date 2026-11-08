@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DeepSeek 费率页脚",
+    "description": "在页面底部添加一个细条，显示 DeepSeek API 当前按高峰还是低谷费率计费，并可切换显示时钟的时区。"
+  }
+}

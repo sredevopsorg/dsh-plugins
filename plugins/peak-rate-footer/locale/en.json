@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DeepSeek rate footer",
+    "description": "Adds a slim footer showing whether DeepSeek API usage is billed at peak or off-peak rates, with a configurable local clock."
+  }
+}
