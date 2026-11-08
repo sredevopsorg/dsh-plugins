@@ -1,0 +1,14 @@
+You are verifying a bug fix in the dsh-plugins repository. Working directory: /home/ngeorger/dsh-plugins/.agents/worktrees/dsh-0d899ea6-da02 (a git worktree of /home/ngeorger/dsh-plugins). The only writable area is /home/ngeorger/dsh-plugins (DSH sandbox is workspace-write), so put scratch files under /home/ngeorger/dsh-plugins/.scratch-verify/.
+
+Your shared task is task-1. First call team_task_get({task_id:"task-1"}), then team_task_update with action "claim" and expected_revision 1, do the work, then team_task_update action "complete" with the latest revision.
+
+Summary of the bug: installing plugins/superagent as a DSH bundle created a profile where the plugin failed to activate with `dsh-superagent (@sredevopsorg/dsh-superagent): ValidationError: invalid config: - $.stateDir missing required value (at stateDir)`. Because the plugin never mounted, its management panel could not be configured and reported "dsh-superagent is not answering: it may be restarting; if this persists, the DSH log names the cause, often a configuration error."
+
+The fix under test: `stateDir` is now optional in src/deployment.ts (no `.required()`); src/index.ts resolves it from `ctx.get('profileContext')` (home + name), and the fallback is `<DSH home>/state/superagent/<profile>` where DSH home is `$DSH_HOME` when set and non-blank, else `~/.dsh`. An explicit `stateDir` in the profile's cordis.patch.yml must still win. Tests were updated in tests/deployment.spec.ts and tests/index.spec.ts. The committed build output lib/ was rebuilt. Version bumped to 0.1.2.
+
+Follow the acceptance criteria in task-1 exactly. Key environment facts:
+- DSH CLI is /home/ngeorger/.nvm/versions/node/v24.22.2/bin/dsh, version 0.2.2-rc.1.
+- The sandbox makes /run/user read-only and the default pnpm store unusable: export XDG_RUNTIME_DIR=<scratch>/run and npm_config_store_dir=<scratch>/pnpm-store, and mkdir both.
+- Each bash tool call runs in its own sandbox, so run boot + HTTP checks within one bash invocation (start dsh with timeout in background, poll the API with curl for up to ~45s).
+- Management API requests need header `x-orchestrator-request: 1` and host 127.0.0.1:<port>.
+- Do not modify tracked files. Read files with the read tool. Report PASS/FAIL per criterion with exact evidence. Be adversarial: try to falsify the fix (e.g. confirm the error is gone from the boot log, confirm explicit stateDir overrides the default, confirm DSH_HOME is honored by the default path).
