@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Pie de tarifas de DeepSeek",
+    "description": "Añade un pie fino que muestra si el uso de la API de DeepSeek se factura a tarifas de hora punta o de hora valle, con un reloj local configurable."
+  }
+}

@@ -1,0 +1,5 @@
+# DeepSeek rate footer: one Host row whose Client half occupies the
+# full-width `shell.bottom` seat declared by the Web frame.
+- insert:
+    - id: peak-rate-footer
+      name: '@sredevopsorg/dsh-peak-rate-footer'
