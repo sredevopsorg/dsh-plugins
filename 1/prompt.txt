@@ -1,0 +1,1 @@
+fix plugins/superagent, installing creates an error and after installing, it cannot be configured, error: `dsh-superagent is not answering: it may be restarting; if this persists, the DSH log names the cause, often a configuration error.`

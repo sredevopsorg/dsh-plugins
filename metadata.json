@@ -3,7 +3,7 @@
   "checkpoint_id": "01M6WB5RN61N1H1VSB9YGD9EMT",
   "strategy": "manual-commit",
   "branch": "dsh-0d899ea6-da02",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "README.md",
     "docs/installing-plugins-from-github.md",
@@ -40,6 +40,12 @@
       "transcript": "/0/full.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "redaction": {
