@@ -14,7 +14,7 @@ Install from this repository (the release tag is immutable, so the command repro
 same package contents):
 
 ```sh
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 ```
 
 Or install from the repository's plugin index, which the Web **Plugins → Discover** tab
