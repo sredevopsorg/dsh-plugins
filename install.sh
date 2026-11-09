@@ -7,7 +7,7 @@
 # through one host-wide provider row:
 #
 #   dsh plugin --profile web add ./plugins/skills
-#   dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
+#   dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 #
 # This script is kept for setups that cannot install a plugin. It links the same
 # skills from plugins/skills/skills/ into a DSH filesystem skill root.

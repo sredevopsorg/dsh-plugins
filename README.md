@@ -205,7 +205,7 @@ Or from the pinned GitHub release (the tag is immutable, so the contents are rep
 quote the `&` or the shell will split it):
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 ```
 
 Or add the repository's [plugin index](#the-plugin-index-discover) source once and install
@@ -426,7 +426,7 @@ Install and select it into a profile — from Discover, from GitHub with a pinne
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#peak-rate-footer-v0.1.0&path:/plugins/peak-rate-footer"
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 dsh plugin --profile web add ./plugins/code-editor # local checkout
 dsh plugin --profile web add ./plugins/entire   # local checkout
@@ -548,7 +548,7 @@ node scripts/validate-github-install.mjs        # GitHub install metadata + npm 
 node scripts/validate-github-install.mjs --strict
 node scripts/validate-github-install.mjs --json
 node scripts/validate-github-install.mjs --tag entire-v0.2.0   # release-tag check
-node scripts/validate-github-install.mjs --tag skills-v0.1.0   # skills plugin release tag
+node scripts/validate-github-install.mjs --tag skills-v0.2.0   # skills plugin release tag
 node scripts/validate-github-install.mjs --tag superagent-v0.1.2 # superagent release tag
 
 node scripts/build-market-index.mjs --check     # index.json matches the release tags

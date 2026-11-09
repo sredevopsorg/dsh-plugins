@@ -67,7 +67,7 @@ through one provider row (no filesystem roots involved):
 dsh plugin --profile web add ./plugins/skills
 
 # or the pinned release (quotes required: & is part of the spec)
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.1.0&path:/plugins/skills"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 ```
 
 Restart DSH after installing. The plugin's package README covers the provider, the bundled
