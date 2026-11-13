@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 env:
-  DSH_VERSION: "0.2.2-rc.1"
+  DSH_VERSION: ${{ vars.DSH_VERSION }}
 
 jobs:
   version:
