@@ -10,7 +10,7 @@ The preset is a bundle: one persona, three on-demand skills, and reference files
 plugins/sredevops-writer/
 ├── package.json              # @sredevopsorg/dsh-sredevops-writer
 ├── cordis.patch.yml          # the preset declaration
-├── index.js                  # entry module: resolves ./skills for the patch
+├── index.js                  # skill provider: registers ./skills on ctx.skills
 ├── README.md
 ├── icon.svg
 ├── locale/en.json            # display title and description for market surfaces
@@ -44,7 +44,7 @@ plugins/sredevops-writer/
 Install the bundle from a pinned release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.0&path:/plugins/sredevops-writer"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.1&path:/plugins/sredevops-writer"
 ```
 
 From a local checkout, while developing:
@@ -88,14 +88,16 @@ Ask **"what rules have you learned?"** to review them, or **"remove the multi-te
 
 ### How the skills are located
 
-`cordis.patch.yml` points the preset's filesystem skill provider at this package's `skills/` directory with one `!!js` expression. It resolves the package by name first and falls back to the checkout-relative path, because the value is evaluated in two different contexts: DSH's Loader at runtime (where the package sits in the profile's `node_modules`) and `scripts/validate-bundles.mjs` in CI (where it sits at `plugins/sredevops-writer` and is not installed). The expression deliberately avoids `baseUrl`, which the Loader provides but the validator does not; `index.js` documents the constraint. If you move the plugin to a new directory name, update the specifiers in that expression and the matching assertion in `test/preset.test.mjs`.
+`cordis.patch.yml` declares two rows. The preset row (`preset-sredevops-writer`) carries the persona and the tools; the host row (`sredevops-writer-skills`) mounts this package, and `index.js` registers a skill provider on `ctx.skills`. The provider finds `skills/` from `import.meta.url`, so its location follows the installed package wherever the profile or a checkout puts it. No session's working directory and no install layout affects the lookup.
+
+The host row registers the three skills in DSH's global skill layer, so every agent sees `sredevops-article`, `sredevops-translate`, and `sredevops-editorial-memory`, not only sessions started with this preset. Older revisions computed the path inside a `!!js` expression with `createRequire(process.cwd())`. That resolved to `<session cwd>/plugins/sredevops-writer/skills` from any session started outside this checkout, and because a missing skill root is silent, the three skills simply disappeared from the catalog. Keep paths out of the patch: `test/preset.test.mjs` fails if it gains a `customSkillDirs` entry, an evaluated expression, or a `process.cwd()` call.
 
 Keep the persona under roughly 800 words. Keep each `SKILL.md` and reference file under roughly 6.8k characters: the tool-result pruner trims results over 8192 characters, and a `read` result includes line numbers and wrappers. The persona is system-prompt text and is not pruned.
 
 ## Notes
 
 - Changes to the **persona or the plugin list** need a reinstalled bundle. Changes to a **skill body, a reference, or the editorial memory** are read on the next load; they need no reinstall, unless you installed from a pinned tag, in which case pull a later release.
-- The preset mounts the default skill roots, so workspace and user skills (including the bundled `dsh-doc`) remain visible alongside the three editorial skills.
+- The preset mounts the default skill roots, so workspace and user skills (including the bundled `dsh-doc`) remain visible alongside the three editorial skills. The three editorial skills themselves come from the bundle's host-level provider, so they are available in every session, not only in this preset.
 - The preset has no shell or publishing credentials. It writes drafts with the file tools, never claims to have executed code, and writes every article to disk as well as posting it in chat.
 
 ## Delivery

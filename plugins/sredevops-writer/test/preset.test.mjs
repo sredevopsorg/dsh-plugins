@@ -1,15 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SKILLS_DIR } from "../index.js";
+import {
+  PROVIDER_NAME,
+  SKILLS_DIR,
+  SKILLS_RANK,
+  apply,
+  createProvider,
+  inject,
+  parseSkillFile,
+} from "../index.js";
 
-// This bundle is configuration: one agent-preset row plus a small entry module
-// that exists to resolve the packaged skills directory. The tests check the
-// packaging contract, the preset structure, and the agreement between the
-// patch's skill path and the directory that actually ships.
+// The bundle is one host-level skill-provider row plus one agent-preset row.
+// The tests check the packaging contract, the preset structure, the provider's
+// discovery and parsing, and that no install layout or working directory can
+// redirect where the skills are found.
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const skillsDir = join(packageRoot, "skills");
@@ -48,23 +57,29 @@ test("the patch declares exactly one agent preset", () => {
   assert.match(patchText, /^\s*order: 20$/m);
 });
 
-test("the skill directory is resolved without baseUrl, and names this package", () => {
-  // The preset finds its skills through createRequire(...).resolve(), so the
-  // specifier must match package.json or the skills never load. `baseUrl` is
-  // rejected on purpose: scripts/validate-bundles.mjs evaluates `!!js` with only
-  // `ctx` and `process` in scope, and fails CI when an expression needs baseUrl.
-  const expressions = [...patchText.matchAll(/!!js (.+)$/gm)].map((match) => match[1]);
-  assert.ok(expressions.length > 0, "the patch has !!js expressions");
-  for (const expression of expressions) {
-    assert.doesNotMatch(expression, /\bbaseUrl\b/, "CI cannot evaluate baseUrl in a !!js expression");
-  }
-  const escaped = manifest.name.replace(/[/@]/g, (character) => `\\${character}`);
-  assert.match(patchText, new RegExp(`'${escaped}/package\\.json'`));
-  assert.match(patchText, /customSkillDirs:/);
-  // The exported path and the directory the patch points at must be the same.
-  assert.equal(resolve(SKILLS_DIR), resolve(skillsDir));
-  assert.ok(manifest.exports["."] !== undefined);
+test("the skill directory comes from the module URL, not the patch", () => {
+  // A path lookup inside the patch depended on process.cwd() and on where Node
+  // resolved the package: from any session outside this checkout the fallback
+  // pointed at a directory that does not exist, and the three skills silently
+  // disappeared from the catalog. The provider now derives its root from
+  // import.meta.url, which no install layout or working directory can move.
+  assert.doesNotMatch(patchText, /!!js/, "the patch declares no evaluated expressions");
+  assert.doesNotMatch(patchText, /^\s*customSkillDirs:/m, "skill paths no longer live in the patch");
+  assert.doesNotMatch(patchText, /createRequire|process\.cwd/, "the patch must not resolve paths");
+  assert.match(patchText, /name: '@sredevopsorg\/dsh-sredevops-writer'/, "the patch mounts the provider module");
+  assert.equal(resolve(SKILLS_DIR), resolve(skillsDir), "the exported path is the packaged skills directory");
+  assert.ok(manifest.files.includes("skills"), "the skills directory ships");
 });
+
+test("the patch mounts the preset and a host-level skill provider row", () => {
+  // Rows inside `config.plugins` mount in the preset's scope; the provider row
+  // must sit beside the preset so it registers the three skills in the global
+  // skill layer and every agent sees them.
+  assert.match(patchText, /^ {4}- id: sredevops-writer-skills\n {6}name: '@sredevopsorg\/dsh-sredevops-writer'$/m);
+  const presetTail = patchText.slice(patchText.indexOf("id: preset-sredevops-writer"));
+  assert.doesNotMatch(presetTail, /name: '@sredevopsorg\/dsh-sredevops-writer'/, "the provider row is not a preset child");
+});
+
 
 test("the persona keeps the voice contract and the mandatory write rule", () => {
   assert.ok(persona.length > 3000, "the persona prefix is present");
@@ -137,6 +152,74 @@ test("relative reference links inside the skills resolve", async () => {
       await assert.doesNotReject(access(target), `${file} links to a missing file: ${match[1]}`);
     }
   }
+});
+
+test("the provider lists the three packaged skills regardless of the working directory", async () => {
+  const original = process.cwd();
+  const elsewhere = await mkdtemp(join(tmpdir(), "sredevops-writer-cwd-"));
+  try {
+    process.chdir(elsewhere);
+    const provider = createProvider();
+    const candidates = await provider.list({});
+    assert.deepEqual(candidates.map((candidate) => candidate.name), [
+      "sredevops-article",
+      "sredevops-editorial-memory",
+      "sredevops-translate",
+    ]);
+    for (const candidate of candidates) {
+      assert.equal(candidate.provider, PROVIDER_NAME);
+      assert.equal(candidate.source, "bundled");
+      assert.equal(candidate.rank, SKILLS_RANK);
+      assert.ok(candidate.description.length > 20, `${candidate.name} has a usable description`);
+      const definition = await provider.get(candidate, {});
+      assert.equal(definition.name, candidate.name);
+      assert.ok(definition.content.length > 500, `${candidate.name} loads its body`);
+      assert.ok(definition.resourceBase.path.startsWith(resolve(skillsDir)));
+    }
+  } finally {
+    process.chdir(original);
+    await rm(elsewhere, { recursive: true, force: true });
+  }
+});
+
+test("a missing or empty skills root is an empty, complete observation", async () => {
+  const provider = createProvider({ skillsDir: join(tmpdir(), "sredevops-writer-absent-root") });
+  assert.deepEqual(await provider.list({}), []);
+});
+
+test("frontmatter parsing follows the filesystem provider contract", () => {
+  const valid = parseSkillFile(
+    ["---", "name: example-skill", "description: A test skill.", "whenToUse: When testing.", "---", "", "Body."].join("\n"),
+  );
+  assert.deepEqual(valid, {
+    name: "example-skill",
+    description: "A test skill.",
+    whenToUse: "When testing.",
+    invocation: { modelInvocable: true, userInvocable: true },
+    content: "Body.",
+  });
+  assert.equal(parseSkillFile("no frontmatter here"), undefined);
+  assert.equal(parseSkillFile("---\nname: Only A Name\n---\n"), undefined, "a description is required");
+  assert.equal(parseSkillFile("---\nname: Not_Kebab\ndescription: x\n---\n"), undefined, "the name is kebab-case");
+  assert.equal(
+    parseSkillFile("---\nname: ok-name\ndescription: x\ndisableModelInvocation: true\n---\n"),
+    undefined,
+    "removed legacy invocation keys are rejected",
+  );
+});
+
+test("apply registers the provider on the skills service", async () => {
+  const registered = [];
+  const ctx = {
+    skills: { registerProvider: (create) => registered.push(create) },
+    logger: { warn() {} },
+  };
+  assert.deepEqual(inject, ["skills"]);
+  apply(ctx);
+  assert.equal(registered.length, 1);
+  const provider = registered[0]();
+  assert.equal(provider.name, PROVIDER_NAME);
+  assert.equal((await provider.list({})).length, 3);
 });
 
 test("the editorial memory ships with its documented seed rule", async () => {
