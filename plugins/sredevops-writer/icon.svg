@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="SRE DevOps Writer">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#12324a"/>
+  <path d="M20 14h20l8 8v28a2 2 0 0 1-2 2H20a2 2 0 0 1-2-2V16a2 2 0 0 1 2-2Z" fill="#e9f6ff" opacity="0.94"/>
+  <path d="M40 14v8h8" fill="#9fd2f2"/>
+  <path d="M24 32h12M24 38h14M24 44h8" stroke="#12324a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M44 40l3 3 6-7" fill="none" stroke="#37d39b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

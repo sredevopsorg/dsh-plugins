@@ -47,6 +47,7 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
 | [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
 | [`peak-rate-footer`](plugins/peak-rate-footer/README.md) | bundle + web footer | A green/orange footer showing whether DeepSeek API usage is currently billed at peak or off-peak rates, with a local clock, next-change countdown, and in-footer time-zone picker |
 | [`skills`](plugins/skills/README.md) | bundle + 10 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, Kustomize, and GitHub Actions skills |
+| [`sredevops-writer`](plugins/sredevops-writer/README.md) | bundle + agent preset | An editorial agent preset for `sredevops.org`: drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish in a senior SRE/DevOps voice, and saves standing corrections to an editorial memory |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
 
 ---
@@ -118,28 +119,40 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
     │   ├── prompts/, skills/, docs/       # executor prompts, its own two skills, numbered docs
     │   ├── locale/en.json, icon.svg, NOTICE.md, LICENSE
     │   └── README.md
-    └── skills/
-        ├── package.json                   # name, license, exports, dsh.bundle.patch, files: skills
-        ├── cordis.patch.yml               # inserts the host-wide skill-provider row
-        ├── index.js                       # provider: discovers/parses/serves packaged skills
-        ├── test/skills.test.mjs           # provider + frontmatter tests (node --test)
-        ├── locale/en.json
-        ├── icon.svg
+    ├── skills/
+    │   ├── package.json                   # name, license, exports, dsh.bundle.patch, files: skills
+    │   ├── cordis.patch.yml               # inserts the host-wide skill-provider row
+    │   ├── index.js                       # provider: discovers/parses/serves packaged skills
+    │   ├── test/skills.test.mjs           # provider + frontmatter tests (node --test)
+    │   ├── locale/en.json
+    │   ├── icon.svg
+    │   ├── README.md
+    │   └── skills/                        # the 10 packaged skills — add new skills here
+    │       ├── software-architecture/SKILL.md
+    │       ├── fullstack-development/SKILL.md
+    │       ├── supabase/{SKILL.md,references/,assets/}
+    │       ├── supabase-postgres-best-practices/{SKILL.md,references/}
+    │       ├── ghost-theme-development/{SKILL.md,references/}
+    │       ├── ghost-theme-modern-frontend/{SKILL.md,references/,scripts/}
+    │       ├── kubernetes-kubectl-operations/{SKILL.md,references/,scripts/}
+    │       ├── kustomize/{SKILL.md,references/,scripts/}
+    │       ├── helm-chart-development/{SKILL.md,references/,scripts/}
+    │       └── github-actions-security-audit/SKILL.md
+    └── sredevops-writer/                  # agent preset: editorial voice for sredevops.org
+        ├── package.json                   # @sredevopsorg/dsh-sredevops-writer, bundle patch, files: skills
+        ├── cordis.patch.yml               # one agent-preset row: persona + the tools an editorial session needs
+        ├── test/preset.test.mjs           # packaging, preset, and skill-file tests (node --test)
+        ├── locale/en.json, icon.svg
         ├── README.md
-        └── skills/                        # the 10 packaged skills — add new skills here
-            ├── software-architecture/SKILL.md
-            ├── fullstack-development/SKILL.md
-            ├── supabase/{SKILL.md,references/,assets/}
-            ├── supabase-postgres-best-practices/{SKILL.md,references/}
-            ├── ghost-theme-development/{SKILL.md,references/}
-            ├── ghost-theme-modern-frontend/{SKILL.md,references/,scripts/}
-            ├── kubernetes-kubectl-operations/{SKILL.md,references/,scripts/}
-            ├── kustomize/{SKILL.md,references/,scripts/}
-            ├── helm-chart-development/{SKILL.md,references/,scripts/}
-            └── github-actions-security-audit/SKILL.md
+        ├── references/
+        │   └── editorial-memory.md        # standing corrections learned from review
+        └── skills/
+            ├── sredevops-article/{SKILL.md,references/}
+            ├── sredevops-translate/{SKILL.md,references/}
+            └── sredevops-editorial-memory/SKILL.md
 ```
 
-A skill directory may carry any supporting files — `references/`, `scripts/`, `assets/` — because the whole directory is the skill's resource base. That directory is also what `npm pack` ships: a repository skill outside `plugins/skills/skills` is not installable and fails [`scripts/validate-skills.mjs`](scripts/validate-skills.mjs).
+A skill directory may carry any supporting files — `references/`, `scripts/`, `assets/` — because the whole directory is the skill's resource base. That directory is also what `npm pack` ships: a repository skill outside a plugin's `skills/` directory is not installable and fails [`scripts/validate-skills.mjs`](scripts/validate-skills.mjs).
 
 ---
 
@@ -427,6 +440,7 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#peak-rate-footer-v0.1.0&path:/plugins/peak-rate-footer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.0&path:/plugins/sredevops-writer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 dsh plugin --profile web add ./plugins/code-editor # local checkout
 dsh plugin --profile web add ./plugins/entire   # local checkout
@@ -646,6 +660,7 @@ When the versioning workflow is unavailable, tag by hand after the bump merges:
 node scripts/release-tag.mjs --plugin code-editor --push
 node scripts/release-tag.mjs --plugin entire --push
 node scripts/release-tag.mjs --plugin skills --push
+node scripts/release-tag.mjs --plugin sredevops-writer --push
 node scripts/release-tag.mjs --plugin superagent --push
 ```
 

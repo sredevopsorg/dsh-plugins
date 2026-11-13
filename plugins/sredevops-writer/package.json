@@ -1,0 +1,61 @@
+{
+  "name": "@sredevopsorg/dsh-sredevops-writer",
+  "version": "0.1.0",
+  "description": "Editorial agent preset for sredevops.org: a senior SRE/DevOps voice that drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/sredevops-writer"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/sredevops-writer#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./skills/*": "./skills/*",
+    "./references/*": "./references/*"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "skills",
+    "references",
+    "test/*.test.mjs"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check index.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "agent-preset",
+    "sre",
+    "devops",
+    "kubernetes",
+    "editorial",
+    "ghost",
+    "writing",
+    "translation"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
