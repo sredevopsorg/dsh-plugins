@@ -183,6 +183,48 @@
       ]
     },
     {
+      "name": "@sredevopsorg/dsh-sredevops-writer",
+      "title": "SRE DevOps Writer",
+      "description": "A senior SRE/DevOps editorial agent preset for sredevops.org: drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish, and learns from your corrections.",
+      "icon": "plugins/sredevops-writer/icon.svg",
+      "author": "sredevopsorg",
+      "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/sredevops-writer#readme",
+      "repository": {
+        "url": "https://github.com/sredevopsorg/dsh-plugins",
+        "directory": "plugins/sredevops-writer"
+      },
+      "metadata": {
+        "keywords": [
+          "dsh",
+          "dsh-plugin",
+          "dsh-bundle",
+          "agent-preset",
+          "sre",
+          "devops",
+          "kubernetes",
+          "editorial",
+          "ghost",
+          "writing",
+          "translation"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794542721,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "46a94a5d8acf7e26d7ece69ee0e4d142bbce9302",
+            "path": "plugins/sredevops-writer"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        }
+      ]
+    },
+    {
       "name": "@sredevopsorg/dsh-superagent",
       "title": "Superagent",
       "description": "Watch one GitHub repository, turn authorized requests into Tickets, and execute each in its own DSH Session.",
