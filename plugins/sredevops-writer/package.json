@@ -1,6 +1,6 @@
 {
   "name": "@sredevopsorg/dsh-sredevops-writer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Editorial agent preset for sredevops.org: a senior SRE/DevOps voice that drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish.",
   "license": "MIT",
   "repository": {

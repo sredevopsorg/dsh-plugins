@@ -1,9 +1,17 @@
 # SRE DevOps Writer: an editorial agent preset for sredevops.org.
-# Installed as one @deepseek-ai/dsh-agent-preset declaration row. The persona
-# carries the always-on voice; three skills carry the article, translation, and
-# editorial-memory workflows, and their references carry the detailed editorial
-# rules.
+#
+# Two rows. `preset-sredevops-writer` is the @deepseek-ai/dsh-agent-preset
+# declaration: the persona carries the always-on voice, and the tools give the
+# session a catalog and loader for the skills. `sredevops-writer-skills` mounts
+# this package at host level so its apply() registers the packaged `skills/`
+# directory on ctx.skills; that provider resolves the directory from
+# import.meta.url and registers in the global skill layer, so every agent sees
+# the three editorial skills and no session's working directory can redirect
+# the lookup. The preset keeps its own `skill-filesystem` row for workspace and
+# user skills.
 - insert:
+    - id: sredevops-writer-skills
+      name: '@sredevopsorg/dsh-sredevops-writer'
     - id: preset-sredevops-writer
       name: '@deepseek-ai/dsh-agent-preset'
       config:
@@ -75,14 +83,11 @@
           - id: skill-filesystem
             name: '@deepseek-ai/dsh-skill-filesystem'
             config:
+              # Workspace and user skills only: the three editorial skills come
+              # from the host-level provider row above, and a second
+              # `customSkillDirs` entry here would only re-introduce a path that
+              # depends on the install layout.
               includeDefaultRoots: true
-              # The three editorial skills live next to this package. The
-              # specifier that resolves depends on the install layout (profile
-              # node_modules, or a bare checkout for CI and local installs), and
-              # the repository validator evaluates this with only `process` in
-              # scope, so `baseUrl` is not available here; see index.js.
-              customSkillDirs:
-                - !!js (() => { const p = process.getBuiltinModule('node:path'); const r = process.getBuiltinModule('node:module').createRequire(p.join(process.cwd(), 'noop.js')); for (const s of ['@sredevopsorg/dsh-sredevops-writer/package.json', './plugins/sredevops-writer/package.json']) { try { return p.join(p.dirname(r.resolve(s)), 'skills'); } catch {} } return p.join(process.cwd(), 'plugins', 'sredevops-writer', 'skills'); })()
           - id: tool-skill
             name: '@deepseek-ai/dsh-tool-skill'
           - id: tool-ask-user

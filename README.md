@@ -440,7 +440,7 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#peak-rate-footer-v0.1.0&path:/plugins/peak-rate-footer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.0&path:/plugins/sredevops-writer"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.1&path:/plugins/sredevops-writer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 dsh plugin --profile web add ./plugins/code-editor # local checkout
 dsh plugin --profile web add ./plugins/entire   # local checkout
