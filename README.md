@@ -58,7 +58,7 @@ it globally with build scripts allowed — `pnpm add -g --allow-build=@opencode/
 script-free platform package on first use. Install the bundle with:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.1.0&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.0&path:/plugins/subagent-opencode"
 ```
 
 ---
