@@ -8,6 +8,44 @@
   },
   "plugins": [
     {
+      "name": "@sredevopsorg/dsh-agent-opencode",
+      "title": "OpenCode",
+      "description": "An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools of its own, so the only way to inspect or change the workspace is the `subagent_opencode` tool.",
+      "icon": "plugins/agent-opencode/icon.svg",
+      "author": "sredevopsorg",
+      "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/agent-opencode#readme",
+      "repository": {
+        "url": "https://github.com/sredevopsorg/dsh-plugins",
+        "directory": "plugins/agent-opencode"
+      },
+      "metadata": {
+        "keywords": [
+          "dsh",
+          "dsh-plugin",
+          "dsh-bundle",
+          "agent-preset",
+          "subagent",
+          "opencode",
+          "delegation"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794913304,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "24a57e6c322d5be6b25141ea71f07e9df9515be4",
+            "path": "plugins/agent-opencode"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        }
+      ]
+    },
+    {
       "name": "@sredevopsorg/dsh-code-editor",
       "title": "Workspace code editor",
       "description": "Browse workspace files and edit UTF-8 text files in a right-sidebar editor with save, sandbox, and conflict protection.",
