@@ -17,11 +17,36 @@
  * @module @sredevopsorg/dsh-subagent-opencode/sdk
  */
 
+import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 /** Anchors that may reach the DSH installation, in order. */
 const ANCHORS = ['@deepseek-ai/dsh', '@deepseek-ai/dsh-acp']
+
+/**
+ * Locate `@deepseek-ai/dsh` manifests the Node resolver can already see,
+ * covering a global install whose sibling dependencies are not reachable
+ * from this package's own directory.
+ * @returns {string[]} manifest paths usable as resolution anchors.
+ */
+function globalDshManifests() {
+  const anchors = []
+  const candidates = [
+    ...(process.env.NODE_PATH ?? '').split(':').filter(Boolean).map(entry => join(entry, '@deepseek-ai', 'dsh')),
+    join(process.execPath, '..', '..', 'lib', 'node_modules', '@deepseek-ai', 'dsh'),
+  ]
+  for (const candidate of candidates) {
+    try {
+      const manifest = join(candidate, 'package.json')
+      if (existsSync(manifest)) anchors.push(manifest)
+    } catch {
+      // An unreadable candidate is simply not an anchor.
+    }
+  }
+  return anchors
+}
 
 /**
  * Resolve a package to a file URL through the DSH installation.
@@ -40,6 +65,12 @@ function resolveThroughDsh(specifier) {
       // An installation that lacks one anchor may still carry the other.
     }
   }
+  // A globally installed DSH (`npm i -g @deepseek-ai/dsh`) is not reachable
+  // from this package's location, and a global install may not place
+  // dependencies in a flat layout either. Anchor on the DSH package itself,
+  // which is the directory of any `@deepseek-ai/dsh` the Node resolver can
+  // already see — the same package the running CLI was launched from.
+  for (const packageJson of globalDshManifests()) searches.push(packageJson)
   for (const search of searches) {
     try {
       const requireFromDsh = createRequire(search)

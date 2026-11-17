@@ -13,7 +13,9 @@
  * @module @sredevopsorg/dsh-subagent-opencode
  */
 
-import { loadFromDsh, loadSchemastery } from './sdk.js'
+import { statSync } from 'node:fs'
+import { isAbsolute } from 'node:path'
+import { loadSchemastery } from './sdk.js'
 import { startOpenCodeRun } from './acp.js'
 import {
   assertLoadTimeRequirements,
@@ -30,12 +32,8 @@ const DEFAULT_COMMAND = 'opencode'
 const DEFAULT_DISPOSE_GRACE_MS = 3_000
 const DEFAULT_PASS_ENV = ['OPENCODE_*', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'HOME']
 
-/** The `schemastery` builder and the `dsh-subagent` helpers, resolved from DSH. */
+/** The `schemastery` builder, used to declare {@link Config}. */
 const z = await loadSchemastery()
-const { assertUsableCwd } = await loadFromDsh(
-  '@deepseek-ai/dsh-subagent',
-  'this provider must run inside a DSH installation',
-)
 
 /** Deployment-owned provider, process, and required-configuration settings. */
 export const Config = z.object({
@@ -108,7 +106,7 @@ class OpenCodeProvider {
     }
     let cwd
     try {
-      cwd = assertUsableCwd('subagent-opencode', 'child cwd', request.cwd)
+      cwd = assertUsableCwd(request.cwd)
     } catch (error) {
       this.ctx.logger.warn(`subagent-opencode "${this.name}": child cwd is unusable: ${error.message}`)
       throw error
@@ -152,6 +150,30 @@ class OpenCodeProvider {
 async function resolveCommand(ctx, command) {
   if (command.includes('/') || command.includes('\\')) return command
   return ctx.subprocess.resolveExecutable(command)
+}
+
+/**
+ * Assert that a child working directory is an absolute, existing directory.
+ *
+ * This mirrors `assertUsableCwd` from `@deepseek-ai/dsh-subagent`, but keeps
+ * that package out of the module's load-time dependencies: only the DSH
+ * runtime that calls {@link apply} needs it, so this cheap local check is
+ * enough to fail a bad request early.
+ * @param {string} cwd - resolved working directory.
+ * @returns {string} the validated directory.
+ */
+function assertUsableCwd(cwd) {
+  if (typeof cwd !== 'string' || cwd === '' || !isAbsolute(cwd)) {
+    throw new Error(`subagent-opencode: child cwd must be an absolute path; received ${JSON.stringify(cwd)}`)
+  }
+  let stats
+  try {
+    stats = statSync(cwd)
+  } catch {
+    throw new Error('subagent-opencode: child cwd does not exist')
+  }
+  if (!stats.isDirectory()) throw new Error('subagent-opencode: child cwd is not a directory')
+  return cwd
 }
 
 /**

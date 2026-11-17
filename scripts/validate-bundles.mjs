@@ -336,6 +336,10 @@ async function main() {
   }
 
   const requireFromDsh = createRequire(path.join(dshRoot, "dsh", "package.json"));
+  // A bundle that resolves its dependencies from the running DSH installation
+  // cannot find them from this repository's own directory. Point its resolver
+  // at the installation under test, exactly as the runtime would.
+  process.env.DSH_INSTALL_DIR ??= path.join(dshRoot, "dsh");
   let parseYaml;
   let semver;
   try {
