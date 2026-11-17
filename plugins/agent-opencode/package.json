@@ -1,0 +1,53 @@
+{
+  "name": "@sredevopsorg/dsh-agent-opencode",
+  "version": "0.1.0",
+  "description": "OpenCode agent preset: every task is delegated to the OpenCode CLI through the `subagent_opencode` tool, because the agent holds no file or shell tools of its own.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/agent-opencode"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/agent-opencode#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "test/*.test.mjs"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check index.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "agent-preset",
+    "subagent",
+    "opencode",
+    "delegation"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

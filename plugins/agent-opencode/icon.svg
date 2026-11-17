@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="OpenCode agent preset">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#0f0f10"/>
+  <circle cx="32" cy="24" r="7" fill="none" stroke="#ffffff" stroke-width="2.4"/>
+  <path d="M20 48c0-6.6 5.4-12 12-12s12 5.4 12 12" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M32 31v7" stroke="#8b8b93" stroke-width="2" stroke-linecap="round"/>
+  <path d="M42 41l6 6M22 47h20" stroke="#8b8b93" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="48" cy="23" r="3.2" fill="#ffd166"/>
+</svg>

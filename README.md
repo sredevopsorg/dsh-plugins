@@ -43,6 +43,7 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
 
 | Plugin | Kind | Use it for |
 |---|---|---|
+| [`agent-opencode`](plugins/agent-opencode/README.md) | bundle + agent preset | An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools, so `subagent_opencode` is its only route to the workspace |
 | [`code-editor`](plugins/code-editor/README.md) | bundle + web editor | Browsing a Session's workspace and editing UTF-8 files from a right-sidebar tab, with sandbox-aware saves and optimistic conflict detection |
 | [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
 | [`peak-rate-footer`](plugins/peak-rate-footer/README.md) | bundle + web footer | A green/orange footer showing whether DeepSeek API usage is currently billed at peak or off-peak rates, with a local clock, next-change countdown, and in-footer time-zone picker |
@@ -50,6 +51,10 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
 | [`sredevops-writer`](plugins/sredevops-writer/README.md) | bundle + agent preset | An editorial agent preset for `sredevops.org`: drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish in a senior SRE/DevOps voice, and saves standing corrections to an editorial memory |
 | [`subagent-opencode`](plugins/subagent-opencode/README.md) | bundle + subagent provider | Delegating a one-shot task to the [OpenCode](https://opencode.ai) CLI over ACP as the `subagent_opencode` tool, with opt-in enforcement and relay of the required OpenCode configurations, and an opt-in install of the OpenCode CLI itself |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
+
+`agent-opencode` declares that same subagent as the preset's only working tool, so it
+carries the identical requirement: install `subagent-opencode` at `>= 0.2.0` beside it (the
+preset's bundle enables the provider itself), and provide the CLI as described next.
 
 The `subagent-opencode` bundle additionally needs the OpenCode CLI, logged in with
 `opencode auth login` for each provider it delegates to. Provide the CLI either by installing
@@ -59,6 +64,12 @@ script-free platform package on first use. Install the bundle with:
 
 ```bash
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.0&path:/plugins/subagent-opencode"
+```
+
+The preset installs the same way, from its own pinned tag:
+
+```bash
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.1.0&path:/plugins/agent-opencode"
 ```
 
 ---
@@ -94,6 +105,14 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-
 │   ├── installing-plugins-from-github.md  # install addresses, pinning, troubleshooting
 │   └── plugin-index.md                    # publishing and maintaining index.json
 └── plugins/
+    ├── agent-opencode/
+    │   ├── package.json                   # name, license, exports, dsh.bundle.patch
+    │   ├── cordis.patch.yml               # provider row + the `opencode` agent preset declaration
+    │   ├── index.js                       # empty Host half; the preset declaration owns behavior
+    │   ├── test/preset.test.mjs           # asserts the delegation-only tool set (node --test)
+    │   ├── locale/en.json, locale/es.json
+    │   ├── icon.svg
+    │   └── README.md
     ├── code-editor/
     │   ├── package.json                   # name, license, exports, dsh.bundle.patch
     │   ├── cordis.patch.yml               # inserts the authenticated write-endpoint row

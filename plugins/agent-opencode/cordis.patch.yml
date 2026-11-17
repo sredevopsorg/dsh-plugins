@@ -1,0 +1,103 @@
+# OpenCode agent preset: a host agent whose only route to work is delegation.
+#
+# Two rows, and the order between them is not cosmetic. `subagent-opencode-provider`
+# registers the `opencode` provider on ctx.subagents; `preset-opencode` declares an
+# Agent whose tools *include* a `dsh-tool-subagent` row bound to that provider.
+# The tool-subagent plugin refuses to mount when its provider is absent, so the
+# provider row must be enabled in every profile this preset is used in.
+#
+# The preset's own plugin list is deliberately tool-poor. It carries no file, shell,
+# search, or job tools: the agent cannot read the workspace, so it cannot quietly
+# do the work itself and report that delegating worked. Every change happens inside
+# the OpenCode child, which has its own session, model, and tools.
+#
+# `maxDepth: provider-managed` is required. The child is out-of-process, so nothing
+# in this Host process can enforce a numeric delegation depth inside it.
+#
+# To choose this preset, select `opencode` in the Agent preset picker, or set it as
+# the default for a session. Installing the bundle alone changes no existing Agent.
+- insert:
+    - id: subagent-opencode-provider
+      name: '@sredevopsorg/dsh-subagent-opencode'
+      config:
+        providerName: opencode
+        command: opencode
+        args:
+          - acp
+        # The child never asks a human. `reject` keeps it from editing the
+        # workspace unprompted; raise it to `allow` for preset-driven work that
+        # is expected to modify files.
+        permission: reject
+        requirements:
+          require: []
+          # Set true to install OpenCode on first delegation when the command
+          # does not resolve. Released packages from 0.2.0 support this.
+          install: false
+    - id: preset-opencode
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: opencode
+        name: OpenCode
+        description: 'Delegates every task to the OpenCode CLI; this agent holds no file or shell tools of its own.'
+        order: 30
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                You are a thin orchestrator for the OpenCode CLI. You have no file system, no shell, and no search tools: the only way to inspect or change anything is to delegate through `subagent_opencode`.
+
+                Delegate the whole task, not a fragment of it. One delegation should be able to finish on its own, because each child starts a fresh OpenCode session with only the text you send it — it does not see this conversation, your earlier delegations, or anything you already learned. Restate the context it needs.
+
+                When a task has several stages, an unclear objective, or a real risk of doing the wrong thing, use `exit_plan_mode` first, before delegating anything.
+
+                The child reports back only its final text. If it says it could not proceed, that is usually the permission policy refusing an edit rather than an error: report what it said and what would unblock it. Do not claim work was completed unless the child's text shows it.
+          - id: delegation
+            name: cordis:group
+            group: true
+            config:
+              - id: tool-subagent-opencode
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: opencode
+                  toolName: subagent_opencode
+                  maxDepth: provider-managed
+              - id: tool-subagent-control
+                name: '@deepseek-ai/dsh-tool-subagent-control'
+                config:
+                  interrupt: false
+          - id: plan
+            name: cordis:group
+            group: true
+            isolate:
+              planMode: true
+            config:
+              - id: plan-mode
+                name: '@deepseek-ai/dsh-plan-mode'
+                config:
+                  section: |
+                    You are in plan mode. Stay in plan mode until the user approves your plan through exit_plan_mode or switches the session mode.
+
+                    You cannot inspect anything yourself: no file, shell, or search tool is available to you. Ground the plan in what the user told you, and delegate inspection through `subagent_opencode` when you need facts about the workspace — a read-only question is a legitimate delegation.
+
+                    Do not create, edit, or run anything in plan mode, and do not delegate work that changes the workspace. When ready, call exit_plan_mode with the complete plan markdown, starting with a # title. Make it the only and final tool call in that response.
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-goal
+            name: '@deepseek-ai/dsh-tool-goal'
+          - id: command-goal
+            name: '@deepseek-ai/dsh-command-goal'
