@@ -9,27 +9,49 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { apply, Config } from '../index.js'
+import { knownInstall } from '../install.js'
+import { assertLoadTimeRequirements } from '../requirements.js'
 
 /** A context stub that records the provider it is handed. */
-function fakeContext() {
+function fakeContext({ provide } = {}) {
   const registered = []
+  const warnings = []
   return {
     registered,
-    logger: { warn() {} },
+    warnings,
+    logger: { warn(message) { warnings.push(message) }, info() {} },
     subagents: { registerProvider: (provider) => { registered.push(provider) } },
     subprocess: {
       spawn() { throw new Error('spawn should not be reached in these tests') },
-      async resolveExecutable() { throw new Error('resolve should not be reached') },
+      // `provide: false` makes every lookup fail, which is how a host without
+      // OpenCode answers. The default must reject, not answer, so a test that
+      // installs is not silently treated as resolving.
+      async resolveExecutable() {
+        if (provide === false) throw Object.assign(new Error('not found'), { code: 'SUBPROCESS_EXECUTABLE_NOT_FOUND' })
+        return process.execPath
+      },
     },
   }
 }
 
 /** Resolve Config the way the loader does, then apply it. */
-function mount(overrides = {}) {
-  const ctx = fakeContext()
+function mount(overrides = {}, context) {
+  const ctx = fakeContext(context)
   const config = Config(overrides)
   apply(ctx, config)
   return { ctx, provider: ctx.registered[0] }
+}
+
+/** A temporary directory removed when the test ends. */
+function tempDir(t, prefix = 'dsh-subagent-opencode-provider-') {
+  const dir = mkdtempSync(join(tmpdir(), prefix))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  return dir
+}
+
+/** A start request for a provider test. */
+function request() {
+  return { prompt: [{ type: 'text', text: 'hi' }], cwd: process.cwd(), signal: new AbortController().signal }
 }
 
 test('the default configuration registers the opencode provider', () => {
@@ -107,5 +129,75 @@ test('start rejects before spawning when a credential disappears after load', as
       signal: new AbortController().signal,
     }),
     new RegExp(`required configuration is missing: ${name}`),
+  )
+})
+
+test('the required install gate is part of the schema', () => {
+  assert.doesNotThrow(() => mount({ requirements: { require: ['install'] } }))
+  assert.throws(
+    () => mount({ requirements: { require: ['instal'] } }),
+    /expected "auth" \| "credentials" \| "model" \| "install"/,
+  )
+  assert.throws(
+    () => assertLoadTimeRequirements({ require: ['nope'] }, process.env),
+    /requirements.require accepts install, credentials, auth, model; found "nope"/,
+  )
+})
+
+test('an install path must be absolute before the plugin mounts', () => {
+  assert.throws(
+    () => mount({ requirements: { installDir: 'relative/opencode' } }),
+    /requirements.installDir must be an absolute path/,
+  )
+  assert.throws(
+    () => mount({ requirements: { installBinDir: './bin' } }),
+    /requirements.installBinDir must be an absolute path/,
+  )
+})
+
+test('an install policy the provider cannot honor fails the plugin mount', () => {
+  assert.throws(
+    () => mount({ requirements: { installManager: 'yarn' } }),
+    /expected "pnpm" \| "npm" \| "none"/,
+  )
+})
+
+test('a command that does not resolve fails the run with the install stage', async (t) => {
+  const { provider, ctx } = mount({ requirements: { installDir: tempDir(t) } }, { provide: false })
+  await assert.rejects(provider.start(request()), /stage: install/)
+  assert.equal(ctx.warnings.length, 0, 'nothing is installed and nothing is logged')
+})
+
+test('the install gate names the manual command, and the opt-in', async (t) => {
+  const { provider } = mount(
+    { requirements: { require: ['install'], installDir: tempDir(t) } },
+    { provide: false },
+  )
+  await assert.rejects(
+    provider.start(request()),
+    /the OpenCode command does not resolve; run `pnpm add -g --allow-build=@opencode\/cli @opencode\/cli`, or set requirements.install/,
+  )
+})
+
+test('a command that is not OpenCode is never installed over', async (t) => {
+  const { provider, ctx } = mount(
+    { command: 'opencode-beta', requirements: { install: true, installDir: tempDir(t) } },
+    { provide: false },
+  )
+  await assert.rejects(provider.start(request()), /stage: install/)
+  assert.equal(ctx.warnings.length, 0, 'installing would not make this command resolvable')
+})
+
+test('an empty install directory is not read as an install', (t) => {
+  assert.equal(knownInstall(tempDir(t)), undefined)
+})
+
+test('an aborted request starts nothing', async (t) => {
+  const { provider } = mount({ requirements: { install: true, installDir: tempDir(t) } })
+  const controller = new AbortController()
+  controller.abort()
+  await assert.rejects(
+    provider.start({ ...request(), signal: controller.signal }),
+    /the run was aborted/,
   )
 })

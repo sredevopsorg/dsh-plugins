@@ -48,12 +48,14 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
 | [`peak-rate-footer`](plugins/peak-rate-footer/README.md) | bundle + web footer | A green/orange footer showing whether DeepSeek API usage is currently billed at peak or off-peak rates, with a local clock, next-change countdown, and in-footer time-zone picker |
 | [`skills`](plugins/skills/README.md) | bundle + 10 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, Kustomize, and GitHub Actions skills |
 | [`sredevops-writer`](plugins/sredevops-writer/README.md) | bundle + agent preset | An editorial agent preset for `sredevops.org`: drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish in a senior SRE/DevOps voice, and saves standing corrections to an editorial memory |
-| [`subagent-opencode`](plugins/subagent-opencode/README.md) | bundle + subagent provider | Delegating a one-shot task to the [OpenCode](https://opencode.ai) CLI over ACP as the `subagent_opencode` tool, with opt-in enforcement and relay of the required OpenCode configurations |
+| [`subagent-opencode`](plugins/subagent-opencode/README.md) | bundle + subagent provider | Delegating a one-shot task to the [OpenCode](https://opencode.ai) CLI over ACP as the `subagent_opencode` tool, with opt-in enforcement and relay of the required OpenCode configurations, and an opt-in install of the OpenCode CLI itself |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
 
-The `subagent-opencode` bundle additionally needs the OpenCode CLI, installed globally with
-build scripts allowed: `pnpm add -g --allow-build=@opencode/cli @opencode/cli`, then
-`opencode auth login` for each provider it delegates to. Install it with:
+The `subagent-opencode` bundle additionally needs the OpenCode CLI, logged in with
+`opencode auth login` for each provider it delegates to. Provide the CLI either by installing
+it globally with build scripts allowed — `pnpm add -g --allow-build=@opencode/cli @opencode/cli`
+— or by setting `requirements.install: true`, which installs the same binary from its
+script-free platform package on first use. Install the bundle with:
 
 ```bash
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.1.0&path:/plugins/subagent-opencode"
