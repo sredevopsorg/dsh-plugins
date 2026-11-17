@@ -520,6 +520,48 @@ async function main() {
     warn("no installed subagent provider packages were found; provider checks are skipped");
   }
 
+  // A bundle may ship its own provider package, whose name no installation
+  // declares. Its config is validated against that package's exported Config
+  // below, so the registry check must accept the name it declares itself.
+  const declaredByBundle = new Map();
+  for (const directory of directories) {
+    const manifest = manifests.get(directory);
+    const patches = Array.isArray(manifest?.dsh?.bundle?.patch)
+      ? manifest.dsh.bundle.patch
+      : manifest?.dsh?.bundle?.patch === undefined
+        ? []
+        : [manifest.dsh.bundle.patch];
+    for (const patchPath of patches) {
+      if (typeof patchPath !== "string") continue;
+      let document;
+      try {
+        document = parsePatch(path.join(directory, patchPath), parseYaml);
+      } catch {
+        continue;
+      }
+      const rows = Array.isArray(document)
+        ? document.flatMap((entry) => (Array.isArray(entry?.insert) ? entry.insert : []))
+        : [];
+      for (const row of leafRows(rows)) {
+        if (typeof row.name !== "string" || !row.name.startsWith("@sredevopsorg/")) continue;
+        try {
+          const resolved = resolvePluginSpec(row.name);
+          if (resolved.file === undefined) continue;
+          const module = await import(pathToFileURL(resolved.file).href);
+          if (typeof module.Config !== "function") continue;
+          const resolvedConfig = module.Config({});
+          const providerName = row.config?.providerName ?? resolvedConfig?.providerName;
+          if (typeof providerName === "string") {
+            providerNames.add(providerName);
+            declaredByBundle.set(providerName, `${path.basename(directory)} (repository package)`);
+          }
+        } catch (error) {
+          note(`${path.basename(directory)}: cannot inspect its own provider package ${row.name}: ${error.message}`);
+        }
+      }
+    }
+  }
+
   // ── Row checks ───────────────────────────────────────────────────────────
   const rowsByDirectory = new Map();
   for (const directory of directories) {
@@ -618,7 +660,10 @@ async function main() {
         if (providerNames.size > 0 && !providerNames.has(provider)) {
           fail(
             `${label}: provider ${JSON.stringify(provider)} is not registered by an installed ` +
-              `dsh-subagent-* package (available: ${[...providerNames].sort().join(", ")})`,
+              `dsh-subagent-* package (available: ${[...providerNames]
+                .sort()
+                .map((name) => declaredByBundle.get(name) ?? name)
+                .join(", ")})`,
           );
         }
       }

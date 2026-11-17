@@ -1,0 +1,57 @@
+{
+  "name": "@sredevopsorg/dsh-subagent-opencode",
+  "version": "0.1.0",
+  "description": "OpenCode CLI subagent provider: delegate a one-shot task to `opencode acp`, with opt-in enforcement and relay of the required OpenCode configurations.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sredevopsorg/dsh-plugins.git",
+    "directory": "plugins/subagent-opencode"
+  },
+  "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/subagent-opencode#readme",
+  "bugs": {
+    "url": "https://github.com/sredevopsorg/dsh-plugins/issues"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "acp.js",
+    "requirements.js",
+    "sdk.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "test/*.test.mjs",
+    "test/fixtures/*.mjs"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check index.js && node --check acp.js && node --check requirements.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "subagent",
+    "opencode",
+    "acp",
+    "delegation"
+  ],
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

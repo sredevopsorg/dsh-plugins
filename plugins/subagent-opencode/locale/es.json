@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Subagente OpenCode",
+    "description": "Delega tareas de una sola vez al CLI de OpenCode mediante ACP, con validación y reenvío opcionales de las configuraciones requeridas de OpenCode."
+  }
+}

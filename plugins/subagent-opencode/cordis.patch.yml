@@ -1,0 +1,40 @@
+# OpenCode subagent: delegate one-shot tasks to the OpenCode CLI.
+#
+# Two rows, mirroring the official Codex subagent bundle. `subagent-opencode`
+# registers a provider named `opencode` on ctx.subagents; `tool-subagent-opencode`
+# exposes it to the model under a distinct tool name so it can sit beside the
+# built-in `subagent` and `subagent_fork` tools.
+#
+# `maxDepth: provider-managed` is required: the child is out-of-process, so the
+# parent cannot enforce a numeric delegation depth inside it.
+#
+# `requirements` declares the OpenCode configuration this profile depends on.
+# It is empty here, which keeps the zero-configuration behavior of a local
+# `opencode auth login` setup; a deployment that needs enforcement adds gates,
+# for example:
+#
+#   requirements:
+#     require: [auth, credentials, model]
+#     credentials: [OPENAI_API_KEY]     # names only; values are read from the parent env
+#     model: openai/gpt-5-codex
+#     mode: build
+#
+# A `require` entry that is statically missing fails the plugin load, so a
+# misconfigured profile fails at startup instead of on first delegation.
+- insert:
+    - id: subagent-opencode
+      name: '@sredevopsorg/dsh-subagent-opencode'
+      config:
+        providerName: opencode
+        command: opencode
+        args:
+          - acp
+        permission: reject
+        requirements:
+          require: []
+    - id: tool-subagent-opencode
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: opencode
+        toolName: subagent_opencode
+        maxDepth: provider-managed
