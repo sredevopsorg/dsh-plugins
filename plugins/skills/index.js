@@ -151,7 +151,10 @@ function parseMapping(lines) {
       index += 1;
       continue;
     }
-    const match = /^([A-Za-z0-9_.-]+):[ \t]*(.*)$/.exec(line.slice(indent));
+    // Bounded key, then `[ \t]*` on the same line: an unbounded key before a
+    // whitespace-star run is what CodeQL reports as polynomial backtracking
+    // (js/polynomial-redos). Real frontmatter keys are far shorter than this.
+    const match = /^([A-Za-z0-9_.-]{1,128}):[ \t]*(.*)$/.exec(line.slice(indent));
     if (match === null) {
       throw new Error(`invalid YAML frontmatter line: ${JSON.stringify(line.trim())}`);
     }

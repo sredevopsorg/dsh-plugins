@@ -189,8 +189,20 @@ it('says no Source runs when every Source is off, and states a Source missing or
 it('sends text without HTML, entity-encoded tags included, and with images named', () => {
   const text = '<div>Hello <b>there</b></div> &lt;script&gt;alert(1)&lt;/script&gt; <!-- note --> ![shot](https://x/y.png) [Image: diagram]'
   expect(plain(text)).toBe('Hello there alert(1) [image] [image]')
-  expect(markdown(`**Fix** ${text}\n\n- one`)).toBe('**Fix** Hello there alert(1)  [image] [image]\n\n- one')
+  // Tags are now replaced by a separator instead of nothing, so a tag that used to
+  // vanish into existing whitespace leaves one more space behind.
+  expect(markdown(`**Fix** ${text}\n\n- one`)).toBe('**Fix**  Hello  there    alert(1)   [image] [image]\n\n- one')
   expect(plain('[the docs](https://example.com) and `code` &amp; more')).toBe('the docs and code & more')
+})
+
+it('strips a tag however deeply it was entity-encoded, and keeps no markup after the pass bound', () => {
+  // One decode used to leave `&lt;script&gt;` behind as a live-looking tag.
+  expect(plain('&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;')).toBe('alert(1)')
+  expect(plain('&amp;amp;lt;b&amp;amp;gt;x&amp;amp;lt;/b&amp;amp;gt;')).toBe('x')
+  // Removal inserts a space, so neighbouring text never fuses into a new tag.
+  expect(plain('a<b>c</b>d')).toBe('a c d')
+  // Plain ampersands and comparison operators survive entity decoding.
+  expect(plain('AT&T and 5 &lt; 6')).toBe('AT&T and 5 < 6')
 })
 
 it('words each settings save by what it changed from the one before, and nothing after a gap in the history', () => {

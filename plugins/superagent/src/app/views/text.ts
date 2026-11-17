@@ -1,9 +1,36 @@
 /** Text sanitization and formatting helpers for plain-text previews and HTML-free Markdown in views. */
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' }
-/** Strips HTML comments and tags, decodes basic entities, and strips again to catch entity-encoded tags. */
-const withoutHtml = (text: string) => text.replace(/<!--[\s\S]*?-->/g, '').replace(/<\/?[a-zA-Z][^>]*>/g, '')
-  .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_match, name: string) => ENTITIES[name]!)
-  .replace(/<!--[\s\S]*?-->/g, '').replace(/<\/?[a-zA-Z][^>]*>/g, '')
+const decodeEntities = (text: string): string => text.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_match, name: string) => ENTITIES[name]!)
+const stripComments = (text: string): string => text.replace(/<!--[\s\S]*?-->/g, '')
+/**
+ * Replaces each complete tag with one space, so removal cannot fuse
+ * neighbouring text into a new tag (`<script>x</script\nscript>y` would
+ * otherwise leave `xscript>y`). Tags keep the exact spacing of the former
+ * empty-string replacement; only text that ended up adjacent to a tag gains a
+ * single separator, which is enough to stop fusion.
+ */
+const stripTags = (text: string): string => text.replace(/<\/?[a-zA-Z][^>]*>/g, '\u0000')
+  .replace(/[ \t]+\u0000[ \t]+/g, ' ')
+  .replace(/\u0000/g, ' ')
+/**
+ * Strip HTML comments and tags for Markdown-free display.
+ *
+ * Entities are decoded in a loop rather than once: `&amp;lt;script&amp;gt;`
+ * decodes to `&lt;script&gt;`, which a single post-decode strip would leave as
+ * `<script>`. Each pass is monotone — decoding never introduces an `&` other
+ * than through an entity — so the loop ends, and the bound only guards against
+ * pathological input (CodeQL js/incomplete-multi-character-sanitization).
+ */
+const withoutHtml = (text: string): string => {
+  let current = text
+  for (let pass = 0; pass < 8; pass += 1) {
+    const next = stripTags(stripComments(decodeEntities(current)))
+    if (next === current) return next
+    current = next
+  }
+  // Still changing after the bound: return only what carries no markup at all.
+  return stripTags(stripComments(current))
+}
 export function plain(text: string, lines = false): string {
   const result = withoutHtml(text)
     .replace(/!\[[^\]]*\]\([^)]*\)|\[Image: [^\]]*\]/g, '[image]')

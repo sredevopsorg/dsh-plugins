@@ -543,6 +543,33 @@ section("rendered output");
 const rendered = templateRun.stdout;
 const documents = rendered.split(/^---\s*$/m).filter((doc) => doc.trim().length > 0);
 
+/**
+ * Read a top-level mapping value under `metadata:` in a rendered document.
+ *
+ * Scans lines instead of matching a nested regular expression: a pattern like
+ * `/metadata:\n(?:[ \t]+.*\n)*?[ \t]+name:/` backtracks over every
+ * combination of indented lines, so a large document costs quadratic time.
+ * @param {string[]} lines rendered YAML lines.
+ * @param {string} key metadata key to read (`name` or `namespace`).
+ * @returns {string} the value, or "" when absent.
+ */
+function metadataField(lines, key) {
+  const pattern = new RegExp(`^[ \\t]+${key}:\\s*["']?([^"'\\s#]+)`);
+  let insideMetadata = false;
+  for (const line of lines) {
+    if (line.length === 0) continue;
+    if (!/^[ \t]/.test(line)) {
+      // A new top-level key ends the metadata block.
+      insideMetadata = line.startsWith("metadata:");
+      continue;
+    }
+    if (!insideMetadata) continue;
+    const match = pattern.exec(line);
+    if (match) return match[1];
+  }
+  return "";
+}
+
 const identities = new Map();
 let hooks = 0;
 let documentsWithoutMetadata = 0;
@@ -559,8 +586,8 @@ for (const doc of documents) {
     continue;
   }
 
-  const name = (/(^|\n)metadata:\n(?:[ \t]+.*\n)*?[ \t]+name:\s*["']?([^"'\s#]+)/.exec(doc) ?? [])[2] ?? "";
-  const namespace = (/(^|\n)metadata:\n(?:[ \t]+.*\n)*?[ \t]+namespace:\s*["']?([^"'\s#]+)/.exec(doc) ?? [])[1] ?? "";
+  const name = metadataField(lines, "name");
+  const namespace = metadataField(lines, "namespace");
 
   if (doc.includes('"helm.sh/hook"')) hooks += 1;
 
