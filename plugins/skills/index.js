@@ -137,8 +137,14 @@ function minimumIndent(lines) {
 }
 
 /** Parse a block of `key: value` lines into a plain object. */
-/** A `key: value` line, matched at a sticky offset so no substring is copied. */
-const KEY_LINE = /([A-Za-z0-9_.-]{1,128}):[ \t]*(.*)$/y
+/**
+ * A `key: value` line, matched at a sticky offset so no substring is copied.
+ *
+ * `.*` already runs to the end of the line, so no `$` anchor is needed; leaving
+ * it out keeps the tail from being re-tried at every remaining position and is
+ * what CodeQL accepts as linear (js/polynomial-redos).
+ */
+const KEY_LINE = /([A-Za-z0-9_.-]{1,128}):[ \t]*(.*)/y
 
 function parseMapping(lines) {
   const indent = minimumIndent(lines);
