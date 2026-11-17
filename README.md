@@ -48,7 +48,16 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
 | [`peak-rate-footer`](plugins/peak-rate-footer/README.md) | bundle + web footer | A green/orange footer showing whether DeepSeek API usage is currently billed at peak or off-peak rates, with a local clock, next-change countdown, and in-footer time-zone picker |
 | [`skills`](plugins/skills/README.md) | bundle + 10 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, Kustomize, and GitHub Actions skills |
 | [`sredevops-writer`](plugins/sredevops-writer/README.md) | bundle + agent preset | An editorial agent preset for `sredevops.org`: drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish in a senior SRE/DevOps voice, and saves standing corrections to an editorial memory |
+| [`subagent-opencode`](plugins/subagent-opencode/README.md) | bundle + subagent provider | Delegating a one-shot task to the [OpenCode](https://opencode.ai) CLI over ACP as the `subagent_opencode` tool, with opt-in enforcement and relay of the required OpenCode configurations |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
+
+The `subagent-opencode` bundle additionally needs the OpenCode CLI, installed globally with
+build scripts allowed: `pnpm add -g --allow-build=@opencode/cli @opencode/cli`, then
+`opencode auth login` for each provider it delegates to. Install it with:
+
+```bash
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.1.0&path:/plugins/subagent-opencode"
+```
 
 ---
 
@@ -108,6 +117,17 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
     │   ├── client.js                      # schedule, holiday data, local clock, time-zone picker
     │   ├── test/schedule.test.mjs         # peak/holiday/transition/time-zone tests (node --test)
     │   ├── locale/en.json, locale/es.json, locale/zh.json
+    │   ├── icon.svg
+    │   └── README.md
+    ├── subagent-opencode/
+    │   ├── package.json                   # name, license, exports, dsh.bundle.patch
+    │   ├── cordis.patch.yml               # the provider row + the subagent_opencode tool row
+    │   ├── index.js                       # provider: Config, load-time requirement enforcement
+    │   ├── acp.js                         # one-shot `opencode acp` lifecycle over ACP
+    │   ├── requirements.js                # declare, enforce, and relay required configurations
+    │   ├── sdk.js                         # resolves the ACP SDK and schemastery from DSH
+    │   ├── test/                          # requirement, provider, and lifecycle tests (node --test)
+    │   ├── locale/en.json, locale/es.json
     │   ├── icon.svg
     │   └── README.md
     ├── superagent/                        # vendored fork of deepseek-ai/dsh-superagent-prototype

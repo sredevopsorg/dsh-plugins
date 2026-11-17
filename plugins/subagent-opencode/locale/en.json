@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OpenCode subagent",
+    "description": "Delegates one-shot tasks to the OpenCode CLI over ACP, with opt-in enforcement and relay of the required OpenCode configurations."
+  }
+}
