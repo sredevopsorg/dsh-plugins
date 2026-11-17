@@ -65,7 +65,7 @@ dsh plugin --profile web add ./plugins/subagent-opencode
 Or from a pinned release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.1.0&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.0&path:/plugins/subagent-opencode"
 ```
 
 Restart DSH afterwards; the provider and tool are composed at startup.
