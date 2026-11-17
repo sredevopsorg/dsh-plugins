@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OpenCode",
+    "description": "An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools of its own, so the only way to inspect or change the workspace is the `subagent_opencode` tool."
+  }
+}
