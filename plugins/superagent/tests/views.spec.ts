@@ -189,9 +189,9 @@ it('says no Source runs when every Source is off, and states a Source missing or
 it('sends text without HTML, entity-encoded tags included, and with images named', () => {
   const text = '<div>Hello <b>there</b></div> &lt;script&gt;alert(1)&lt;/script&gt; <!-- note --> ![shot](https://x/y.png) [Image: diagram]'
   expect(plain(text)).toBe('Hello there alert(1) [image] [image]')
-  // Tags are now replaced by a separator instead of nothing, so a tag that used to
-  // vanish into existing whitespace leaves one more space behind.
-  expect(markdown(`**Fix** ${text}\n\n- one`)).toBe('**Fix**  Hello  there    alert(1)   [image] [image]\n\n- one')
+  // Tags and comments are replaced by a separator instead of nothing, so each one
+  // that used to vanish into existing whitespace leaves one more space behind.
+  expect(markdown(`**Fix** ${text}\n\n- one`)).toBe('**Fix**  Hello  there    alert(1)    [image] [image]\n\n- one')
   expect(plain('[the docs](https://example.com) and `code` &amp; more')).toBe('the docs and code & more')
 })
 

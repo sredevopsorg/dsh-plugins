@@ -137,6 +137,9 @@ function minimumIndent(lines) {
 }
 
 /** Parse a block of `key: value` lines into a plain object. */
+/** A `key: value` line, matched at a sticky offset so no substring is copied. */
+const KEY_LINE = /([A-Za-z0-9_.-]{1,128}):[ \t]*(.*)$/y
+
 function parseMapping(lines) {
   const indent = minimumIndent(lines);
   const data = {};
@@ -151,10 +154,12 @@ function parseMapping(lines) {
       index += 1;
       continue;
     }
-    // Bounded key, then `[ \t]*` on the same line: an unbounded key before a
-    // whitespace-star run is what CodeQL reports as polynomial backtracking
-    // (js/polynomial-redos). Real frontmatter keys are far shorter than this.
-    const match = /^([A-Za-z0-9_.-]{1,128}):[ \t]*(.*)$/.exec(line.slice(indent));
+    // Match at the line's indent with a sticky regex instead of `line.slice(indent)`:
+    // slicing every line copies O(n) per line and makes the whole parse
+    // quadratic on a large skill file. The key is bounded because an unbounded
+    // key before `[ \t]*` is what CodeQL reports as polynomial backtracking.
+    KEY_LINE.lastIndex = indent;
+    const match = KEY_LINE.exec(line);
     if (match === null) {
       throw new Error(`invalid YAML frontmatter line: ${JSON.stringify(line.trim())}`);
     }

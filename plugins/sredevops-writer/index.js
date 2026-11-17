@@ -123,9 +123,9 @@ export function parseSkillDocument(raw) {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     if (line.trim() === "" || /^\s*#/.test(line)) continue;
-    // Bounded key, then `[ \t]*` on the same line: an unbounded key before a
-    // whitespace-star run is what CodeQL reports as polynomial backtracking
-    // (js/polynomial-redos). Real frontmatter keys are far shorter than this.
+    // The key is bounded because an unbounded key before `[ \t]*` is what
+    // CodeQL reports as polynomial backtracking (js/polynomial-redos); real
+    // frontmatter keys are far shorter than this.
     const field = /^([A-Za-z0-9_.-]{1,128}):[ \t]*(.*)$/.exec(line);
     if (field === null) {
       throw new Error(`invalid YAML frontmatter line: ${JSON.stringify(line.trim())}`);
