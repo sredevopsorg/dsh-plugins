@@ -18,6 +18,7 @@ import {
   failureDiagnostic,
   RELAY_ORDER,
   relayEnv,
+  REQUIREMENTS,
   requirementFailures,
 } from '../requirements.js'
 
@@ -40,7 +41,7 @@ test('an empty require list enforces nothing', () => {
   assert.doesNotThrow(() => assertLoadTimeRequirements(requirements(), {}))
 })
 
-for (const gate of ['auth', 'credentials', 'model']) {
+for (const gate of REQUIREMENTS) {
   test(`require names the known gate ${gate}`, () => {
     assert.doesNotThrow(() => assertRequirements([gate]))
   })
@@ -49,7 +50,31 @@ for (const gate of ['auth', 'credentials', 'model']) {
 test('an unknown gate is rejected with the accepted list', () => {
   assert.throws(
     () => assertRequirements(['everything']),
-    /requirements\.require accepts auth, credentials, model; found "everything"/,
+    new RegExp(`requirements\\.require accepts ${REQUIREMENTS.join(', ')}; found "everything"`),
+  )
+})
+
+test('the install gate fails only when the command does not resolve', () => {
+  const gated = requirements({ require: ['install'] })
+  assert.deepEqual(requirementFailures(gated, {}), [], 'a resolvable command satisfies it')
+  assert.deepEqual(requirementFailures(gated, {}, { commandMissing: false }), [])
+  const failures = requirementFailures(gated, {}, { commandMissing: true })
+  assert.equal(failures.length, 1)
+  assert.match(
+    failures[0],
+    /the OpenCode command does not resolve; run `pnpm add -g --allow-build=@opencode\/cli @opencode\/cli`/,
+  )
+})
+
+test('install paths are checked for shape, not existence', () => {
+  assert.doesNotThrow(() => assertLoadTimeRequirements(requirements({ installDir: '/opt/opencode' }), {}))
+  assert.throws(
+    () => assertLoadTimeRequirements(requirements({ installDir: 'opencode' }), {}),
+    /requirements\.installDir must be an absolute path/,
+  )
+  assert.throws(
+    () => assertLoadTimeRequirements(requirements({ installBinDir: '' }), {}),
+    /requirements\.installBinDir must be an absolute path/,
   )
 })
 

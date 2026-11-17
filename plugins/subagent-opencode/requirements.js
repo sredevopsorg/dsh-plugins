@@ -17,12 +17,15 @@
  */
 
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 const PREFIX = 'subagent-opencode'
 
-/** A mandatory configuration gate. */
-export const REQUIREMENTS = Object.freeze(['auth', 'credentials', 'model'])
+/** A mandatory configuration gate, in the order messages report them. */
+export const REQUIREMENTS = Object.freeze(['install', 'credentials', 'auth', 'model'])
+
+/** A configuration that needs an explicit install, expressed as a command to run. */
+const INSTALL_COMMAND = 'pnpm add -g --allow-build=@opencode/cli @opencode/cli'
 
 /** A model reference must be `provider/model` without spaces or extra slashes. */
 const MODEL_PATTERN = /^[^\s/\\]+\/[^\s/\\]+$/
@@ -69,6 +72,32 @@ export function assertModel(model) {
 }
 
 /**
+ * Assert the shape of every install path a profile configured.
+ * @param {object} requirements - resolved requirement config.
+ */
+export function assertInstallPaths(requirements) {
+  for (const [field, value] of [
+    ['requirements.installDir', requirements.installDir],
+    ['requirements.installBinDir', requirements.installBinDir],
+  ]) {
+    if (value !== undefined && !isAbsolutePath(value)) {
+      throw new Error(`${PREFIX}: ${field} must be an absolute path`)
+    }
+  }
+}
+
+/**
+ * Whether a value is an absolute path on this platform.
+ * A POSIX absolute path stays absolute on Windows, where it names a drive
+ * relative location, so only the host's own root forms count.
+ * @param {string} value - candidate path.
+ * @returns {boolean} whether it is absolute.
+ */
+function isAbsolutePath(value) {
+  return resolve(value) === value && (dirname(value) !== value)
+}
+
+/**
  * Locate OpenCode's credential store for a configured home.
  *
  * OpenCode versions have moved the store between `auth.json` at the data root
@@ -96,11 +125,19 @@ export function authState(home) {
  * reports all of them instead of only the first.
  * @param {object} requirements - resolved requirement config.
  * @param {Record<string, string | undefined>} env - parent environment.
+ * @param {object} [facts] - facts only the caller can observe.
+ * @param {boolean} [facts.commandMissing] - whether the configured command does not resolve.
  * @returns {string[]} fixed failure messages, empty when satisfied.
  */
-export function requirementFailures(requirements, env) {
+export function requirementFailures(requirements, env, facts = {}) {
   const failures = []
   const require = requirements.require ?? []
+
+  if (require.includes('install') && facts.commandMissing === true) {
+    failures.push(
+      `${PREFIX}: required configuration is missing: the OpenCode command does not resolve; run \`${INSTALL_COMMAND}\`, or set requirements.install to let the provider install it`,
+    )
+  }
 
   if (require.includes('credentials')) {
     const missing = (requirements.credentials ?? []).filter(name => typeof env[name] !== 'string' || env[name] === '')
@@ -127,14 +164,17 @@ export function requirementFailures(requirements, env) {
 /**
  * Enforce the gates that can be decided without starting a child: a missing
  * credential, an absent or malformed model, and a credential store that the
- * configured home proves missing. Throw at plugin load so a broken profile
- * fails at boot rather than on first delegation.
+ * configured home proves missing. File system gates report as failures instead
+ * of throwing, so one load reports them beside every other missing item. The
+ * shapes a deployment configured are checked before that, and throw: they are
+ * mistakes in the profile, not facts about the host.
  * @param {object} requirements - resolved requirement config.
  * @param {Record<string, string | undefined>} env - parent environment.
  */
 export function assertLoadTimeRequirements(requirements, env) {
   assertRequirements(requirements.require ?? [])
   assertModel(requirements.model)
+  assertInstallPaths(requirements)
   const failures = requirementFailures(requirements, env)
   if (failures.length > 0) throw new Error(failures.join('\n'))
 }

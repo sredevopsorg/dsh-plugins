@@ -21,6 +21,19 @@
 #
 # A `require` entry that is statically missing fails the plugin load, so a
 # misconfigured profile fails at startup instead of on first delegation.
+#
+# `install: true` is the opt-in alternative to a manual global install: when the
+# configured command does not resolve, the provider installs OpenCode's platform
+# package (`@opencode/cli-<platform>-<arch>`) into `installDir` and delegates to
+# it. That package has no install scripts, so the install needs no build-script
+# approval. It is off by default: a delegation never downloads a program unless
+# the profile asked for it.
+#
+#   requirements:
+#     install: true
+#     require: [install]        # fail the run with a clear message when it cannot
+#     installDir: /var/lib/dsh/opencode   # default: <profile dir>/opencode
+#     installManager: npm                 # pnpm (default), npm, or none
 - insert:
     - id: subagent-opencode
       name: '@sredevopsorg/dsh-subagent-opencode'
