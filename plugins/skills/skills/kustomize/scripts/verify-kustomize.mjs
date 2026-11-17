@@ -338,6 +338,33 @@ function firstErrorLine(text) {
   return preferred.replace(/^error:\s*/i, "");
 }
 
+/**
+ * Read a top-level mapping value under `metadata:` in a rendered manifest.
+ *
+ * Scans lines instead of matching a nested regular expression: a pattern like
+ * `/^metadata:\n(?:[ \t]+.*\n)*?[ \t]+name:/` backtracks over every
+ * combination of indented lines, so a large document costs quadratic time.
+ * @param {string} document rendered YAML document.
+ * @param {string} key metadata key to read (`name` or `namespace`).
+ * @returns {string} the value, or "" when absent.
+ */
+function metadataField(document, key) {
+  const pattern = new RegExp(`^[ \\t]+${key}:\\s*["']?([^"'\\s#]+)`);
+  let insideMetadata = false;
+  for (const line of document.split("\n")) {
+    if (line.length === 0) continue;
+    if (!/^[ \t]/.test(line)) {
+      // A new top-level key ends the metadata block.
+      insideMetadata = line.startsWith("metadata:");
+      continue;
+    }
+    if (!insideMetadata) continue;
+    const match = pattern.exec(line);
+    if (match) return match[1];
+  }
+  return "";
+}
+
 function validateManifestStream(root, text) {
   const documents = splitDocuments(text);
   current.docs = documents.length;
@@ -364,8 +391,8 @@ function validateManifestStream(root, text) {
     const label = `document ${index + 1}`;
     const kind = (/^kind:\s*["']?([A-Za-z][A-Za-z0-9]*)/m.exec(document) ?? [])[1] ?? "";
     const apiVersion = (/^apiVersion:\s*["']?([A-Za-z0-9/.-]+)/m.exec(document) ?? [])[1] ?? "";
-    const name = (/^metadata:\n(?:[ \t]+.*\n)*?[ \t]+name:\s*["']?([^"'\s#]+)/m.exec(document) ?? [])[1] ?? "";
-    const namespace = (/^metadata:\n(?:[ \t]+.*\n)*?[ \t]+namespace:\s*["']?([^"'\s#]+)/m.exec(document) ?? [])[1] ?? "";
+    const name = metadataField(document, "name");
+    const namespace = metadataField(document, "namespace");
     const source = (/#\s*Source:\s*(\S+)/.exec(document) ?? [])[1] ?? "";
     const where = [kind, name].filter(Boolean).join(" ") || label;
 

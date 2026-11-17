@@ -1,9 +1,52 @@
 /** Text sanitization and formatting helpers for plain-text previews and HTML-free Markdown in views. */
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ' }
-/** Strips HTML comments and tags, decodes basic entities, and strips again to catch entity-encoded tags. */
-const withoutHtml = (text: string) => text.replace(/<!--[\s\S]*?-->/g, '').replace(/<\/?[a-zA-Z][^>]*>/g, '')
-  .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_match, name: string) => ENTITIES[name]!)
-  .replace(/<!--[\s\S]*?-->/g, '').replace(/<\/?[a-zA-Z][^>]*>/g, '')
+const decodeEntities = (text: string): string => text.replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_match, name: string) => ENTITIES[name]!)
+/**
+ * Replaces each complete tag with one space.
+ *
+ * Either `<` or `>` is enough to start a tag, so replacing it with a space —
+ * never with nothing — keeps neighbouring text from fusing into a new one
+ * (`<script>x</script\nscript>y` would otherwise leave `xscript>y`). A tag
+ * still consumes exactly the text it matched, so spacing around it is
+ * unchanged; the separator only appears where two pieces of text meet.
+ */
+const stripTags = (text: string): string => text.replace(/<\/?[a-zA-Z][^>]*>/g, ' ')
+/**
+ * Remove HTML comments, including unterminated ones.
+ *
+ * `[\s\S]*?` cannot match the `-` between `--` and `>`, so the loop handles a
+ * `<!--` that runs into a following `-->` in pieces. Each step removes at least
+ * the `<!--` it found, so the loop ends. The replacement is a space for the
+ * same fusion reason as {@link stripTags}.
+ */
+const stripComments = (text: string): string => {
+  let current = text
+  for (let step = 0; step < 16; step += 1) {
+    const next = current.replace(/<!--[\s\S]*?-->/g, ' ').replace(/<!--/g, ' ')
+    if (next === current) return next
+    current = next
+  }
+  return current
+}
+/**
+ * Strip HTML comments and tags for Markdown-free display.
+ *
+ * Entities are decoded in a loop rather than once: `&amp;lt;script&amp;gt;`
+ * decodes to `&lt;script&gt;`, which a single post-decode strip would leave as
+ * `<script>`. The loop ends when a pass changes nothing; it also ends the
+ * cycle `<script``<!-->`, where the comment rule produces the tag the tag rule
+ * then produces back. The bound only guards pathological input.
+ */
+const withoutHtml = (text: string): string => {
+  let current = text
+  for (let pass = 0; pass < 8; pass += 1) {
+    const next = stripComments(stripTags(decodeEntities(current)))
+    if (next === current) return next
+    current = next
+  }
+  // Still changing after the bound: return only what carries no markup at all.
+  return stripComments(stripTags(current))
+}
 export function plain(text: string, lines = false): string {
   const result = withoutHtml(text)
     .replace(/!\[[^\]]*\]\([^)]*\)|\[Image: [^\]]*\]/g, '[image]')
