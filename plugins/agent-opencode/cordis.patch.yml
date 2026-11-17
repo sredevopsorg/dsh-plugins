@@ -1,10 +1,17 @@
 # OpenCode agent preset: a host agent whose only route to work is delegation.
 #
-# Two rows, and the order between them is not cosmetic. `subagent-opencode-provider`
+# Three rows, and the order between them is not cosmetic. `subagent-opencode-provider`
 # registers the `opencode` provider on ctx.subagents; `preset-opencode` declares an
 # Agent whose tools *include* a `dsh-tool-subagent` row bound to that provider.
 # The tool-subagent plugin refuses to mount when its provider is absent, so the
 # provider row must be enabled in every profile this preset is used in.
+#
+# `auto-continue-opencode` is the host-side watcher behind the preset. A reply
+# cut off by the model's output token limit ends its turn with reason
+# `max-tokens`; the watcher queues the `continue` prompt the Web chat suggests,
+# once the agent is idle, and stops after more than five continuations inside a
+# rolling three-minute window. It filters on `presetId` because `session/event`
+# listeners are realm-wide, not preset-scoped.
 #
 # The preset's own plugin list is deliberately tool-poor. It carries no file, shell,
 # search, or job tools: the agent cannot read the workspace, so it cannot quietly
@@ -33,6 +40,17 @@
           # Set true to install OpenCode on first delegation when the command
           # does not resolve. Released packages from 0.2.0 support this.
           install: false
+    # Answer the output-token-limit cutoff with the same `continue` prompt the
+    # Web chat suggests, until the reply finishes or the rolling guard trips.
+    # Only sessions running this preset are served; the values below are the
+    # defaults, restated so a profile patch can override any one of them.
+    - id: auto-continue-opencode
+      name: '@sredevopsorg/dsh-agent-opencode/auto-continue'
+      config:
+        presetId: opencode
+        text: continue
+        maxAttempts: 5
+        windowMs: 180000
     - id: preset-opencode
       name: '@deepseek-ai/dsh-agent-preset'
       config:

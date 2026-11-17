@@ -1,7 +1,7 @@
 {
   "name": "@sredevopsorg/dsh-agent-opencode",
-  "version": "0.1.0",
-  "description": "OpenCode agent preset: every task is delegated to the OpenCode CLI through the `subagent_opencode` tool, because the agent holds no file or shell tools of its own.",
+  "version": "0.2.0",
+  "description": "OpenCode agent preset: every task is delegated to the OpenCode CLI through the `subagent_opencode` tool, because the agent holds no file or shell tools of its own. A host watcher answers output-token-limit cutoffs with `continue`.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -15,6 +15,7 @@
   "type": "module",
   "exports": {
     ".": "./index.js",
+    "./auto-continue": "./auto-continue.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
@@ -22,6 +23,7 @@
   "icon": "./icon.svg",
   "files": [
     "index.js",
+    "auto-continue.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
@@ -30,7 +32,7 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check index.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+    "check": "node --check index.js && node --check auto-continue.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
   },
   "keywords": [
     "dsh",
@@ -39,6 +41,7 @@
     "agent-preset",
     "subagent",
     "opencode",
+    "auto-continue",
     "delegation"
   ],
   "engines": {

@@ -14,6 +14,7 @@ over by the orchestrator doing the work directly.
 - [Prerequisites](#prerequisites)
 - [Choosing the preset](#choosing-the-preset)
 - [Configuration](#configuration)
+- [Automatic continuation on output limit](#automatic-continuation-on-output-limit)
 - [How it differs from a normal coding agent](#how-it-differs-from-a-normal-coding-agent)
 
 ## What the agent can do
@@ -25,6 +26,7 @@ over by the orchestrator doing the work directly.
 | Plan before acting | `dsh-plan-mode` | A wrong delegation is expensive |
 | Ask, track, set a goal | `dsh-tool-ask-user`, `dsh-tool-todo`, `dsh-tool-goal` | Reasoning aids, no side effects |
 | Compaction | `dsh-compaction-basic`, `dsh-command-compact` | Long sessions |
+| Resume a cut-off reply | `@sredevopsorg/dsh-agent-opencode/auto-continue` | The orchestrator's own answer can exceed the model's output cap |
 
 Everything absent on purpose: `dsh-tool-fs`, `dsh-tool-fs-search`,
 `dsh-tool-bash`, `dsh-tool-pwsh`, `dsh-tool-bash-persistent`, `dsh-tool-jobs`,
@@ -39,7 +41,7 @@ dsh plugin --profile web add ./plugins/agent-opencode
 Or from a pinned release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.1.0&path:/plugins/agent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.2.0&path:/plugins/agent-opencode"
 ```
 
 Restart DSH afterwards. Installing declares the preset; it does not change any
@@ -93,6 +95,49 @@ Override them from the profile patch by row id:
 `permission: reject` is the honest default: an orchestrator that delegates
 everything will otherwise produce children that quietly cannot edit. Set it to
 `allow` deliberately, once you have decided this preset should change files.
+
+## Automatic continuation on output limit
+
+When a reply reaches the model's output token cap, the Web chat ends the turn
+with an "Output token limit reached" notice that suggests sending `continue`.
+This bundle answers that cutoff for the **OpenCode preset** on its own:
+
+1. A turn that ends because of the output cap (`turn/end` with
+   `reason.kind === 'max-tokens'`) marks the session.
+2. Once the agent is idle again, the host row queues `continue` as an ordinary
+   user message — the same prompt a human would type, recorded in the session
+   log like any other.
+3. The next turn either finishes normally (the loop stops) or hits the cap again
+   (the loop continues, guarded).
+
+The trigger is the turn's end **reason**, not the rendered notice text, so the
+behavior is identical in every UI language and in headless surfaces.
+
+The guard stops a model that only ever emits cutoff-length replies: more than
+five automatic continuations inside a rolling three-minute window pause the
+loop. Attempts age out individually, so continuations resume as the window
+drains. A prompt the human queues during the cut-off turn takes precedence; the
+watcher then leaves the session alone.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `presetId` | `opencode` | Preset whose sessions are served |
+| `text` | `continue` | Exact text queued as the continuing user message |
+| `maxAttempts` | `5` | Continuations allowed inside one rolling window |
+| `windowMs` | `180000` | Window length in milliseconds |
+
+Override any of them from the profile patch by row id:
+
+```yaml
+- id: auto-continue-opencode
+  name: '@sredevopsorg/dsh-agent-opencode/auto-continue'
+  config:
+    maxAttempts: 10
+    windowMs: 600000
+```
+
+Disable the watcher without removing the preset by setting `disabled: true` on
+that row.
 
 ## How it differs from a normal coding agent
 

@@ -69,7 +69,7 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-
 The preset installs the same way, from its own pinned tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.1.0&path:/plugins/agent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.2.0&path:/plugins/agent-opencode"
 ```
 
 ---

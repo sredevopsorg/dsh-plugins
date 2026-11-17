@@ -70,13 +70,27 @@ function pluginNames(text) {
   return names
 }
 
-test('the patch inserts a provider row and a preset row', () => {
+test('the patch inserts a provider row, the auto-continue watcher, and a preset row', () => {
   assert.deepEqual(
     insertRows(PATCH).map(row => row.id),
-    ['subagent-opencode-provider', 'preset-opencode'],
+    ['subagent-opencode-provider', 'auto-continue-opencode', 'preset-opencode'],
   )
   assert.equal(insertRows(PATCH)[0].name, '@sredevopsorg/dsh-subagent-opencode')
-  assert.equal(insertRows(PATCH)[1].name, '@deepseek-ai/dsh-agent-preset')
+  assert.equal(insertRows(PATCH)[1].name, '@sredevopsorg/dsh-agent-opencode/auto-continue')
+  assert.equal(insertRows(PATCH)[2].name, '@deepseek-ai/dsh-agent-preset')
+})
+
+test('the auto-continue watcher is scoped to this preset with the documented guard', () => {
+  assert.match(PATCH, /^ {8}presetId: opencode$/m)
+  assert.match(PATCH, /^ {8}text: continue$/m)
+  assert.match(PATCH, /^ {8}maxAttempts: 5$/m)
+  assert.match(PATCH, /^ {8}windowMs: 180000$/m)
+})
+
+test('the package exports the auto-continue module the patch mounts', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.equal(manifest.exports['./auto-continue'], './auto-continue.js')
+  assert.ok(manifest.files.includes('auto-continue.js'), 'Git installs ship the mounted module')
 })
 
 test('the preset declares itself with an id, a name, and a roster order', () => {
