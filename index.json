@@ -313,6 +313,19 @@
       },
       "versions": [
         {
+          "version": "0.2.1",
+          "publishTimestamp": 1794974334,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "6777c2d2381c07c4cb04ef13f1b8e356f8c14164",
+            "path": "plugins/subagent-opencode"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        },
+        {
           "version": "0.2.0",
           "publishTimestamp": 1794900853,
           "source": {
