@@ -55,7 +55,7 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 | `entire` | `entire-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"` |
 | `skills` | `skills-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"` |
 | `superagent` | `superagent-v0.1.2` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"` |
-| `subagent-opencode` | `subagent-opencode-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.0&path:/plugins/subagent-opencode"` |
+| `subagent-opencode` | `subagent-opencode-v0.2.1` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.1&path:/plugins/subagent-opencode"` |
 
 Replace `web` with the profile you use. The tag is immutable: a new release gets
 a new tag and a new version, so an install command always reproduces the same

@@ -1,6 +1,6 @@
 {
   "name": "@sredevopsorg/dsh-subagent-opencode",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "OpenCode CLI subagent provider: delegate a one-shot task to `opencode acp`, with opt-in enforcement and relay of the required OpenCode configurations and an opt-in local install of the OpenCode CLI.",
   "license": "MIT",
   "repository": {

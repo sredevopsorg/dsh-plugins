@@ -18,7 +18,7 @@ import { statSync } from 'node:fs'
 import { isAbsolute } from 'node:path'
 import { cwd } from 'node:process'
 import { loadSchemastery } from './sdk.js'
-import { startOpenCodeRun } from './acp.js'
+import { OpenCodeFailure, startOpenCodeRun } from './acp.js'
 import {
   assertLoadTimeRequirements,
   assertPositiveGrace,
@@ -185,7 +185,14 @@ class OpenCodeProvider {
     if (!namesOpenCode(config.command)) return { install: false }
 
     const manager = config.requirements.installManager
-    const known = knownInstall(config.requirements.installDir)
+    // An unusable install directory is a host fact, not a Node error: report it
+    // with the same fixed diagnostic a failed executable resolution gets.
+    let known
+    try {
+      known = knownInstall(config.requirements.installDir)
+    } catch (error) {
+      throw new OpenCodeFailure({ stage: 'install', category: 'unknown' }, error)
+    }
     if (known !== undefined) return { executable: known, install: true }
     if (config.requirements.install !== true || manager === 'none') return { install: false }
 
@@ -289,7 +296,8 @@ function assertUsableCwd(cwd) {
  * @param {object} config - resolved plugin configuration.
  */
 export function apply(ctx, config) {
-  const requirements = resolvedRequirements(config.requirements ?? {})
+  const baseDir = isDirectory(config.profileDir) ? config.profileDir : cwd()
+  const requirements = resolvedRequirements(config.requirements ?? {}, baseDir)
   assertPositiveGrace('disposeGraceMs', config.disposeGraceMs)
   assertInstallPolicy({
     manager: requirements.installManager,
@@ -307,7 +315,6 @@ export function apply(ctx, config) {
       passEnv: config.passEnv ?? [...DEFAULT_PASS_ENV],
       env: config.env ?? {},
       disposeGraceMs: config.disposeGraceMs ?? DEFAULT_DISPOSE_GRACE_MS,
-      installDir: defaultInstallDir(requirements.installDir, isDirectory(config.profileDir) ? config.profileDir : cwd()),
       requirements,
     },
   ))
@@ -320,13 +327,17 @@ export function apply(ctx, config) {
  * `apply` a plain object. Keeping the defaults in one place means an explicit
  * install is off unless something asked for it, whichever way it arrived.
  * @param {object} requirements - configured requirement block.
+ * @param {string} baseDir - the profile directory, or the process cwd.
  * @returns {object} the same block with every install field defined.
  */
-function resolvedRequirements(requirements) {
+function resolvedRequirements(requirements, baseDir) {
   return {
     ...requirements,
     install: requirements.install === true,
     installManager: requirements.installManager ?? DEFAULT_INSTALL_MANAGER,
+    // resolveExecutable() probes this field before it considers installing, so
+    // the default has to live here rather than on the provider config.
+    installDir: defaultInstallDir(requirements.installDir, baseDir),
     installArgs: requirements.installArgs ?? [],
     installTimeoutMs: requirements.installTimeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
   }

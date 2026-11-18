@@ -138,9 +138,10 @@ export function isExecutable(path) {
  * Where an install puts one package's tree.
  * @param {string} dir - install directory.
  * @param {string} packageName - a package name such as `@opencode/cli-linux-x64`.
- * @returns {string} the package directory.
+ * @returns {string | undefined} the package directory, or undefined for an unusable directory.
  */
 export function packageDir(dir, packageName) {
+  if (typeof dir !== 'string' || dir === '') return undefined
   return join(dir, 'node_modules', ...packageName.split('/'))
 }
 
@@ -156,7 +157,8 @@ export function packageDir(dir, packageName) {
  */
 export function installedExecutable(dir, platform = hostPlatformPackage()) {
   if (platform === undefined) return undefined
-  return join(packageDir(dir, platform), 'bin', EXECUTABLE)
+  const directory = packageDir(dir, platform)
+  return directory === undefined ? undefined : join(directory, 'bin', EXECUTABLE)
 }
 
 /**
@@ -177,7 +179,9 @@ export function knownInstall(dir) {
  */
 export function installedVersion(dir, packageName = PACKAGE) {
   try {
-    const manifest = JSON.parse(readFileSync(join(packageDir(dir, packageName), 'package.json'), 'utf8'))
+    const directory = packageDir(dir, packageName)
+    if (directory === undefined) return undefined
+    const manifest = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'))
     return typeof manifest.version === 'string' ? manifest.version : undefined
   } catch {
     return undefined

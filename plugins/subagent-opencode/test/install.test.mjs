@@ -20,6 +20,7 @@ import {
   installedVersion,
   isExecutable,
   knownInstall,
+  packageDir,
   platformPackage,
   usesMusl,
   withExecutableOnPath,
@@ -100,6 +101,20 @@ test('an install is found inside the platform package, not the launcher', (t) =>
   writeExecutable(join(dir, 'node_modules', ...platform.split('/'), 'bin', 'opencode'))
   assert.equal(knownInstall(dir, platform), join(dir, 'node_modules', ...platform.split('/'), 'bin', 'opencode'))
   assert.equal(installedExecutable(dir, platform), knownInstall(dir, platform))
+})
+
+test('a missing or invalid install directory holds no install', () => {
+  for (const dir of [undefined, null, '', 42, {}]) {
+    assert.doesNotThrow(() => knownInstall(dir))
+    assert.equal(knownInstall(dir), undefined)
+  }
+})
+
+test('a non-string install directory does not make packageDir throw', () => {
+  assert.equal(packageDir(undefined, '@opencode/cli'), undefined)
+  assert.equal(packageDir(null, '@opencode/cli'), undefined)
+  assert.equal(packageDir('', '@opencode/cli'), undefined)
+  assert.equal(installedExecutable(null, '@opencode/cli-linux-x64'), undefined)
 })
 
 test('a launcher stub is never mistaken for the executable', (t) => {

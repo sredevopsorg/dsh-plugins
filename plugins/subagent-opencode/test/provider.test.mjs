@@ -4,12 +4,12 @@
  */
 
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { apply, Config } from '../index.js'
-import { knownInstall } from '../install.js'
+import { hostPlatformPackage, knownInstall } from '../install.js'
 import { assertLoadTimeRequirements } from '../requirements.js'
 
 /** A context stub that records the provider it is handed. */
@@ -190,6 +190,46 @@ test('a command that is not OpenCode is never installed over', async (t) => {
 
 test('an empty install directory is not read as an install', (t) => {
   assert.equal(knownInstall(tempDir(t)), undefined)
+})
+
+test('the agent preset settings resolve an install directory through apply', () => {
+  // cordis.patch.yml in agent-opencode declares exactly this requirements block.
+  const { provider } = mount({ requirements: { require: [], install: false } })
+  const resolved = provider.config.requirements
+  assert.equal(typeof resolved.installDir, 'string')
+  assert.notEqual(resolved.installDir, '')
+  assert.equal(provider.config.installDir, undefined, 'the dead top-level key is gone')
+})
+
+test('an explicitly configured install directory survives resolution', (t) => {
+  const dir = tempDir(t)
+  const { provider } = mount({ requirements: { install: false, installDir: dir } })
+  assert.equal(provider.config.requirements.installDir, dir)
+})
+
+test('an opt-in install in a configured directory is still reused', async (t) => {
+  const dir = tempDir(t)
+  const platform = hostPlatformPackage()
+  assert.ok(platform, 'the host has an OpenCode platform package')
+  const executable = join(dir, 'node_modules', ...platform.split('/'), 'bin', 'opencode')
+  mkdirSync(dirname(executable), { recursive: true })
+  writeFileSync(executable, '#!/bin/sh\nexit 0\n', { mode: 0o755 })
+  const { provider } = mount({ requirements: { install: true, installDir: dir } }, { provide: false })
+  assert.deepEqual(await provider.resolveExecutable(), { executable, install: true })
+})
+
+test('a missing install directory and no OpenCode on PATH fail with a plugin diagnostic', async () => {
+  const { provider, ctx } = mount({ requirements: { require: [], install: false } }, { provide: false })
+  await assert.rejects(
+    provider.start(request()),
+    (error) => {
+      assert.doesNotMatch(error.message, /ERR_INVALID_ARG_TYPE|The "path" argument must be of type string/)
+      assert.match(error.message, /subagent-opencode: Subagent failure/)
+      assert.match(error.message, /stage: install/)
+      return true
+    },
+  )
+  assert.equal(ctx.warnings.length, 0, 'nothing is installed and nothing is logged')
 })
 
 test('an aborted request starts nothing', async (t) => {

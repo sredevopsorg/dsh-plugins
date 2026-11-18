@@ -15,6 +15,7 @@ tools, and credentials; only its final text comes back to the parent.
 - [What the model sees](#what-the-model-sees)
 - [Differences from `subagent-codex`](#differences-from-subagent-codex)
 - [Troubleshooting](#troubleshooting)
+- [Release notes](#release-notes)
 
 ## Prerequisites
 
@@ -65,7 +66,7 @@ dsh plugin --profile web add ./plugins/subagent-opencode
 Or from a pinned release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.0&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.1&path:/plugins/subagent-opencode"
 ```
 
 Restart DSH afterwards; the provider and tool are composed at startup.
@@ -257,6 +258,18 @@ Both are one-shot: the child cannot receive follow-up messages.
 | `required configuration is missing: X is not set` | `require: [credentials]` and `X` is unset | Export `X` for the DSH process, or drop the gate |
 | `stage: configure` | OpenCode rejected `model`, `effort`, or `mode` | Check `opencode models` / `opencode agent list` |
 | The child reports it could not write files | `permission: reject` | Set `permission: allow` |
+
+## Release notes
+
+### 0.2.1
+
+Drop-in patch over 0.2.0. Fixes the first delegation failing with
+`Error: The "path" argument must be of type string. Received undefined` whenever
+`opencode` is absent from the DSH process's `PATH` and no `installDir` was
+configured. The resolved default install directory now reaches the executable
+probe, an unusable directory reports no previous install instead of throwing a
+raw `TypeError`, and any unexpected probe failure uses the plugin's own fixed
+diagnostic. No configuration changes are needed; install 0.2.1 over 0.2.0.
 
 ## Development
 

@@ -53,7 +53,7 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | A vendored fork of DeepSeek Harness's `dsh-superagent` research prototype: a proactive agent for one GitHub repository (optionally Feishu) that runs tickets in their own DSH sessions and answers in the original conversation |
 
 `agent-opencode` declares that same subagent as the preset's only working tool, so it
-carries the identical requirement: install `subagent-opencode` at `>= 0.2.0` beside it (the
+carries the identical requirement: install `subagent-opencode` at `>= 0.2.1` beside it (the
 preset's bundle enables the provider itself), and provide the CLI as described next.
 
 The `subagent-opencode` bundle additionally needs the OpenCode CLI, logged in with
@@ -63,7 +63,7 @@ it globally with build scripts allowed — `pnpm add -g --allow-build=@opencode/
 script-free platform package on first use. Install the bundle with:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.0&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.1&path:/plugins/subagent-opencode"
 ```
 
 The preset installs the same way, from its own pinned tag:
