@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Subagente OpenCode",
-    "description": "Delega tareas de una sola vez al CLI de OpenCode mediante ACP, sigue la política de aprobación de la sesión que delega y reenvía o instala la configuración de OpenCode que las tareas requieren. Funciona solo y es seguro junto al preset de agente de OpenCode."
+    "description": "Delega tareas de una sola vez al CLI de OpenCode mediante ACP, sigue la política de aprobación de la sesión que delega y reenvía o instala la configuración de OpenCode que las tareas requieren. Funciona solo y es seguro junto al preset de agente de OpenCode. Una página de ajustes web edita el proveedor, los permisos y los requisitos desde la página de Plugins."
   }
 }

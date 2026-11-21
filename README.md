@@ -42,6 +42,8 @@ dsh plugin --profile web add ./plugins/agent-opencode
 Then add the rows from `profiles/preset.cordis.patch.yml` to the driving
 profile's `cordis.patch.yml`. Each plugin's README explains the details. The
 rule of thumb is that the preset is the policy and the subagent is the mechanism.
+Both bundles also ship a settings page under **Plugins**, so the watcher and the
+provider can be adjusted without editing YAML.
 
 ## Install via Custom plugin indexes (recommended)
 
@@ -63,12 +65,12 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#<plugin>-v<version
 Quote the spec so the shell does not interpret `&`. Replace `web` with your profile. Examples:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.3.0&path:/plugins/agent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.4.0&path:/plugins/agent-opencode"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#peak-rate-footer-v0.1.0&path:/plugins/peak-rate-footer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.1&path:/plugins/sredevops-writer"
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.3.0&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.4.0&path:/plugins/subagent-opencode"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 ```
 

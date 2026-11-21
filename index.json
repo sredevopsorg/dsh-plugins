@@ -10,7 +10,7 @@
     {
       "name": "@sredevopsorg/dsh-agent-opencode",
       "title": "OpenCode",
-      "description": "An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools of its own, so the only way to inspect or change the workspace is the `subagent_opencode` tool. It binds the provider name `opencode-preset`, which a profile supplies with `@sredevopsorg/dsh-subagent-opencode`, so it never collides with that bundle's own `opencode` provider.",
+      "description": "An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools of its own, so the only way to inspect or change the workspace is the `subagent_opencode` tool. It binds the provider name `opencode-preset`, which a profile supplies with `@sredevopsorg/dsh-subagent-opencode`, so it never collides with that bundle's own `opencode` provider. A Web settings page edits the continuation watcher from the Plugins page.",
       "icon": "plugins/agent-opencode/icon.svg",
       "author": "sredevopsorg",
       "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/agent-opencode#readme",
@@ -268,7 +268,7 @@
     {
       "name": "@sredevopsorg/dsh-subagent-opencode",
       "title": "OpenCode subagent",
-      "description": "Delegates one-shot tasks to the OpenCode CLI over ACP, follows the delegating session's approval policy, and relays or installs the OpenCode configuration that tasks require. Stands alone and is safe next to the OpenCode agent preset.",
+      "description": "Delegates one-shot tasks to the OpenCode CLI over ACP, follows the delegating session's approval policy, and relays or installs the OpenCode configuration that tasks require. Stands alone and is safe next to the OpenCode agent preset. A Web settings page edits the provider, permission, and requirement settings from the Plugins page.",
       "icon": "plugins/subagent-opencode/icon.svg",
       "author": "sredevopsorg",
       "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/subagent-opencode#readme",

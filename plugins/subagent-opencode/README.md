@@ -74,7 +74,7 @@ dsh plugin --profile web add ./plugins/subagent-opencode
 Or from a pinned release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.3.0&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.4.0&path:/plugins/subagent-opencode"
 ```
 
 Restart DSH afterwards; the provider and tool are composed at startup.
@@ -201,6 +201,36 @@ What each gate checks:
 | `env` | `{}` | Explicit child environment, merged last |
 | `disposeGraceMs` | `3000` | Window before the child is terminated after its stdin closes |
 
+### Settings in the Web GUI
+
+The bundle ships its own settings page under **Plugins → OpenCode subagent**,
+and the `subagent-opencode` row gets a **Configure** control that opens the same
+form. It edits the provider and requirement fields from the **Configuration**
+and **Required configurations** tables: command and arguments, permission
+policy, relayed environment names, shutdown grace, requirement gates, credential
+variable names, model, mode, effort, OpenCode home, and the install policy.
+
+**Save** writes through DSH's configuration editor to the active profile's
+`cordis.patch.yml`; **Reset to defaults** removes the profile override and
+restores the bundle values. Later delegations use the new values. Unrelated
+rows, comments, and `!!js` expressions are preserved.
+
+Two limits are deliberate:
+
+- `env` and `requirements.env` are literal environment maps and may carry
+  secrets, so the page does not display them. They stay YAML-editable and are
+  preserved by every save.
+- The page cannot repair a row that failed to load, because the configuration
+  editor only writes to an active entry. Edit `cordis.patch.yml` and restart.
+
+Renaming `providerName` here also requires updating the `tool-subagent-opencode`
+row's `provider`; the page warns about this but does not edit that row.
+
+The row **Configure** shortcut is registered for the standard
+`subagent-opencode` row id. A profile that mounts the package under a different
+row id (for example the preset's `subagent-opencode-preset`) still gets the
+bundle-page form, and the form edits whichever active row it finds.
+
 ### Installing OpenCode
 
 `requirements.install` is off by default: a delegation never downloads a program
@@ -323,6 +353,17 @@ Both are one-shot: the child cannot receive follow-up messages.
 
 ## Release notes
 
+### 0.4.0
+
+- **Web settings page.** The bundle's page under **Plugins → OpenCode subagent**
+  (and the provider row's **Configure** page) edits the provider, permission,
+  requirement, and install fields. Saves go through the profile configuration
+  editor; Reset restores the bundle defaults. `env` maps remain YAML-only.
+- **Browser half and authenticated bridge.** The package now ships a
+  `dsh.client` module and a browser-only settings route. The route is reference
+  counted so the package still works when a profile mounts it twice under
+  different row ids, as the preset setup does.
+
 ### 0.3.0
 
 Follows the delegating session's approval policy by default and makes
@@ -369,8 +410,8 @@ diagnostic. No configuration changes are needed; install 0.2.1 over 0.2.0.
 
 ```bash
 cd plugins/subagent-opencode
-npm test    # 112 tests: requirement gates, env relay, the ACP lifecycle,
-            # session policy, conformance, and the coexistence guard
+npm test    # requirement gates, env relay, the ACP lifecycle, session policy,
+            # conformance, the coexistence guard, and the settings bridge
 npm run check
 ```
 

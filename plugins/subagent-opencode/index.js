@@ -17,6 +17,7 @@
 import { statSync } from 'node:fs'
 import { isAbsolute, relative, resolve } from 'node:path'
 import { cwd } from 'node:process'
+import { registerSettingsRoute } from './settings.js'
 import { loadSchemastery } from './sdk.js'
 import { OpenCodeFailure, startOpenCodeRun } from './acp.js'
 import { describePolicy, projectPolicy, resolveSessionPolicy } from './approval-policy.js'
@@ -371,6 +372,9 @@ function assertUsableCwd(cwd) {
  * @param {object} config - resolved plugin configuration.
  */
 export function apply(ctx, config) {
+  // The Web settings page is optional: a Host without a Web server still gets
+  // the provider, and a failed provider config cannot make the page mount.
+  registerSettingsRoute(ctx)
   const baseDir = isDirectory(config.profileDir) ? config.profileDir : cwd()
   const requirements = resolvedRequirements(config.requirements ?? {}, baseDir)
   assertPositiveGrace('disposeGraceMs', config.disposeGraceMs)

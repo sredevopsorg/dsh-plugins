@@ -1,7 +1,7 @@
 {
   "name": "@sredevopsorg/dsh-subagent-opencode",
-  "version": "0.3.0",
-  "description": "OpenCode CLI subagent provider: delegate a one-shot task to `opencode acp`, with a session-following permission policy, opt-in enforcement and relay of the required OpenCode configurations, and an opt-in local install of the OpenCode CLI.",
+  "version": "0.4.0",
+  "description": "OpenCode CLI subagent provider: delegate a one-shot task to `opencode acp`, with a session-following permission policy, opt-in enforcement and relay of the required OpenCode configurations, and an opt-in local install of the OpenCode CLI. A Web settings page edits the provider without touching YAML.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,7 +19,8 @@
     "./conformance": "./conformance.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
+    "./icon": "./icon.svg",
+    "./client": "./client.js"
   },
   "icon": "./icon.svg",
   "files": [
@@ -35,11 +36,13 @@
     "icon.svg",
     "README.md",
     "test/*.test.mjs",
-    "test/fixtures/*.mjs"
+    "test/fixtures/*.mjs",
+    "client.js",
+    "settings.js"
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check index.js && node --check acp.js && node --check approval-policy.js && node --check conformance.js && node --check install.js && node --check requirements.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+    "check": "node --check index.js && node --check acp.js && node --check approval-policy.js && node --check conformance.js && node --check install.js && node --check settings.js && node --check client.js && node --check requirements.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
   },
   "keywords": [
     "dsh",
@@ -59,6 +62,14 @@
     "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
+      ]
     }
   }
 }
