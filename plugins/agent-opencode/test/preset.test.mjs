@@ -1,9 +1,9 @@
 /**
- * Preset contract tests: the declaration, the provider binding, and the one
- * property that gives this preset a reason to exist.
+ * Preset contract tests: the declaration, the provider binding, and the
+ * independence that makes this bundle safe next to `subagent-opencode`.
  *
- * The tests read `cordis.patch.yml` as data. They need no DSH runtime, no
- * OpenCode install, and no network.
+ * The tests read `cordis.patch.yml` and `profiles/preset.cordis.patch.yml` as
+ * data. They need no DSH runtime, no OpenCode install, and no network.
  */
 
 import assert from 'node:assert/strict'
@@ -11,11 +11,13 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const PATCH = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+const PROFILE_PATCH = readFileSync(new URL('../profiles/preset.cordis.patch.yml', import.meta.url), 'utf8')
 
 /** The `insert` rows, parsed without a YAML dependency.
  *
  * This is not a general YAML parser: it reads the two-level shape this patch
  * uses (a list of `- id:` rows, each with `name` and an optional `config:`).
+ * @param {string} text - the patch source.
  * @returns {Array<{id: string, name: string, config?: object}>} the rows.
  */
 function insertRows(text) {
@@ -70,27 +72,23 @@ function pluginNames(text) {
   return names
 }
 
-test('the patch inserts a provider row, the auto-continue watcher, and a preset row', () => {
+test('the patch inserts the auto-continue watcher and the preset row only', () => {
   assert.deepEqual(
     insertRows(PATCH).map(row => row.id),
-    ['subagent-opencode-provider', 'auto-continue-opencode', 'preset-opencode'],
+    ['auto-continue-opencode', 'preset-opencode'],
   )
-  assert.equal(insertRows(PATCH)[0].name, '@sredevopsorg/dsh-subagent-opencode')
-  assert.equal(insertRows(PATCH)[1].name, '@sredevopsorg/dsh-agent-opencode/auto-continue')
-  assert.equal(insertRows(PATCH)[2].name, '@deepseek-ai/dsh-agent-preset')
+  assert.equal(insertRows(PATCH)[0].name, '@sredevopsorg/dsh-agent-opencode/auto-continue')
+  assert.equal(insertRows(PATCH)[1].name, '@deepseek-ai/dsh-agent-preset')
 })
 
-test('the auto-continue watcher is scoped to this preset with the documented guard', () => {
-  assert.match(PATCH, /^ {8}presetId: opencode$/m)
-  assert.match(PATCH, /^ {8}text: continue$/m)
-  assert.match(PATCH, /^ {8}maxAttempts: 5$/m)
-  assert.match(PATCH, /^ {8}windowMs: 180000$/m)
-})
-
-test('the package exports the auto-continue module the patch mounts', () => {
-  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-  assert.equal(manifest.exports['./auto-continue'], './auto-continue.js')
-  assert.ok(manifest.files.includes('auto-continue.js'), 'Git installs ship the mounted module')
+test('the bundle inserts no host-level provider or delegation tool of its own', () => {
+  // A host-level provider row here would collide with `subagent-opencode`, which
+  // registers `opencode` itself. The preset binds a provider by name only.
+  const names = insertRows(PATCH).map(row => row.name)
+  assert.ok(!names.includes('@sredevopsorg/dsh-subagent-opencode'))
+  assert.ok(!names.includes('@deepseek-ai/dsh-tool-subagent'))
+  assert.doesNotMatch(PATCH, /^ {4}- id: subagent-opencode/m, 'no host-level provider id')
+  assert.doesNotMatch(PATCH, /^ {4}- id: tool-subagent-opencode\n/m, 'no host-level tool id')
 })
 
 test('the preset declares itself with an id, a name, and a roster order', () => {
@@ -106,9 +104,12 @@ test('the declared preset id is lowercase kebab-case', () => {
   assert.equal(id, 'opencode')
 })
 
-test('the delegation tool is bound to the opencode provider', () => {
-  assert.match(PATCH, /^ {18}provider: opencode$/m)
+test('the delegation tool is bound to the distinct opencode-preset provider', () => {
+  assert.match(PATCH, /^ {18}provider: opencode-preset$/m)
   assert.match(PATCH, /^ {18}toolName: subagent_opencode$/m)
+  // A preset child id is local to this preset's scope, so it may keep the name
+  // the host bundle also uses; the provider name is what must not collide.
+  assert.match(PATCH, /^ {14}- id: tool-subagent-opencode$/m)
 })
 
 test('maxDepth is provider-managed, because the child is out-of-process', () => {
@@ -157,12 +158,38 @@ test('the persona states that delegation is the only way to act', () => {
   assert.match(PATCH, /subagent_opencode/)
 })
 
-test('the provider defaults are the safe ones', () => {
-  // `permission` sits directly under the provider config; the `requirements`
-  // block nests one level deeper.
-  assert.match(PATCH, /^ {8}permission: reject$/m, 'reject keeps an unattended child from editing')
-  assert.match(PATCH, /^ {10}install: false$/m, 'a delegation must never download a program by default')
-  assert.match(PATCH, /^ {10}require: \[\]$/m)
+test('the persona explains that the child follows the session policy', () => {
+  assert.match(PATCH, /permission policy follows this session's approval policy/)
+  assert.match(PATCH, /approval prompts disabled/)
+})
+
+test('the auto-continue watcher is scoped to this preset with the documented guard', () => {
+  assert.match(PATCH, /^ {8}presetId: opencode$/m)
+  assert.match(PATCH, /^ {8}text: continue$/m)
+  assert.match(PATCH, /^ {8}maxAttempts: 5$/m)
+  assert.match(PATCH, /^ {8}windowMs: 180000$/m)
+  assert.match(PATCH, /^ {8}requireChildPrompt: true$/m)
+})
+
+test('the package exports the auto-continue module the patch mounts', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.equal(manifest.exports['./auto-continue'], './auto-continue.js')
+  assert.ok(manifest.files.includes('auto-continue.js'), 'Git installs ship the mounted module')
+  assert.ok(manifest.files.includes('profiles/*.yml'), 'Git installs ship the provider patch')
+})
+
+test('the profile patch supplies the provider under the distinct name', () => {
+  const rows = insertRows(PROFILE_PATCH)
+  assert.deepEqual(rows.map(row => row.id), ['subagent-opencode-preset', 'subagent-opencode-conformance'])
+  assert.equal(rows[0].name, '@sredevopsorg/dsh-subagent-opencode')
+  assert.equal(rows[1].name, '@sredevopsorg/dsh-subagent-opencode/conformance')
+  assert.match(PROFILE_PATCH, /^ {8}providerName: opencode-preset$/m)
+  assert.match(PROFILE_PATCH, /^ {8}permission: session$/m)
+})
+
+test('the profile patch declares opencode-preset exactly once', () => {
+  const declarations = PROFILE_PATCH.match(/^ {8}providerName: (.+)$/gm) ?? []
+  assert.deepEqual(declarations, ['        providerName: opencode-preset'])
 })
 
 test('the locale files describe the preset for both languages', () => {
@@ -171,5 +198,6 @@ test('the locale files describe the preset for both languages', () => {
     assert.equal(typeof locale.meta?.title, 'string')
     assert.ok(locale.meta.title.length > 0, `${language} title`)
     assert.ok(locale.meta.description.length > 40, `${language} description`)
+    assert.match(locale.meta.description, /opencode-preset/, `${language} names the provider it binds`)
   }
 })

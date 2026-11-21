@@ -1,7 +1,7 @@
 {
   "name": "@sredevopsorg/dsh-subagent-opencode",
-  "version": "0.2.1",
-  "description": "OpenCode CLI subagent provider: delegate a one-shot task to `opencode acp`, with opt-in enforcement and relay of the required OpenCode configurations and an opt-in local install of the OpenCode CLI.",
+  "version": "0.3.0",
+  "description": "OpenCode CLI subagent provider: delegate a one-shot task to `opencode acp`, with a session-following permission policy, opt-in enforcement and relay of the required OpenCode configurations, and an opt-in local install of the OpenCode CLI.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -15,6 +15,8 @@
   "type": "module",
   "exports": {
     ".": "./index.js",
+    "./approval-policy": "./approval-policy.js",
+    "./conformance": "./conformance.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
@@ -23,6 +25,8 @@
   "files": [
     "index.js",
     "acp.js",
+    "approval-policy.js",
+    "conformance.js",
     "install.js",
     "requirements.js",
     "sdk.js",
@@ -35,7 +39,7 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check index.js && node --check acp.js && node --check install.js && node --check requirements.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+    "check": "node --check index.js && node --check acp.js && node --check approval-policy.js && node --check conformance.js && node --check install.js && node --check requirements.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
   },
   "keywords": [
     "dsh",
@@ -44,6 +48,8 @@
     "subagent",
     "opencode",
     "acp",
+    "permission",
+    "approval-policy",
     "delegation"
   ],
   "engines": {

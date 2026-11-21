@@ -17,6 +17,8 @@ const update = (body) => write({
 const chunk = (text) => update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } })
 
 let buffer = ''
+/** Client capabilities announced by `initialize`, when a scenario asks for them. */
+let capabilities = 'none'
 process.stdin.on('data', (data) => {
   buffer += data
   let newline
@@ -39,6 +41,11 @@ function handle(message) {
       if (scenario.failInitialize === true) {
         return write({ jsonrpc: '2.0', id, error: { code: -32603, message: 'Internal error' } })
       }
+      // `echoClientCapabilities` copies what the client advertised into a value
+      // the test can read back from the assistant's final text.
+      if (scenario.echoClientCapabilities === true) {
+        capabilities = JSON.stringify(params?.clientCapabilities ?? null)
+      }
       return reply(id, { protocolVersion: 1, agentCapabilities: {} })
 
     case 'session/new':
@@ -58,6 +65,7 @@ function handle(message) {
       chunk('Hello from ')
       update({ sessionUpdate: 'tool_call', toolCallId: 'call-1', title: 'Read src/index.js', kind: 'read' })
       chunk('fake OpenCode.')
+      if (scenario.echoClientCapabilities === true) chunk(` capabilities=${capabilities}`)
       if (scenario.exitDuringPrompt === true) {
         setTimeout(() => process.exit(3), 10)
         return

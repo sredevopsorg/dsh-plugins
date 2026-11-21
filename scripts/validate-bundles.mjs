@@ -527,7 +527,50 @@ async function main() {
   // A bundle may ship its own provider package, whose name no installation
   // declares. Its config is validated against that package's exported Config
   // below, so the registry check must accept the name it declares itself.
+  //
+  // A bundle may also ship a *profile* patch under `profiles/`: a snippet a
+  // user adds to a profile that mounts the bundle's preset. A provider a bundle
+  // is designed to be paired with is declared there, and the tool-subagent rows
+  // in the main patch may bind it, so those files count too.
   const declaredByBundle = new Map();
+  const profilePatchFiles = (directory) => {
+    const profiles = path.join(directory, "profiles");
+    if (!isDirectory(profiles)) return [];
+    return fs
+      .readdirSync(profiles)
+      .filter((name) => /\.ya?ml$/.test(name))
+      .sort()
+      .map((name) => path.join(profiles, name));
+  };
+  const collectDeclared = async (filename, origin) => {
+    let document;
+    try {
+      document = parsePatch(filename, parseYaml);
+    } catch (error) {
+      fail(`${path.relative(REPO_ROOT, filename)}: YAML parse error: ${error.message}`);
+      return;
+    }
+    const rows = Array.isArray(document)
+      ? document.flatMap((entry) => (Array.isArray(entry?.insert) ? entry.insert : []))
+      : [];
+    for (const row of leafRows(rows)) {
+      if (typeof row.name !== "string" || !row.name.startsWith("@sredevopsorg/")) continue;
+      try {
+        const resolved = resolvePluginSpec(row.name);
+        if (resolved.file === undefined) continue;
+        const module = await import(pathToFileURL(resolved.file).href);
+        if (typeof module.Config !== "function") continue;
+        const resolvedConfig = module.Config({});
+        const providerName = row.config?.providerName ?? resolvedConfig?.providerName;
+        if (typeof providerName === "string") {
+          providerNames.add(providerName);
+          declaredByBundle.set(providerName, origin);
+        }
+      } catch (error) {
+        note(`${origin}: cannot inspect its provider package ${row.name}: ${error.message}`);
+      }
+    }
+  };
   for (const directory of directories) {
     const manifest = manifests.get(directory);
     const patches = Array.isArray(manifest?.dsh?.bundle?.patch)
@@ -537,32 +580,10 @@ async function main() {
         : [manifest.dsh.bundle.patch];
     for (const patchPath of patches) {
       if (typeof patchPath !== "string") continue;
-      let document;
-      try {
-        document = parsePatch(path.join(directory, patchPath), parseYaml);
-      } catch {
-        continue;
-      }
-      const rows = Array.isArray(document)
-        ? document.flatMap((entry) => (Array.isArray(entry?.insert) ? entry.insert : []))
-        : [];
-      for (const row of leafRows(rows)) {
-        if (typeof row.name !== "string" || !row.name.startsWith("@sredevopsorg/")) continue;
-        try {
-          const resolved = resolvePluginSpec(row.name);
-          if (resolved.file === undefined) continue;
-          const module = await import(pathToFileURL(resolved.file).href);
-          if (typeof module.Config !== "function") continue;
-          const resolvedConfig = module.Config({});
-          const providerName = row.config?.providerName ?? resolvedConfig?.providerName;
-          if (typeof providerName === "string") {
-            providerNames.add(providerName);
-            declaredByBundle.set(providerName, `${path.basename(directory)} (repository package)`);
-          }
-        } catch (error) {
-          note(`${path.basename(directory)}: cannot inspect its own provider package ${row.name}: ${error.message}`);
-        }
-      }
+      await collectDeclared(path.join(directory, patchPath), `${path.basename(directory)} (repository package)`);
+    }
+    for (const profilePatch of profilePatchFiles(directory)) {
+      await collectDeclared(profilePatch, `${path.relative(REPO_ROOT, profilePatch)} (profile patch)`);
     }
   }
 

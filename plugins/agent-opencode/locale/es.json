@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "OpenCode",
-    "description": "Un preset de agente que delega cada tarea a la CLI de OpenCode: no tiene herramientas de archivos ni de shell propias, así que la única forma de inspeccionar o modificar el espacio de trabajo es la herramienta `subagent_opencode`."
+    "description": "Un preset de agente que delega cada tarea a la CLI de OpenCode: no tiene herramientas de archivos ni de shell propias, así que la única forma de inspeccionar o modificar el espacio de trabajo es la herramienta `subagent_opencode`. Se enlaza al nombre de proveedor `opencode-preset`, que un perfil aporta con `@sredevopsorg/dsh-subagent-opencode`, así que nunca choca con el proveedor `opencode` de ese mismo bundle."
   }
 }

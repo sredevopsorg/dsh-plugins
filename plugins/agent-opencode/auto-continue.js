@@ -15,6 +15,12 @@
  * cutoff-length replies from looping forever; the queued `continue` messages are
  * ordinary user messages, so the log states exactly what happened.
  *
+ * `requireChildPrompt` narrows the trigger to the orchestrator's own reply. The
+ * preset delegates, so a turn that consumed a tool result ends with the child's
+ * stop reason instead; that reason is already in the completion notice, and
+ * continuing it would repeat the delegation. The switch is off by default so a
+ * profile that only wants the historical behavior is unaffected.
+ *
  * The row is installed by this bundle at the host level and scopes itself to the
  * declared preset id, because `session/event` listeners are realm-wide: a preset
  * plugin receives every session's events, so the filter is explicit here.
@@ -40,6 +46,17 @@ export const DEFAULT_CONFIG = Object.freeze({
   maxAttempts: 5,
   /** Length of the rolling window in milliseconds (3 minutes). */
   windowMs: 3 * 60 * 1000,
+  /**
+   * Only continue when the cut-off belongs to the orchestrator's own answer.
+   *
+   * A one-shot child also ends its turn with `max-tokens` when its own provider
+   * caps output. That stop reason reaches the orchestrator in the completion
+   * notice, so queueing `continue` for it would pay for a second, redundant
+   * delegation. The cut-off turn's last model-visible event tells the two
+   * apart: a `tool`-role result there means the turn consumed the child's
+   * result. A host that exposes no surface keeps the historical behavior.
+   */
+  requireChildPrompt: false,
 })
 
 /**
@@ -51,7 +68,7 @@ export const DEFAULT_CONFIG = Object.freeze({
  * default instead of failing the row, so a stale profile patch keeps working.
  *
  * @param {unknown} raw - the row's config, or undefined.
- * @returns {{presetId: string, text: string, maxAttempts: number, windowMs: number}} resolved config.
+ * @returns {{presetId: string, text: string, maxAttempts: number, windowMs: number, requireChildPrompt: boolean}} resolved config.
  */
 export function normalizeConfig(raw) {
   const config = { ...DEFAULT_CONFIG }
@@ -65,6 +82,7 @@ export function normalizeConfig(raw) {
     config.maxAttempts = record.maxAttempts
   }
   if (Number.isSafeInteger(record.windowMs) && record.windowMs > 0) config.windowMs = record.windowMs
+  if (typeof record.requireChildPrompt === 'boolean') config.requireChildPrompt = record.requireChildPrompt
   return config
 }
 
@@ -113,6 +131,54 @@ function presetOf(ctx, session) {
     }
   }
   return session?.header?.agentPreset ?? null
+}
+
+/**
+ * The last model-visible event of a session, when the host exposes the surface.
+ *
+ * DSH keeps the model-visible surface as event sequences; a session that does
+ * not expose `surface.nodes` (or an older host) yields undefined, and the
+ * caller falls back to the historical behavior.
+ * @param {object} session - the session that ended the turn.
+ * @returns {object | undefined} the last event.
+ */
+function lastSurfaceEvent(session) {
+  const nodes = session?.surface?.nodes
+  if (!Array.isArray(nodes) || nodes.length === 0) return undefined
+  const seq = nodes[nodes.length - 1]
+  try {
+    return typeof session.eventAt === 'function' ? session.eventAt(seq) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Whether a cut-off turn belongs to the orchestrator's own answer.
+ *
+ * A turn that consumed a tool result (this preset delegates, so the tool is
+ * `subagent_opencode`) ends with the child's stop reason. The orchestrator is
+ * told that reason in the completion notice; a `continue` message would pay
+ * for a redundant delegation that the model did not ask for. The turn's last
+ * model-visible event is the discriminator: a `tool`-role message there means
+ * the turn is the delegation round, not a plain reply.
+ *
+ * An unreadable session is treated as a plain reply, so a host that does not
+ * expose the log keeps the historical behavior instead of silently stopping
+ * the loop.
+ * @param {object} session - the session that ended the turn.
+ * @returns {boolean} whether the turn is the orchestrator's own reply.
+ */
+export function isOwnReply(session) {
+  try {
+    const event = lastSurfaceEvent(session)
+    if (event === undefined) return true
+    // A tool result is appended with the `tool` role; every event type that
+    // carries one names it `tool` in `data.message.role` or `data.role`.
+    return event.data?.message?.role !== 'tool' && event.data?.role !== 'tool'
+  } catch {
+    return true
+  }
 }
 
 /**
@@ -179,6 +245,9 @@ export function apply(ctx, rawConfig) {
     }
     if (event?.type !== 'turn/end') return
     if (event.data?.reason?.kind !== 'max-tokens') return
+    // A stop reason that belongs to a delegated child is already reported to
+    // the orchestrator; continuing it would repeat the delegation.
+    if (config.requireChildPrompt && !isOwnReply(session)) return
     const agent = ctx.agents.get(session.id)
     if (agent === undefined || agent.session !== session) return
     if (!targetAgent(agent)) return

@@ -53,6 +53,9 @@ jobs:
       - name: Validate GitHub install metadata
         run: node scripts/validate-github-install.mjs --strict
 
+      - name: Validate bundle independence
+        run: node scripts/validate-plugin-pair.mjs
+
       - name: Validate the plugin market index
         run: node scripts/validate-market-index.mjs --dsh-root "$(npm root -g)/@deepseek-ai"
 

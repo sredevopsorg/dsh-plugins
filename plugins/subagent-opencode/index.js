@@ -15,10 +15,11 @@
  */
 
 import { statSync } from 'node:fs'
-import { isAbsolute } from 'node:path'
+import { isAbsolute, relative, resolve } from 'node:path'
 import { cwd } from 'node:process'
 import { loadSchemastery } from './sdk.js'
 import { OpenCodeFailure, startOpenCodeRun } from './acp.js'
+import { describePolicy, projectPolicy, resolveSessionPolicy } from './approval-policy.js'
 import {
   assertLoadTimeRequirements,
   assertPositiveGrace,
@@ -53,10 +54,15 @@ export const Config = z.object({
   providerName: z.string().default(DEFAULT_PROVIDER_NAME),
   /** OpenCode executable: a bare name resolved on `PATH`, or an absolute path. */
   command: z.string().default(DEFAULT_COMMAND),
-  /** Arguments after the executable; `acp` is added when absent. */
+  /** Args after the executable; `acp` is added when absent. */
   args: z.array(z.string()).default(['acp']),
-  /** Auto-answer `session/request_permission` prompts: `reject` (default) or `allow`. */
-  permission: z.union(['reject', 'allow']).default('reject'),
+  /**
+   * Auto-answer `session/request_permission` prompts. `session` (the default)
+   * follows the delegating session's approval policy: a `never` session refuses,
+   * every other session keeps the profile's choice. `reject` and `allow` pin
+   * the answer for every session.
+   */
+  permission: z.union(['session', 'reject', 'allow']).default('session'),
   /** Ambient names re-forwarded after the seam's credential scrub (exact or `PREFIX_*`). */
   passEnv: z.array(z.string()).default([...DEFAULT_PASS_ENV]),
   /** Explicit child environment layered last. */
@@ -138,9 +144,22 @@ class OpenCodeProvider {
     let cwd
     try {
       cwd = assertUsableCwd(request.cwd)
+      assertOutsideProfile(this.ctx, cwd)
     } catch (error) {
       this.ctx.logger.warn(`subagent-opencode "${this.name}": child cwd is unusable: ${error.message}`)
       throw error
+    }
+
+    // The child answers its own permission prompts, so the policy is decided
+    // here, once, from the session that is delegating.
+    const resolvedPolicy = config.permission === 'session'
+      ? resolveSessionPolicy(this.ctx, request)
+      : { policy: config.permission, source: 'configured' }
+    const policy = projectPolicy(config.permission, resolvedPolicy.policy)
+    if (config.permission === 'session') {
+      this.ctx.logger.info(
+        `subagent-opencode "${this.name}": permission ${policy} (session approval policy ${resolvedPolicy.policy} from ${resolvedPolicy.source})`,
+      )
     }
 
     const env = relayEnv({
@@ -153,6 +172,8 @@ class OpenCodeProvider {
       cwd,
       args: config.args,
       permission: config.permission,
+      policy,
+      policyNote: describePolicy(policy, resolvedPolicy),
       disposeGraceMs: config.disposeGraceMs,
       // An installed executable runs with its own directory first on `PATH`, so
       // it finds the helpers it ships. A resolved one keeps the configured env.
@@ -267,6 +288,60 @@ async function resolveCommand(ctx, command) {
 }
 
 /**
+ * Read the profile directory the provider is running in, if the host exposes it.
+ *
+ * `profileContext.dir` is the application-owned profile directory DSH passes to
+ * every booted profile; `profileDir` covers a plugin config that names one
+ * explicitly. Either may be absent, in which case the guard simply does not run.
+ * @param {object} ctx - plugin context.
+ * @returns {string | undefined} an absolute profile directory.
+ */
+export function profileDirOf(ctx) {
+  for (const candidate of [ctx?.get?.('profileContext')?.dir, ctx?.profileContext?.dir]) {
+    if (typeof candidate === 'string' && candidate !== '' && isAbsolute(candidate)) return candidate
+  }
+  return undefined
+}
+
+/**
+ * Whether `cwd` is inside `directory` (or is it).
+ * @param {string} cwd - absolute child working directory.
+ * @param {string} directory - absolute directory to test against.
+ * @returns {boolean} whether cwd is contained.
+ */
+export function isInsideDirectory(cwd, directory) {
+  const fromDirectory = relative(resolve(directory), resolve(cwd))
+  return fromDirectory === '' || (!fromDirectory.startsWith('..') && !isAbsolute(fromDirectory))
+}
+
+/**
+ * Refuse a child that would run inside the profile that mounts this provider.
+ *
+ * An OpenCode child with its working directory inside the profile inherits the
+ * profile's configuration, which is how the same provider ends up registered
+ * twice in one host. The failure is fixed text: it names the situation and the
+ * two ways out, never the paths.
+ * @param {object} ctx - plugin context.
+ * @param {string} cwd - validated child working directory.
+ */
+export function assertOutsideProfile(ctx, cwd) {
+  let directory
+  try {
+    directory = profileDirOf(ctx)
+  } catch {
+    return
+  }
+  if (directory === undefined) return
+  if (!isInsideDirectory(cwd, directory)) return
+  throw new Error(
+    'subagent-opencode: the child working directory is inside the DSH profile that mounts this provider; ' +
+      'the child configures a second profile and would duplicate the provider and its tool. ' +
+      'Delegate from a session whose working directory is outside the profile, or run the provider ' +
+      "only in the profile it configures (the OpenCode preset's `opencode-preset` binding does the latter).",
+  )
+}
+
+/**
  * Assert that a child working directory is an absolute, existing directory.
  *
  * This mirrors `assertUsableCwd` from `@deepseek-ai/dsh-subagent`, but keeps
@@ -311,7 +386,7 @@ export function apply(ctx, config) {
     {
       command: config.command ?? DEFAULT_COMMAND,
       args: config.args ?? ['acp'],
-      permission: config.permission ?? 'reject',
+      permission: config.permission ?? 'session',
       passEnv: config.passEnv ?? [...DEFAULT_PASS_ENV],
       env: config.env ?? {},
       disposeGraceMs: config.disposeGraceMs ?? DEFAULT_DISPOSE_GRACE_MS,

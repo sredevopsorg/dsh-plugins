@@ -1,45 +1,60 @@
 # OpenCode agent preset: a host agent whose only route to work is delegation.
 #
-# Three rows, and the order between them is not cosmetic. `subagent-opencode-provider`
-# registers the `opencode` provider on ctx.subagents; `preset-opencode` declares an
-# Agent whose tools *include* a `dsh-tool-subagent` row bound to that provider.
-# The tool-subagent plugin refuses to mount when its provider is absent, so the
-# provider row must be enabled in every profile this preset is used in.
+# One row and it is self-contained: `preset-opencode` declares an Agent whose
+# tools include a `dsh-tool-subagent` row bound to the `opencode-preset`
+# provider. The preset holds no file, shell, search, or job tools, so the
+# agent cannot read the workspace and cannot quietly do the work itself.
+# Every change happens inside the OpenCode child, which has its own session,
+# model, and tools.
+#
+# ## Where the provider comes from
+#
+# This bundle deliberately inserts **no** host-level provider row. DSH presets
+# cannot mount host services, and a host-level provider row would collide with
+# `@sredevopsorg/dsh-subagent-opencode` when both packages are installed in the
+# same profile (two `opencode` registrations and two `subagent_opencode`
+# tools). Instead the preset binds the distinct name `opencode-preset`, which a
+# profile can back with its own `@sredevopsorg/dsh-subagent-opencode` row:
+#
+#   # In the profile that mounts this preset (e.g. a dedicated editor profile):
+#   - insert:
+#       - id: subagent-opencode-preset
+#         name: '@sredevopsorg/dsh-subagent-opencode'
+#         config:
+#           providerName: opencode-preset
+#           permission: session
+#           requirements:
+#             require: []
+#
+# That patch ships in this package as `profiles/preset.cordis.patch.yml`. The
+# provider resolves its OpenCode home through `$HOME` and its own variables, so
+# a provider profile and the profile that drives it can differ. `permission:
+# session` makes a `never`-approval session delegate to a child that also
+# refuses prompts, exactly as the session does.
+#
+# The provider and the tool are both external packages, so no `dsh-tool-subagent`
+# row here keeps the preset dependent on anything but the provider name.
+#
+# `maxDepth: provider-managed` is required. The child is out-of-process, so
+# nothing in this Host process can enforce a numeric delegation depth inside it.
+#
+# To choose this preset, select `opencode` in the Agent preset picker, or set it
+# as the default for a session. Installing the bundle alone changes no existing
+# Agent.
+#
+# ## Automatic continuation on output limit
 #
 # `auto-continue-opencode` is the host-side watcher behind the preset. A reply
 # cut off by the model's output token limit ends its turn with reason
 # `max-tokens`; the watcher queues the `continue` prompt the Web chat suggests,
 # once the agent is idle, and stops after more than five continuations inside a
 # rolling three-minute window. It filters on `presetId` because `session/event`
-# listeners are realm-wide, not preset-scoped.
-#
-# The preset's own plugin list is deliberately tool-poor. It carries no file, shell,
-# search, or job tools: the agent cannot read the workspace, so it cannot quietly
-# do the work itself and report that delegating worked. Every change happens inside
-# the OpenCode child, which has its own session, model, and tools.
-#
-# `maxDepth: provider-managed` is required. The child is out-of-process, so nothing
-# in this Host process can enforce a numeric delegation depth inside it.
-#
-# To choose this preset, select `opencode` in the Agent preset picker, or set it as
-# the default for a session. Installing the bundle alone changes no existing Agent.
+# listeners are realm-wide, not preset-scoped, and it only serves cut-offs of
+# the orchestrator's own answer: `requireChildPrompt` skips a `max-tokens` turn
+# end whose last model-visible event is a `tool`-role result, because that stop
+# reason is the child's and the orchestrator already sees it in the completion
+# notice.
 - insert:
-    - id: subagent-opencode-provider
-      name: '@sredevopsorg/dsh-subagent-opencode'
-      config:
-        providerName: opencode
-        command: opencode
-        args:
-          - acp
-        # The child never asks a human. `reject` keeps it from editing the
-        # workspace unprompted; raise it to `allow` for preset-driven work that
-        # is expected to modify files.
-        permission: reject
-        requirements:
-          require: []
-          # Set true to install OpenCode on first delegation when the command
-          # does not resolve. Released packages from 0.2.0 support this.
-          install: false
     # Answer the output-token-limit cutoff with the same `continue` prompt the
     # Web chat suggests, until the reply finishes or the rolling guard trips.
     # Only sessions running this preset are served; the values below are the
@@ -51,6 +66,7 @@
         text: continue
         maxAttempts: 5
         windowMs: 180000
+        requireChildPrompt: true
     - id: preset-opencode
       name: '@deepseek-ai/dsh-agent-preset'
       config:
@@ -70,6 +86,8 @@
                 When a task has several stages, an unclear objective, or a real risk of doing the wrong thing, use `exit_plan_mode` first, before delegating anything.
 
                 The child reports back only its final text. If it says it could not proceed, that is usually the permission policy refusing an edit rather than an error: report what it said and what would unblock it. Do not claim work was completed unless the child's text shows it.
+
+                The child's permission policy follows this session's approval policy. When the session has approval prompts disabled, the child cannot ask anyone, so a task that needs a write or a command will report that it could not proceed. Tell the user that, rather than working around it or retrying the same delegation.
           - id: delegation
             name: cordis:group
             group: true
@@ -77,7 +95,7 @@
               - id: tool-subagent-opencode
                 name: '@deepseek-ai/dsh-tool-subagent'
                 config:
-                  provider: opencode
+                  provider: opencode-preset
                   toolName: subagent_opencode
                   maxDepth: provider-managed
               - id: tool-subagent-control

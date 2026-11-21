@@ -16,6 +16,33 @@ Each directory under [`plugins/`](plugins/) is a self-contained Cordis plugin pa
 | [`subagent-opencode`](plugins/subagent-opencode/README.md) | bundle + subagent provider | Delegates one-shot tasks to OpenCode over ACP |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | Proactive agent that runs GitHub tickets in DSH sessions |
 
+### OpenCode bundles
+
+`agent-opencode` and `subagent-opencode` are two halves of the same idea,
+shipped as independent packages:
+
+- **`subagent-opencode`** is the capability. It registers the `opencode`
+  provider and the `subagent_opencode` tool, and it works alone.
+- **`agent-opencode`** is the opinionated consumer. It declares an agent preset
+  that may only delegate, and it binds the provider name `opencode-preset`.
+
+Neither installs the other, neither imports the other, and each is released
+separately. They are safe to install in one profile: no row id, tool name, or
+provider name is inserted twice. The preset gets its provider through a profile
+patch that ships with it (`plugins/agent-opencode/profiles/preset.cordis.patch.yml`):
+
+```bash
+# The capable profile: OpenCode configured, provider registered
+dsh plugin --profile web add ./plugins/subagent-opencode
+
+# The driving profile: the preset, plus the provider row it binds
+dsh plugin --profile web add ./plugins/agent-opencode
+```
+
+Then add the rows from `profiles/preset.cordis.patch.yml` to the driving
+profile's `cordis.patch.yml`. Each plugin's README explains the details. The
+rule of thumb is that the preset is the policy and the subagent is the mechanism.
+
 ## Install via Custom plugin indexes (recommended)
 
 1. Open **Plugins** in the Web sidebar and switch on **Custom plugin indexes** under **Experimental plugins**.
@@ -36,12 +63,12 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#<plugin>-v<version
 Quote the spec so the shell does not interpret `&`. Replace `web` with your profile. Examples:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.2.0&path:/plugins/agent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.3.0&path:/plugins/agent-opencode"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#peak-rate-footer-v0.1.0&path:/plugins/peak-rate-footer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.1&path:/plugins/sredevops-writer"
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.1&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.3.0&path:/plugins/subagent-opencode"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 ```
 
@@ -75,6 +102,7 @@ node scripts/validate-bundles.mjs
 node scripts/validate-github-install.mjs --strict
 node scripts/build-market-index.mjs --check
 node scripts/validate-market-index.mjs
+node scripts/validate-plugin-pair.mjs
 ```
 
 CI runs these validators plus the plugin unit tests on every push and pull request.

@@ -1,0 +1,55 @@
+# OpenCode preset provider: the profile-side half of `@sredevopsorg/dsh-agent-opencode`.
+#
+# The preset bundle declares the `opencode` agent preset and binds its
+# `subagent_opencode` tool to the provider name `opencode-preset`. It cannot
+# register that provider itself: a DSH preset cannot mount host services. This
+# patch supplies the provider, in the profile that mounts the preset.
+#
+# Install this bundle into a profile that runs the OpenCode preset — a seat
+# dedicated to driving OpenCode — and add this patch to that profile's
+# `cordis.patch.yml` under `- insert:`:
+#
+#   - id: subagent-opencode-preset
+#     name: '@sredevopsorg/dsh-subagent-opencode'
+#     config:
+#       providerName: opencode-preset
+#
+# The provider name is `opencode-preset`, not `opencode`, so this row can
+# coexist with `@sredevopsorg/dsh-subagent-opencode`'s own bundle in the same
+# profile: the standard bundle registers `opencode`, this row registers
+# `opencode-preset`, and each has its own `opencode auth login` store if the
+# profile wants them to differ.
+#
+# `permission: session` makes the child follow the delegating session's
+# approval policy — a `never` session refuses every permission prompt, which is
+# what "never ask the user" means for a child that has no human either.
+#
+# The provider's OpenCode home, credentials, and install directory are all
+# per-provider, so this row can differ from the standard one and from another
+# profile:
+#
+#   config:
+#     providerName: opencode-preset
+#     permission: session
+#     requirements:
+#       install: true                    # install OpenCode on first delegation
+#       installDir: ~/.dsh/opencode-preset
+#       require: ['install', 'auth']
+#       home: ~/.local/share/opencode
+#       credentials: ['OPENAI_API_KEY']  # names only
+#       model: openai/gpt-5-codex
+- insert:
+    - id: subagent-opencode-preset
+      name: '@sredevopsorg/dsh-subagent-opencode'
+      config:
+        providerName: opencode-preset
+        permission: session
+        requirements:
+          require: []
+    # A composition check: report the preset's provider when nothing supplied
+    # it. Installing this bundle without this patch and without the provider
+    # bundle leaves the preset without `subagent_opencode`; this row names why.
+    - id: subagent-opencode-conformance
+      name: '@sredevopsorg/dsh-subagent-opencode/conformance'
+      config:
+        providers: ['opencode-preset', 'opencode']
