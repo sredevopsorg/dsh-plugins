@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "OpenCode subagent",
-    "description": "Delegates one-shot tasks to the OpenCode CLI over ACP, follows the delegating session's approval policy, and relays or installs the OpenCode configuration that tasks require. Stands alone and is safe next to the OpenCode agent preset."
+    "description": "Delegates one-shot tasks to the OpenCode CLI over ACP, follows the delegating session's approval policy, and relays or installs the OpenCode configuration that tasks require. Stands alone and is safe next to the OpenCode agent preset. A Web settings page edits the provider, permission, and requirement settings from the Plugins page."
   }
 }

@@ -72,13 +72,14 @@ function pluginNames(text) {
   return names
 }
 
-test('the patch inserts the auto-continue watcher and the preset row only', () => {
+test('the patch inserts the watcher, the preset, and the package host row', () => {
   assert.deepEqual(
     insertRows(PATCH).map(row => row.id),
-    ['auto-continue-opencode', 'preset-opencode'],
+    ['auto-continue-opencode', 'preset-opencode', 'agent-opencode'],
   )
   assert.equal(insertRows(PATCH)[0].name, '@sredevopsorg/dsh-agent-opencode/auto-continue')
   assert.equal(insertRows(PATCH)[1].name, '@deepseek-ai/dsh-agent-preset')
+  assert.equal(insertRows(PATCH)[2].name, '@sredevopsorg/dsh-agent-opencode')
 })
 
 test('the bundle inserts no host-level provider or delegation tool of its own', () => {

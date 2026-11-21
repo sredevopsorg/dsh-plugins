@@ -49,7 +49,7 @@ dsh plugin --profile web add ./plugins/agent-opencode
 Or from a pinned release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.3.0&path:/plugins/agent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.4.0&path:/plugins/agent-opencode"
 ```
 
 Restart DSH afterwards. Installing declares the preset; it does not change any
@@ -149,6 +149,29 @@ Override any setting from the profile patch by row id:
     windowMs: 600000
     requireChildPrompt: false
 ```
+
+### Settings in the Web GUI
+
+The bundle ships its own settings page, shown under **Plugins → OpenCode** and
+also reachable from the `auto-continue-opencode` row's **Configure** control.
+It edits the watcher without touching YAML:
+
+| Field | Default | Meaning |
+|---|---|---|
+| Prompt text | `continue` | The message queued to resume a cut-off reply |
+| Maximum continuations | `5` | Automatic continuations allowed in one rolling window |
+| Rolling window (ms) | `180000` | The guard window; the default is three minutes |
+| Only continue the agent's own reply | `true` | Skip a cut-off that belongs to a delegated child |
+| Preset id (Advanced) | `opencode` | Sessions running this preset are served by the watcher |
+
+**Save** writes through DSH's configuration editor to the active profile's
+`cordis.patch.yml`; **Reset to defaults** removes the profile override and
+restores the bundle values. Unrelated rows, comments, and `!!js` expressions are
+preserved. If the profile or the row is not active, the page says so instead of
+writing a partial config.
+
+The page needs the Web GUI and a profile with a live configuration editor. It
+is not an agent tool: changing the continuation policy remains a user action.
 
 ### Permission policy
 
@@ -256,6 +279,17 @@ other: the only contract between them is the provider name `opencode-preset` and
 the `subagent_opencode` tool a preset child binds.
 
 ## Release notes
+
+### 0.4.0
+
+- **Web settings page.** The bundle's page under **Plugins → OpenCode** (and the
+  `auto-continue-opencode` row's **Configure** page) edits the prompt, attempt
+  limit, rolling window, child-prompt guard, and preset id. Saves go through the
+  profile configuration editor; Reset restores the bundle defaults. No YAML
+  format changed.
+- **One new host row.** `agent-opencode` mounts the package itself so the client
+  module system can attach the browser half; it registers no agent, tool, or
+  provider behavior and can be switched off without affecting the preset.
 
 ### 0.3.0
 

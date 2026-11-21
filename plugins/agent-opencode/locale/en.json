@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "OpenCode",
-    "description": "An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools of its own, so the only way to inspect or change the workspace is the `subagent_opencode` tool. It binds the provider name `opencode-preset`, which a profile supplies with `@sredevopsorg/dsh-subagent-opencode`, so it never collides with that bundle's own `opencode` provider."
+    "description": "An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools of its own, so the only way to inspect or change the workspace is the `subagent_opencode` tool. It binds the provider name `opencode-preset`, which a profile supplies with `@sredevopsorg/dsh-subagent-opencode`, so it never collides with that bundle's own `opencode` provider. A Web settings page edits the continuation watcher from the Plugins page."
   }
 }

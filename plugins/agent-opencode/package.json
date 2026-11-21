@@ -1,7 +1,7 @@
 {
   "name": "@sredevopsorg/dsh-agent-opencode",
-  "version": "0.3.0",
-  "description": "OpenCode agent preset: every task is delegated to the OpenCode CLI through the `subagent_opencode` tool, because the agent holds no file or shell tools of its own. It binds the `opencode-preset` provider so it never collides with `@sredevopsorg/dsh-subagent-opencode`, and a host watcher answers output-token-limit cutoffs with `continue`.",
+  "version": "0.4.0",
+  "description": "OpenCode agent preset: every task is delegated to the OpenCode CLI through the `subagent_opencode` tool, because the agent holds no file or shell tools of its own. It binds the `opencode-preset` provider so it never collides with `@sredevopsorg/dsh-subagent-opencode`, and a host watcher answers output-token-limit cutoffs with `continue`. A Web settings page edits the watcher without touching YAML.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -18,7 +18,8 @@
     "./auto-continue": "./auto-continue.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
+    "./icon": "./icon.svg",
+    "./client": "./client.js"
   },
   "icon": "./icon.svg",
   "files": [
@@ -29,11 +30,13 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "test/*.test.mjs"
+    "test/*.test.mjs",
+    "client.js",
+    "settings.js"
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check index.js && node --check auto-continue.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
+    "check": "node --check index.js && node --check auto-continue.js && node --check settings.js && node --check client.js && for f in test/*.test.mjs; do node --check \"$f\" || exit 1; done"
   },
   "keywords": [
     "dsh",
@@ -53,6 +56,14 @@
     "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
+      ]
     }
   }
 }

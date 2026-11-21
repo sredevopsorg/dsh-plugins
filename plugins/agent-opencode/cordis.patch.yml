@@ -137,3 +137,10 @@
             name: '@deepseek-ai/dsh-tool-goal'
           - id: command-goal
             name: '@deepseek-ai/dsh-command-goal'
+    # The package's own row exists only for the Web settings bridge and its
+    # browser half: the client module system attaches a bundle's client to the
+    # Loader row whose specifier is the bare package name. It registers no
+    # agent, tool, or provider behavior; if it is off, the preset still works
+    # and only its settings page disappears.
+    - id: agent-opencode
+      name: '@sredevopsorg/dsh-agent-opencode'
