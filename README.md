@@ -11,7 +11,7 @@ The repository publishes two things:
 |---|---|---|
 | **Skill** | A `SKILL.md` (or flat `<name>.md`) instruction bundle loaded on demand by the model or with `/name`. Skills are packaged and served by a DSH skill-provider plugin. | [`plugins/skills/skills/`](plugins/skills/skills/) |
 | **Plugin** | A Cordis plugin package loaded into a DSH profile (`dsh plugin …`). | [`plugins/`](plugins/) |
-| **Tool** | A model-facing tool registered by a plugin via `ctx.tools`, shipped inside a plugin package. | [`plugins/entire/`](plugins/entire/) |
+| **Tool** | A model-facing tool registered by a plugin via `ctx.tools`, shipped inside a plugin package. | `plugins/code-editor/` |
 
 The repository also publishes [`index.json`](index.json), a **format-1 plugin market index** that [@deepseek-ai/dsh-experimental-plugin-market-bundle](https://github.com/deepseek-ai/deepseek-harness) reads in the Web **Plugins → Discover** tab.
 
@@ -45,7 +45,6 @@ All ten skills ship in the single [`skills`](plugins/skills/README.md) plugin. I
 |---|---|---|
 | [`agent-opencode`](plugins/agent-opencode/README.md) | bundle + agent preset | An agent preset that delegates every task to the OpenCode CLI: it holds no file or shell tools, so `subagent_opencode` is its only route to the workspace |
 | [`code-editor`](plugins/code-editor/README.md) | bundle + web editor | Browsing a Session's workspace and editing UTF-8 files from a right-sidebar tab, with sandbox-aware saves and optimistic conflict detection |
-| [`entire`](plugins/entire/README.md) | bundle + tool | Reading Entire sessions, checkpoints, search, trails, and code history, plus capturing DSH sessions as Entire checkpoints |
 | [`peak-rate-footer`](plugins/peak-rate-footer/README.md) | bundle + web footer | A green/orange footer showing whether DeepSeek API usage is currently billed at peak or off-peak rates, with a local clock, next-change countdown, and in-footer time-zone picker |
 | [`skills`](plugins/skills/README.md) | bundle + 10 skills | Installing every skill in this repository as one plugin: a packaged skill provider serving the architecture, fullstack, Supabase/Postgres, Ghost theme, Helm, Kubernetes, Kustomize, and GitHub Actions skills |
 | [`sredevops-writer`](plugins/sredevops-writer/README.md) | bundle + agent preset | An editorial agent preset for `sredevops.org`: drafts, refines, and translates Ghost-ready articles in English and Chilean Spanish in a senior SRE/DevOps voice, and saves standing corrections to an editorial memory |
@@ -101,7 +100,6 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.
 │       └── version-plugins.yml            # tag merged plugin versions, dispatch releases
 ├── docs/
 │   ├── ghost-themes.md                    # repo doc — NOT a skill
-│   ├── entire-dsh-audit.md                # root-cause audit of the Entire/DSH capture automation
 │   ├── installing-plugins-from-github.md  # install addresses, pinning, troubleshooting
 │   └── plugin-index.md                    # publishing and maintaining index.json
 └── plugins/
@@ -120,15 +118,6 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#agent-opencode-v0.
     │   ├── client.js                      # browser bundle: right-sidebar file browser and editor
     │   ├── test/                          # host route and packaging tests (node --test)
     │   ├── locale/en.json, locale/es.json
-    │   ├── icon.svg
-    │   └── README.md
-    ├── entire/
-    │   ├── package.json                   # name, license, exports, dsh.bundle.patch
-    │   ├── cordis.patch.yml               # the plugin row + capture defaults
-    │   ├── index.js                       # tools, approval policy, prompt section, bridge wiring
-    │   ├── lib/                           # commands, policy, exec, config, text, session bridge
-    │   ├── test/                          # unit tests (node --test)
-    │   ├── locale/en.json
     │   ├── icon.svg
     │   └── README.md
     ├── peak-rate-footer/
@@ -217,10 +206,6 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   `scripts/verify-kustomize.mjs` renders each root and validates the manifest stream.
   Pin the same major.minor across local, CI, and GitOps agents: `kubectl` embeds its
   own Kustomize and the two release lines drift independently.
-- **Entire CLI** (`entire`) on `PATH` — only for the `entire` plugin. It records agent sessions and
-  checkpoints and backs every tool; session capture additionally needs the `entire-agent-dsh`
-  binary and `entire agent add dsh` in the target repository. Search, trails, and recap also need
-  an authenticated login and OS keyring access.
 - **`git`** and **`pnpm` 9 or newer** — only when installing DSH plugin packages from this
   repository (`dsh plugin …` forwards to pnpm; `path:` subdirectory installs need pnpm 9).
   No npm publish is involved. `superagent` also fetches its two runtime dependencies
@@ -233,9 +218,7 @@ A skill directory may carry any supporting files — `references/`, `scripts/`, 
   [`superagent`](plugins/superagent/README.md) fork, whose managed-service script and
   executor sessions need them. It requires a Web profile (the management panel is a web
   plugin) and its own `stateDir` configuration; `SETUP.md` in the plugin drives the
-  deployment. Its optional session capture additionally needs the `entire` plugin in the
-  same profile and `entire agent add dsh` in the target repository — see
-  [`docs/entire-dsh-audit.md`](docs/entire-dsh-audit.md) for the current root causes.
+  deployment.
 
 ---
 
@@ -363,7 +346,7 @@ The same package installs with pnpm's Git subdirectory parameter, pinned to an i
 release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
 ```
 
 Quote the spec: the shell must not interpret `&`. Replace `web` with your profile.
@@ -374,7 +357,7 @@ Requirements, full-URL and commit-pinned variants, update/uninstall commands,
 and troubleshooting are in
 [`docs/installing-plugins-from-github.md`](docs/installing-plugins-from-github.md).
 For local development, install a checkout instead:
-`dsh plugin --profile web add ./plugins/entire`.
+`dsh plugin --profile web add ./plugins/code-editor`.
 
 ---
 
@@ -478,13 +461,11 @@ Install and select it into a profile — from Discover, from GitHub with a pinne
 
 ```bash
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#entire-v0.2.0&path:/plugins/entire"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#peak-rate-footer-v0.1.0&path:/plugins/peak-rate-footer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.1&path:/plugins/sredevops-writer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
 dsh plugin --profile web add ./plugins/code-editor # local checkout
-dsh plugin --profile web add ./plugins/entire   # local checkout
 dsh plugin --profile web add ./plugins/peak-rate-footer # local checkout
 dsh plugin --profile web list
 dsh --profile web --dump-config                 # inspect the composed tree, no boot
@@ -509,7 +490,7 @@ plugins/<name>/
 └── README.md             # configuration table + observable behavior
 ```
 
-[`entire`](plugins/entire/README.md) and [`skills`](plugins/skills/README.md) ship plain ESM
+[`skills`](plugins/skills/README.md) ships plain ESM
 with **no dependencies and no build step**. That is deliberate: a workspace-linked plugin
 cannot resolve bare `@deepseek-ai/*` specifiers unless its manifest declares them as
 `peerDependencies`, so a dependency-free package keeps `dsh plugin add` free of both a
@@ -540,31 +521,6 @@ Model-facing tools are registered from a plugin via `ctx.tools`; they should dec
 plugin version with its display metadata and an exact install source pinned to the
 release-tag commit, so the experimental **Custom plugin indexes** bundle can browse and
 install this repository's plugins without npm publishing.
-
-```json
-{
-  "format": 1,
-  "title": { "en": "sredevopsorg DSH plugins" },
-  "plugins": [
-    {
-      "name": "@sredevopsorg/dsh-entire",
-      "versions": [
-        {
-          "version": "0.2.0",
-          "publishTimestamp": 1793651934,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/sredevopsorg/dsh-plugins",
-            "commit": "<40-hex commit of the entire-v0.2.0 tag>",
-            "path": "plugins/entire"
-          },
-          "engines": { "dsh": "^0.2.1-rc.2" }
-        }
-      ]
-    }
-  ]
-}
-```
 
 `index.json` is generated from the package manifests and Git release tags; do not edit it
 by hand:
@@ -602,7 +558,6 @@ node scripts/validate-bundles.mjs --json    # machine-readable results
 node scripts/validate-github-install.mjs        # GitHub install metadata + npm pack contents
 node scripts/validate-github-install.mjs --strict
 node scripts/validate-github-install.mjs --json
-node scripts/validate-github-install.mjs --tag entire-v0.2.0   # release-tag check
 node scripts/validate-github-install.mjs --tag skills-v0.2.0   # skills plugin release tag
 node scripts/validate-github-install.mjs --tag superagent-v0.1.2 # superagent release tag
 
@@ -639,16 +594,11 @@ Beyond the validators:
 - Start a session and confirm the skill appears in the catalog (`/` in the composer lists user-invocable skills).
 - Load it once by exact name to confirm the body parses and the resource paths resolve.
 - For plugins: `dsh --profile <name> --dump-config` composes without booting.
-- For the `entire` plugin: install it (from Discover or the pinned GitHub spec above), confirm
-  `entire` appears in the tool list, then disable the bundle and confirm it disappears —
-  that proves the registration belongs to the plugin's context. The plugin README has the
-  full verification checklist.
 - For the `superagent` plugin: install it into a scratch profile, run
   `dsh --profile <name> --dump-config` and confirm the `dsh-superagent` row and both presets
   compose; then start DSH, open the **Superagent** sidebar entry, and save a `stateDir` if
   setup asks for it. `cd plugins/superagent && pnpm check` runs the typecheck, test suites
-  and build. Its deployment, Feishu setup and capture caveats are in its README, `SETUP.md`
-  and [`docs/entire-dsh-audit.md`](docs/entire-dsh-audit.md).
+  and build. Its deployment, Feishu setup and capture caveats are in its README and `SETUP.md`.
 - For the `code-editor` plugin: install it into a scratch Web profile, open the right Sidebar
   guide, pick **Code editor**, edit and save a UTF-8 workspace file, and confirm the conflict
   banner after changing that file on disk while an unsaved draft exists.
@@ -699,7 +649,6 @@ When the versioning workflow is unavailable, tag by hand after the bump merges:
 
 ```bash
 node scripts/release-tag.mjs --plugin code-editor --push
-node scripts/release-tag.mjs --plugin entire --push
 node scripts/release-tag.mjs --plugin skills --push
 node scripts/release-tag.mjs --plugin sredevops-writer --push
 node scripts/release-tag.mjs --plugin superagent --push

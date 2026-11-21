@@ -26,12 +26,7 @@ plugin package, so the paths above are package-internal.
 
 | Path | Upstream | License |
 |---|---|---|
-| [`plugins/entire`](plugins/entire/README.md) | Reads the Entire CLI's data through the `entire` binary and captures DSH sessions through `entire-agent-dsh`. The plugin is original work; the binaries are runtime dependencies and are **not** redistributed here. | MIT |
 | [`plugins/superagent`](plugins/superagent/README.md) | Fork of the DeepSeek Harness `dsh-superagent` research prototype — https://github.com/deepseek-ai/dsh-superagent-prototype (upstream commit `8c32a9d`). The fork keeps the upstream MIT license, renames the package to `@sredevopsorg/dsh-superagent`, adds repository packaging, and commits the build output so a Git install needs no toolchain. Upstream copyright remains with the DeepSeek Harness Team. | MIT |
-
-The `entire` plugin runs the Entire CLI from the `entire` binary on `PATH` or the
-`binary` value you configure. Entire is a separate product with its own service,
-account, and terms; nothing from Entire is redistributed here.
 
 The `superagent` plugin is a fork, not a redistribution of the prototype by the
 DeepSeek Harness Team; it is provided as research code without warranty, as the
@@ -39,4 +34,4 @@ upstream README states. The upstream `LICENSE` is kept in the plugin directory.
 
 > Copyright for the upstream material remains with its authors. Nothing in this
 > repository's MIT license grants rights to third-party trademarks such as
-> "Supabase", "Ghost", "Entire", "Kubernetes", "OpenShift", or "DeepSeek".
+> "Supabase", "Ghost", "Kubernetes", "OpenShift", or "DeepSeek".

@@ -10,7 +10,7 @@
  *
  * Usage:
  *   node scripts/release-tag.mjs --plugin <dir> [--dry-run] [--push]
- *   --plugin DIR  plugin directory under plugins/ (e.g. entire)
+ *   --plugin DIR  plugin directory under plugins/ (e.g. code-editor)
  *   --dry-run     print the tag and install command; change nothing
  *   --push        push the tag to origin after creating it
  *   -h, --help    show this help
