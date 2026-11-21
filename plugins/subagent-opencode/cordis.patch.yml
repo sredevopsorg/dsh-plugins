@@ -8,6 +8,13 @@
 # `maxDepth: provider-managed` is required: the child is out-of-process, so the
 # parent cannot enforce a numeric delegation depth inside it.
 #
+# `permission: session` follows the delegating session's approval policy: a
+# session whose policy is `never` gets a child that refuses every permission
+# request, because there is no human to ask; every other session keeps the
+# answer configured here. Pin it to `reject` or `allow` to stop following the
+# session. This is the only permission source the child can consult, so it is
+# also what makes the preset work in a `never`-approval session.
+#
 # `requirements` declares the OpenCode configuration this profile depends on.
 # It is empty here, which keeps the zero-configuration behavior of a local
 # `opencode auth login` setup; a deployment that needs enforcement adds gates,
@@ -34,6 +41,11 @@
 #     require: [install]        # fail the run with a clear message when it cannot
 #     installDir: /var/lib/dsh/opencode   # default: <profile dir>/opencode
 #     installManager: npm                 # pnpm (default), npm, or none
+#
+# One provider per profile. A second registration of `opencode` is rejected by
+# the subagent service with DUPLICATE_PROVIDER. The OpenCode preset bundle
+# therefore binds its own `opencode-preset` provider and can coexist with this
+# row; it does not insert a second `opencode`.
 - insert:
     - id: subagent-opencode
       name: '@sredevopsorg/dsh-subagent-opencode'
@@ -42,7 +54,7 @@
         command: opencode
         args:
           - acp
-        permission: reject
+        permission: session
         requirements:
           require: []
     - id: tool-subagent-opencode

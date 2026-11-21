@@ -8,8 +8,16 @@ The bundle registers a subagent provider named `opencode` and exposes it as the
 wraps Codex. The child runs in its own process, with its own session, model,
 tools, and credentials; only its final text comes back to the parent.
 
+This package is a **capability**: it has no agent preset, no persona, and no
+opinion about how you delegate. It stands alone and it is safe next to
+[`agent-opencode`](../agent-opencode/README.md), which is the **opinionated
+consumer** — an agent preset that delegates every task here. The two never
+share a row id, a tool name, or a provider name (see
+[Relationship to the OpenCode preset](#relationship-to-the-opencode-preset)).
+
 - [Prerequisites](#prerequisites)
 - [Install](#install)
+- [Relationship to the OpenCode preset](#relationship-to-the-opencode-preset)
 - [Required configurations](#required-configurations)
 - [Configuration](#configuration)
 - [What the model sees](#what-the-model-sees)
@@ -66,10 +74,45 @@ dsh plugin --profile web add ./plugins/subagent-opencode
 Or from a pinned release tag:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.2.1&path:/plugins/subagent-opencode"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.3.0&path:/plugins/subagent-opencode"
 ```
 
 Restart DSH afterwards; the provider and tool are composed at startup.
+
+## Relationship to the OpenCode preset
+
+[`agent-opencode`](../agent-opencode/README.md) is an agent preset whose only
+route to work is this provider. It is a separate package, installed separately,
+versioned separately, and **not a dependency of this one**. The two are built to
+be independent:
+
+| | this bundle | `agent-opencode` |
+|---|---|---|
+| Purpose | provide the capability | compose an agent that only delegates |
+| Host rows it inserts | provider `subagent-opencode`, tool `subagent_opencode` | the `opencode` preset, the auto-continue watcher |
+| Provider name | `opencode` | binds `opencode-preset` (supplied by a profile) |
+| Tool name in the model | `subagent_opencode` | `subagent_opencode` (a preset child, local to the preset) |
+| Needs the other to work | no | yes, to have something to delegate to |
+
+The names are deliberately disjoint. The preset binds `opencode-preset`, so it
+can point at *this* bundle's `opencode` provider in a profile that supplies one,
+or at its own provider row, while both packages stay installed. Install either
+alone and it is self-contained; install both and no row, tool, or provider name
+is inserted twice.
+
+`subagent-opencode/conformance` is the optional row that turns a missing
+provider into a named diagnostic instead of a silently absent tool:
+
+```yaml
+- id: subagent-opencode-conformance
+  name: '@sredevopsorg/dsh-subagent-opencode/conformance'
+  config:
+    providers: ['opencode-preset', 'opencode']
+```
+
+It runs after the host has composed every row, waits for `ready`, reports with
+one fixed line per unbacked provider, and never blocks the profile. An explicit
+empty `providers` list turns it off.
 
 ## Required configurations
 
@@ -153,7 +196,7 @@ What each gate checks:
 | `providerName` | `opencode` | Registry name on `ctx.subagents` |
 | `command` | `opencode` | Executable: a bare name on `PATH`, or an absolute path |
 | `args` | `['acp']` | Arguments after the executable; `acp` is added when absent |
-| `permission` | `reject` | Auto-answer permission prompts: `reject` or `allow` |
+| `permission` | `session` | Auto-answer permission prompts: `session`, `reject`, or `allow` |
 | `passEnv` | `['OPENCODE_*', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'HOME']` | Ambient names re-forwarded after the credential scrub |
 | `env` | `{}` | Explicit child environment, merged last |
 | `disposeGraceMs` | `3000` | Window before the child is terminated after its stdin closes |
@@ -185,15 +228,33 @@ build as usual; this plugin only ever runs the install itself.
 ### Permission policy
 
 The child never asks a human: every `session/request_permission` is answered by
-policy.
+policy. That is the only authority the child has, because a subagent provider
+never holds an agent handle and therefore cannot ask the approval seam itself.
 
-- `reject` (default) picks `reject_once`, so a task that needs to write files or
-  run commands will report that it could not proceed. This is the safe default
-  for an unattended child.
-- `allow` picks `allow_once` for every prompt.
+- `session` (the default) follows the approval policy of the **session that is
+  delegating**:
+  - a session whose policy is `never` answers every prompt with `reject_once`,
+    so a task that needs to write files or run commands reports that it could
+    not proceed. That is the honest reading of "never ask the user": there is no
+    human, so a request that needs one cannot be granted;
+  - every other session keeps the profile's answer. The profile's configured
+    policy decides the rest, and a session this provider cannot inspect is
+    treated as untrusted, so the child never gains authority the parent could
+    not verify.
+- `reject` pins `reject_once` for every prompt, whatever the session says.
+- `allow` pins `allow_once` for every prompt.
 
-Choose `allow` when the delegation is expected to modify the workspace, and rely
-on the DSH session's own approval settings for the authority to do so.
+The projection is one-way: a `never` session makes the child stricter than the
+profile allowed, and never more permissive. Read order is the session's recorded
+`approval/policy` override, then the approval service's configured default, then
+the documented `ask` default. The two private DSH facts (`overrideOf` and
+`config.policy`) are read through guarded helpers, so a future DSH that reshapes
+the service degrades to `ask` instead of failing a delegation.
+
+A permission failure names the resolved policy and its source in one fixed line,
+so a child that stopped because it could not act is distinguishable from an
+OpenCode error. Raise `permission` to `allow` only when you have decided that
+every session may write, `never` or `ask`.
 
 ### Changing the tool name
 
@@ -254,12 +315,45 @@ Both are one-shot: the child cannot receive follow-up messages.
 | `stage: install` | `opencode` is not on the DSH process's `PATH` | Set `command` to the absolute path, fix `PATH`, or set `requirements.install: true` |
 | `subagent-opencode: <manager> failed in …` | The explicit install could not run | Read the exit code, then fix network or registry settings; `installManager: none` turns installing off |
 | `… installed no executable for …` | The manager succeeded without the platform package | Check the registry and `installArgs`; arm64 and x64 Linux and macOS are published |
+| `<provider> is not registered` from `conformance` | nothing supplied the provider a preset binds | Install this bundle, or add its provider row to the profile |
 | `stage: session-new; category: auth-required` | No login for a configured provider | `opencode auth login`, or declare `credentials` |
 | `required configuration is missing: X is not set` | `require: [credentials]` and `X` is unset | Export `X` for the DSH process, or drop the gate |
 | `stage: configure` | OpenCode rejected `model`, `effort`, or `mode` | Check `opencode models` / `opencode agent list` |
-| The child reports it could not write files | `permission: reject` | Set `permission: allow` |
+| The child reports it could not write files | `permission: session` and the session has approval prompts disabled, or `permission: reject` | Switch the session to `ask`, or set `permission: allow` deliberately |
 
 ## Release notes
+
+### 0.3.0
+
+Follows the delegating session's approval policy by default and makes
+coexistence with `agent-opencode` structural.
+
+- **`permission: session` is the new default.** A session whose approval policy
+  is `never` now gets a child that also refuses permission prompts, instead of a
+  child that asked for a human who was not there. `reject` and `allow` still pin
+  the answer for every session. The policy is resolved per run from the
+  session's `approval/policy` override, then the approval service's configured
+  default, then `ask`, and is reported in one fixed line on a permission
+  failure. A profile that relied on the old `reject` default and delegates to a
+  child that must write should set `permission: allow` explicitly.
+- **Guarded session seam.** The two private DSH facts used for that read
+  (`overrideOf(session)` and `config.policy`) are accessed through try/catch
+  helpers. A DSH release that reshapes them degrades to `ask`; no delegation
+  fails.
+- **Client capability.** The ACP `initialize` handshake now advertises
+  `fs.sessionPermissionRequests`, matching the contract this client already
+  honors.
+- **Coexistence guard.** A child whose working directory is inside the profile
+  that mounts this provider is refused with a fixed diagnostic: the child would
+  configure a second profile and register the provider and tool twice. This is
+  the failure a same-profile preset install would otherwise hit as
+  `DUPLICATE_PROVIDER`.
+- **`subagent-opencode/conformance`.** New optional row that reports a preset's
+  provider when nothing supplies it, after the host composition settles.
+- **No coupling to `agent-opencode`.** The subagent, install, requirements, and
+  approval-policy modules do not import anything from the preset package, and
+  the resources the ACP SDK needs are resolved from the DSH installation itself
+  (`sdk.js`), which every profile has.
 
 ### 0.2.1
 
@@ -275,7 +369,8 @@ diagnostic. No configuration changes are needed; install 0.2.1 over 0.2.0.
 
 ```bash
 cd plugins/subagent-opencode
-npm test    # 32 tests: requirement gates, env relay, and the ACP lifecycle
+npm test    # 112 tests: requirement gates, env relay, the ACP lifecycle,
+            # session policy, conformance, and the coexistence guard
 npm run check
 ```
 

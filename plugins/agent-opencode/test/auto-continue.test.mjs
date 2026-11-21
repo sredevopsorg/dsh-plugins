@@ -13,6 +13,7 @@ import {
   DEFAULT_CONFIG,
   apply,
   continuationMessage,
+  isOwnReply,
   normalizeConfig,
   pruneAttempts,
 } from '../auto-continue.js'
@@ -200,6 +201,54 @@ test('a custom attempt budget and text are honored', () => {
   assert.deepEqual(host.followups[0].content, [{ type: 'text', text: 'go on' }])
 })
 
+test('requireChildPrompt continues only the orchestrator\'s own reply', () => {
+  const host = harness({ requireChildPrompt: true })
+  const agent = host.addAgent()
+  // The turn consumed a delegated child's result: `tool/result` is the last
+  // model-visible event, so the cut-off belongs to the child, not the reply.
+  agent.session.surface = { nodes: [1, 2] }
+  agent.session.eventAt = (seq) => (seq === 2
+    ? { type: 'tool/result', data: { message: { role: 'tool' } } }
+    : { type: 'user/message', data: { message: { role: 'user' } } })
+
+  host.endTurn(agent)
+
+  assert.equal(host.followups.length, 0, 'the child stop reason is already reported to the orchestrator')
+})
+
+test('requireChildPrompt continues a plain assistant reply that hit the cap', () => {
+  const host = harness({ requireChildPrompt: true })
+  const agent = host.addAgent()
+  agent.session.surface = { nodes: [1] }
+  agent.session.eventAt = () => ({ type: 'assistant/message', data: { message: { role: 'assistant' } } })
+
+  host.endTurn(agent)
+
+  assert.equal(host.followups.length, 1)
+})
+
+test('requireChildPrompt keeps the historical behavior when the log is unreadable', () => {
+  const host = harness({ requireChildPrompt: true })
+  const agent = host.addAgent()
+
+  host.endTurn(agent)
+
+  assert.equal(host.followups.length, 1, 'an unreadable session is treated as a plain reply')
+})
+
+test('the switch is off by default', () => {
+  assert.equal(DEFAULT_CONFIG.requireChildPrompt, false)
+  assert.equal(normalizeConfig(undefined).requireChildPrompt, false)
+  assert.equal(normalizeConfig({ requireChildPrompt: 'yes' }).requireChildPrompt, false, 'a non-boolean is ignored')
+})
+
+test('isOwnReply reads the last model-visible event', () => {
+  assert.equal(isOwnReply({ surface: { nodes: [1] }, eventAt: () => ({ data: { message: { role: 'tool' } } }) }), false)
+  assert.equal(isOwnReply({ surface: { nodes: [1] }, eventAt: () => ({ data: { message: { role: 'user' } } }) }), true)
+  assert.equal(isOwnReply({}), true, 'no surface is treated as a plain reply')
+  assert.equal(isOwnReply({ surface: { nodes: [1] } }), true, 'no eventAt keeps the fallback')
+})
+
 test('pruneAttempts keeps only timestamps inside the rolling window', () => {
   const now = 1_000_000
   const attempts = [now - 180_001, now - 180_000, now - 60_000, now, now + 1]
@@ -217,6 +266,7 @@ test('normalizeConfig keeps valid overrides and falls back on invalid ones', () 
     text: 'resume',
     maxAttempts: 3,
     windowMs: 1000,
+    requireChildPrompt: false,
   })
 })
 

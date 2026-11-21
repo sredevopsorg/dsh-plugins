@@ -1,7 +1,7 @@
 {
   "name": "@sredevopsorg/dsh-agent-opencode",
-  "version": "0.2.0",
-  "description": "OpenCode agent preset: every task is delegated to the OpenCode CLI through the `subagent_opencode` tool, because the agent holds no file or shell tools of its own. A host watcher answers output-token-limit cutoffs with `continue`.",
+  "version": "0.3.0",
+  "description": "OpenCode agent preset: every task is delegated to the OpenCode CLI through the `subagent_opencode` tool, because the agent holds no file or shell tools of its own. It binds the `opencode-preset` provider so it never collides with `@sredevopsorg/dsh-subagent-opencode`, and a host watcher answers output-token-limit cutoffs with `continue`.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
     "index.js",
     "auto-continue.js",
     "cordis.patch.yml",
+    "profiles/*.yml",
     "locale/*.json",
     "icon.svg",
     "README.md",
@@ -42,6 +43,7 @@
     "subagent",
     "opencode",
     "auto-continue",
+    "permission",
     "delegation"
   ],
   "engines": {

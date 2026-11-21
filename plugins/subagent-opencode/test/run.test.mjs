@@ -236,3 +236,67 @@ test('a refusal maps through and keeps its category in the diagnostic', async ()
   assert.match(result.diagnostic, /category: refusal/)
   await run.dispose()
 })
+
+test('the client advertises that it answers session permission requests', async () => {
+  const run = await startOpenCodeRun(request(), await specFor({ echoClientCapabilities: true }))
+  const [block] = (await run.result).output
+  const capabilities = JSON.parse(/capabilities=(.*)$/.exec(block.text)[1])
+  assert.equal(capabilities.fs.sessionPermissionRequests, true)
+  assert.equal(capabilities.fs.readTextFile, false, 'the child still reads files itself')
+  assert.equal(capabilities.fs.writeTextFile, false)
+  assert.equal(capabilities.terminal, false)
+  await run.dispose()
+})
+
+test('a permission failure carries the resolved policy note', async () => {
+  const policyNote = 'Permission policy: reject (session approval policy never from session; set `permission` to override it)'
+  const run = await startOpenCodeRun(
+    request(),
+    await specFor(
+      { askPermission: true, stopReason: 'refusal' },
+      { permission: 'session', policy: 'reject', policyNote },
+    ),
+  )
+  try {
+    const result = await run.result
+    assert.match(result.diagnostic, /permissions requested: 1/)
+    assert.match(result.diagnostic, /session approval policy never from session/)
+  } finally {
+    await run.dispose()
+  }
+})
+
+test('an error-path diagnostic keeps the resolved policy note', async () => {
+  const policyNote = 'Permission policy: reject (session approval policy never from session; set `permission` to override it)'
+  const run = await startOpenCodeRun(
+    request(),
+    await specFor(
+      { askPermission: true, exitDuringPrompt: true },
+      { permission: 'session', policy: 'reject', policyNote },
+    ),
+  )
+  try {
+    const result = await run.result
+    assert.equal(result.stopReason, 'error')
+    assert.match(result.diagnostic, /permissions requested: 1/)
+    assert.match(result.diagnostic, /session approval policy never from session/)
+  } finally {
+    await run.dispose()
+  }
+})
+
+test('the configured permission name still applies when no policy is supplied', async () => {
+  const run = await startOpenCodeRun(
+    request(),
+    await specFor({ askPermission: true, stopReason: 'refusal' }, { permission: 'allow' }),
+  )
+  try {
+    const result = await run.result
+    // An allow policy answers the prompt, so the child proceeds and reports no
+    // permission-driven stop; the run still completes on its own stop reason.
+    assert.equal(result.stopReason, 'refusal')
+    assert.match(result.diagnostic, /Permission policy: allow/)
+  } finally {
+    await run.dispose()
+  }
+})

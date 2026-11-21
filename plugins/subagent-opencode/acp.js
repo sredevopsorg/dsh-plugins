@@ -16,6 +16,7 @@
 
 import { randomUUID } from 'node:crypto'
 import { Readable, Writable } from 'node:stream'
+import { describePolicy } from './approval-policy.js'
 import { failureDiagnostic } from './requirements.js'
 import { loadAcpSdk } from './sdk.js'
 
@@ -170,10 +171,16 @@ export function permissionOutcome(params, policy) {
  * Start one OpenCode child and publish it after the handshake succeeds.
  * @param {object} request - resolved subagent start request.
  * @param {object} spec - resolved run inputs and seam hooks.
+ * @param {string} [spec.policy] - the ACP permission policy this run applies.
+ * @param {string} [spec.policyNote] - the fixed policy line a permission diagnostic carries.
  * @returns {Promise<object>} the published run handle.
  */
 export async function startOpenCodeRun(request, spec) {
   const texts = taskText(request.prompt)
+  // `permission` stays the historical name for the policy; an explicit
+  // `policy` lets a caller resolve it per run without renaming the option.
+  const policy = spec.policy ?? spec.permission
+  const policyNote = spec.policyNote ?? describePolicy(policy, { policy, source: 'configured' })
   if (request.signal.aborted) throw new OpenCodeFailure({ stage: 'initialize', category: 'unknown' })
 
   let executable
@@ -204,7 +211,7 @@ export async function startOpenCodeRun(request, spec) {
       async sessionUpdate({ update }) { collector.update(update) },
       async requestPermission(params) {
         collector.notePermission()
-        return permissionOutcome(params, spec.permission)
+        return permissionOutcome(params, policy)
       },
     }),
     ndJsonStream(Writable.toWeb(child.stdin), Readable.toWeb(child.stdout)),
@@ -248,7 +255,13 @@ export async function startOpenCodeRun(request, spec) {
     await Promise.race([
       connection.initialize({
         protocolVersion: PROTOCOL_VERSION,
-        clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
+        clientCapabilities: {
+          // The client answers `session/request_permission` itself, by policy.
+          // Advertising it lets an agent that consults client capabilities
+          // route its prompts here instead of failing on an unknown capability.
+          fs: { readTextFile: false, writeTextFile: false, sessionPermissionRequests: true },
+          terminal: false,
+        },
       }),
       processFailure,
     ])
@@ -318,12 +331,18 @@ export async function startOpenCodeRun(request, spec) {
       ])
       const stopReason = mapStopReason(response.stopReason)
       if (stopReason === 'completed') return { output: collector.output(), stopReason }
-      diagnostic = failureDiagnostic({
-        stage: 'prompt',
-        category: stopReason === 'error' ? 'unknown' : stopReason,
-        permissions: collector.permissions,
-        outcome: childOutcome,
-      })
+      // A prompt that ended with permission prompts answered by policy is the
+      // case the policy line explains: the child stopped because it could not
+      // act, not because OpenCode failed.
+      diagnostic = [
+        failureDiagnostic({
+          stage: 'prompt',
+          category: stopReason === 'error' ? 'unknown' : stopReason,
+          permissions: collector.permissions,
+          outcome: childOutcome,
+        }),
+        collector.permissions > 0 ? policyNote : undefined,
+      ].filter(line => line !== undefined).join('\n')
       return { output: collector.output(), stopReason, diagnostic }
     } catch (error) {
       if (runAbort.signal.aborted) {
@@ -336,6 +355,9 @@ export async function startOpenCodeRun(request, spec) {
       diagnostic = [
         failureDiagnostic({ ...facts, permissions: collector.permissions }),
         HINTS[facts.category] ?? HINTS[facts.cause?.category],
+        // The policy explains a child that stopped because it could not act,
+        // which is otherwise easy to read as an OpenCode error.
+        collector.permissions > 0 ? policyNote : undefined,
         trail,
       ].filter(line => line !== undefined).join('\n')
       return { output: collector.output(), stopReason: 'error', diagnostic }

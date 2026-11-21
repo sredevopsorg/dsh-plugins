@@ -8,18 +8,25 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
-import { apply, Config } from '../index.js'
+import {
+  apply,
+  Config,
+  isInsideDirectory,
+  profileDirOf,
+} from '../index.js'
 import { hostPlatformPackage, knownInstall } from '../install.js'
 import { assertLoadTimeRequirements } from '../requirements.js'
 
 /** A context stub that records the provider it is handed. */
-function fakeContext({ provide } = {}) {
+function fakeContext({ provide, profile } = {}) {
   const registered = []
   const warnings = []
   return {
     registered,
     warnings,
     logger: { warn(message) { warnings.push(message) }, info() {} },
+    // Only the profile context is served; every other service is absent.
+    get: (name) => (name === 'profileContext' && profile !== undefined ? { dir: profile } : undefined),
     subagents: { registerProvider: (provider) => { registered.push(provider) } },
     subprocess: {
       spawn() { throw new Error('spawn should not be reached in these tests') },
@@ -240,4 +247,46 @@ test('an aborted request starts nothing', async (t) => {
     provider.start({ ...request(), signal: controller.signal }),
     /the run was aborted/,
   )
+})
+
+test('the session permission policy is the provider default', () => {
+  const { provider } = mount()
+  assert.equal(provider.config.permission, 'session')
+})
+
+test('a pinned permission policy survives the mount', () => {
+  for (const permission of ['reject', 'allow']) {
+    assert.equal(mount({ permission }).provider.config.permission, permission)
+  }
+})
+
+test('the profile guard also reads the injected profileContext', () => {
+  assert.equal(profileDirOf({ profileContext: { dir: '/opt/dsh/profiles/web' } }), '/opt/dsh/profiles/web')
+  assert.equal(profileDirOf({ profileContext: { dir: 'relative' } }), undefined)
+  assert.equal(profileDirOf({}), undefined)
+})
+
+test('isInsideDirectory treats the directory itself and its children as inside', () => {
+  assert.equal(isInsideDirectory('/opt/dsh/web', '/opt/dsh/web'), true)
+  assert.equal(isInsideDirectory('/opt/dsh/web/plugins', '/opt/dsh/web'), true)
+  assert.equal(isInsideDirectory('/opt/dsh/webby', '/opt/dsh/web'), false)
+  assert.equal(isInsideDirectory('/opt/other', '/opt/dsh/web'), false)
+})
+
+test('a child working directory inside the profile is refused before spawning', async (t) => {
+  const profile = tempDir(t)
+  const { provider } = mount({ requirements: { installDir: tempDir(t) } }, { profile })
+  await assert.rejects(
+    provider.start({ ...request(), cwd: profile }),
+    /working directory is inside the DSH profile/,
+  )
+})
+
+test('a child working directory outside the profile is allowed', async (t) => {
+  const profile = tempDir(t)
+  const workspace = tempDir(t)
+  const { provider } = mount({ requirements: { installDir: tempDir(t) } }, { profile, provide: false })
+  // The run itself needs OpenCode, so assert only that the guard passed: the
+  // next failure is the executable probe, not the profile guard.
+  await assert.rejects(provider.start({ ...request(), cwd: workspace }), /stage: install/)
 })
