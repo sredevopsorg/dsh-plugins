@@ -106,6 +106,17 @@ test('a never session can only make the child stricter, never more permissive', 
   assert.equal(projectPolicy('reject', 'ask'), 'reject')
 })
 
+test('permission session resolves an ask session to allow and never to reject', () => {
+  // An ask session lets the out-of-process child proceed (it cannot ask a
+  // human itself); a never session refuses regardless of the configured policy.
+  assert.equal(projectPolicy('session', 'ask'), 'allow')
+  assert.equal(projectPolicy('session', 'never'), 'reject')
+  assert.equal(projectPolicy('reject', 'ask'), 'reject')
+  assert.equal(projectPolicy('reject', 'never'), 'reject')
+  assert.equal(projectPolicy('allow', 'ask'), 'allow')
+  assert.equal(projectPolicy('allow', 'never'), 'reject')
+})
+
 test('the diagnostic line names the policy and its source, and nothing else', () => {
   const line = describePolicy('reject', { policy: 'never', source: 'session' })
   assert.match(line, /Permission policy: reject/)

@@ -88,6 +88,7 @@ test('the permission policy picks the configured option kind', () => {
   }
   assert.deepEqual(permissionOutcome(params, 'allow'), { outcome: { outcome: 'selected', optionId: 'once' } })
   assert.deepEqual(permissionOutcome(params, 'reject'), { outcome: { outcome: 'selected', optionId: 'no' } })
+  assert.deepEqual(permissionOutcome(params, 'session'), { outcome: { outcome: 'selected', optionId: 'no' } })
   assert.deepEqual(permissionOutcome({ options: [] }, 'allow'), { outcome: { outcome: 'cancelled' } })
 })
 
@@ -298,5 +299,39 @@ test('the configured permission name still applies when no policy is supplied', 
     assert.match(result.diagnostic, /Permission policy: allow/)
   } finally {
     await run.dispose()
+  }
+})
+
+test('projectPolicy resolves permission session before the permission answer', async () => {
+  // index.js resolves `permission: session` + an `ask` session to `allow`
+  // (via projectPolicy), so the child proceeds instead of being denied.
+  const proceed = await startOpenCodeRun(
+    request(),
+    await specFor({ askPermission: true }, { permission: 'session', policy: 'allow' }),
+  )
+  try {
+    const result = await proceed.result
+    assert.equal(result.stopReason, 'completed')
+    assert.equal(result.diagnostic, undefined)
+  } finally {
+    await proceed.dispose()
+  }
+
+  // The raw 'session' policy string is not an ACP grant: permissionOutcome
+  // treats anything that is not 'allow' as a rejection, so it answers the
+  // prompt with a reject option. The fixture does not wait for the answer,
+  // so the run completes on its own stop reason, but the diagnostic records
+  // that the permission was answered by policy.
+  const answered = await startOpenCodeRun(
+    request(),
+    await specFor({ askPermission: true, stopReason: 'max_tokens' }, { permission: 'session', policy: 'session' }),
+  )
+  try {
+    const result = await answered.result
+    assert.equal(result.stopReason, 'max-tokens')
+    assert.match(result.diagnostic, /permissions requested: 1/)
+    assert.match(result.diagnostic, /Permission policy: session/)
+  } finally {
+    await answered.dispose()
   }
 })
