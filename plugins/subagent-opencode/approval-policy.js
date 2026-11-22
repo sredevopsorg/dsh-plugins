@@ -91,15 +91,20 @@ export function resolveSessionPolicy(ctx, request) {
 /**
  * Project the session policy onto the ACP permission policy.
  *
- * `never` refuses every request; any other session keeps the configured
- * policy. The projection is intentionally one-way: a session policy can only
- * make the child stricter, never more permissive than the profile allowed.
+ * `never` refuses every request, whatever the configured policy (one-way
+ * stricter). `session` delegates to the session's own approval policy: an
+ * `ask` session lets the child proceed (`allow`) because a subagent child
+ * cannot itself ask a human, so an interactive session is treated as
+ * consenting; a `never` session refuses (`reject`). Any other configured
+ * value pins the answer for every session.
  * @param {string} configured - the row's `permission` value.
  * @param {string} sessionPolicy - resolved session approval policy.
  * @returns {string} the ACP permission policy to apply.
  */
 export function projectPolicy(configured, sessionPolicy) {
-  return sessionPolicy === 'never' ? 'reject' : configured
+  if (sessionPolicy === 'never') return 'reject'
+  if (configured === 'session') return 'allow'
+  return configured
 }
 
 /**
