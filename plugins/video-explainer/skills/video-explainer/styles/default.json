@@ -1,0 +1,39 @@
+{
+  "projects_dir": "~/Videos/explainers",
+  "background": "#0B0B0D",
+  "caption_y": {"16:9": 965, "9:16": 1480, "1:1": 960},
+  "caption": {
+    "font": "../fonts/InterVariable.woff2",
+    "weight": 600,
+    "size": 42,
+    "color": "#FFFFFF",
+    "box": "#0B0B0DD9",
+    "border": "#FFFFFF22",
+    "radius": 12,
+    "pad": [24, 12],
+    "uppercase": false,
+    "max_words": 6,
+    "max_chars": 38,
+    "emphasis": "#3B82F6"
+  },
+  "theme": {
+    "background": "#0B0B0D",
+    "surface": "#15161B",
+    "surface_2": "#1E2028",
+    "border": "#FFFFFF1F",
+    "text": "#F8FAFC",
+    "muted": "#94A3B8",
+    "accent": "#3B82F6",
+    "accent_2": "#60A5FA",
+    "good": "#10B981",
+    "warn": "#F59E0B",
+    "danger": "#EF4444",
+    "title_font": "../fonts/InterVariable.woff2",
+    "body_font": "../fonts/InterVariable.woff2",
+    "number_font": "../fonts/InterVariable.woff2",
+    "title_weight": 800,
+    "body_weight": 500,
+    "number_weight": 700
+  },
+  "sound_effects": "subtle"
+}

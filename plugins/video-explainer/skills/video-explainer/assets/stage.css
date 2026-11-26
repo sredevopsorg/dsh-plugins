@@ -1,0 +1,630 @@
+/* Reusable Continuous Motion-Graphics Stage & HUD Kit */
+.st-stage {
+  position: absolute;
+  inset: 0;
+  width: var(--w, 1920px);
+  height: var(--h, 1080px);
+  overflow: hidden;
+  background: #060916;
+  font-family: Fbody, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #f8fafc;
+  user-select: none;
+}
+
+.st-stage.paper {
+  background: #FAF8F4;
+  color: #18181B;
+}
+
+.st-stage.blueprint {
+  background: #0B1526;
+  color: #F1F5F9;
+}
+
+.st-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.st-parallax {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.st-cam-shake,
+.st-cam-pivot {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 0;
+  height: 0;
+  overflow: visible;
+}
+
+.st-cam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  will-change: transform;
+}
+
+.st-zone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+}
+
+.st-hud {
+  position: absolute;
+  inset: 0;
+  bottom: var(--safe-bottom, 190px);
+  pointer-events: none;
+}
+
+/* Badges (WCAG AA/AAA across cosmos, paper, and blueprint) */
+.st-badge {
+  position: absolute;
+  translate: -50% -50%; /* separate from `transform`, so GSAP x/y/scale tweens keep the centering */
+  padding: 11px 24px;
+  border-radius: 999px;
+  background: #0b1124;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font: 800 28px/1.15 Ftitle, sans-serif;
+  letter-spacing: 0.05em;
+  color: #f8fafc;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.st-badge.gold {
+  border-color: #fbbf24;
+  color: #fef3c7;
+  box-shadow: 0 14px 38px rgba(251, 191, 36, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.st-badge.cyan {
+  border-color: #38bdf8;
+  color: #e0f2fe;
+  box-shadow: 0 14px 38px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.st-badge.crimson {
+  border-color: #fb7185;
+  color: #ffe4e6;
+  box-shadow: 0 14px 38px rgba(251, 113, 133, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.st-badge.violet {
+  border-color: #a78bfa;
+  color: #ede9fe;
+  box-shadow: 0 14px 38px rgba(167, 139, 250, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.st-badge.green {
+  background: #071f14;
+  border-color: #22c55e;
+  color: #dcfce7;
+  box-shadow: 0 14px 36px rgba(22, 163, 74, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.st-badge.paper {
+  background: #ffffff;
+  border-color: #d4d4d8;
+  color: #18181b;
+  box-shadow: 0 12px 30px rgba(24, 24, 27, 0.14);
+}
+
+.st-badge.ink {
+  background: #18181b;
+  border-color: #3f3f46;
+  color: #faf8f4;
+  box-shadow: 0 14px 34px rgba(24, 24, 27, 0.28);
+}
+
+.st-stage.paper .st-badge {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #18181b;
+  box-shadow: 0 12px 30px rgba(24, 24, 27, 0.11);
+}
+
+.st-stage.paper .st-badge.ink {
+  background: #18181b;
+  border-color: #27272a;
+  color: #faf8f4;
+}
+
+.st-stage.paper .st-badge.paper {
+  background: #ffffff;
+  border-color: #d4d4d8;
+  color: #18181b;
+}
+
+.st-stage.paper .st-badge.green {
+  background: #f0fdf4;
+  border-color: #16a34a;
+  color: #14532d;
+  box-shadow: 0 12px 28px rgba(22, 163, 74, 0.15);
+}
+
+.st-stage.paper .st-badge.gold {
+  background: #fefce8;
+  border-color: #d97706;
+  color: #78350f;
+  box-shadow: 0 12px 28px rgba(217, 119, 6, 0.14);
+}
+
+.st-stage.paper .st-badge.cyan {
+  background: #f0f9ff;
+  border-color: #0284c7;
+  color: #0c4a6e;
+  box-shadow: 0 12px 28px rgba(2, 132, 199, 0.14);
+}
+
+.st-stage.paper .st-badge.crimson {
+  background: #fff1f2;
+  border-color: #e11d48;
+  color: #881337;
+  box-shadow: 0 12px 28px rgba(225, 29, 72, 0.14);
+}
+
+.st-stage.paper .st-badge.violet {
+  background: #f5f3ff;
+  border-color: #7c3aed;
+  color: #4c1d95;
+  box-shadow: 0 12px 28px rgba(124, 58, 237, 0.14);
+}
+
+/* Floating Media Card (photos, screenshots, B-roll clips inside 3D world) */
+.st-media-card {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #111827;
+  border: 2px solid rgba(148, 163, 184, 0.36);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.50);
+  display: flex;
+  flex-direction: column;
+  color: #f8fafc;
+}
+
+.st-media-card img,
+.st-media-card video {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.st-media-cap {
+  padding: 14px 20px 10px;
+  font: 700 24px/1.3 Ftitle, sans-serif;
+  letter-spacing: -0.01em;
+  color: inherit;
+}
+
+.st-media-cap:last-child {
+  padding-bottom: 15px;
+}
+
+.st-media-src {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 12px 20px 15px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  font: 700 18px/1.2 Fbody, sans-serif;
+  letter-spacing: 0.02em;
+  color: #e2e8f0;
+}
+
+.st-media-cap + .st-media-src {
+  margin-top: 0;
+}
+
+.st-stage.paper .st-media-card {
+  background: #ffffff;
+  border-color: rgba(24, 24, 27, 0.14);
+  box-shadow: 0 20px 52px rgba(24, 24, 27, 0.13);
+  color: #18181b;
+}
+
+.st-stage.paper .st-media-src {
+  background: #f1efe9;
+  border-color: #d4d4d8;
+  color: #3f3f46;
+}
+
+.st-stage.blueprint .st-media-card {
+  background: #0f1d35;
+  border-color: rgba(56, 189, 248, 0.36);
+  box-shadow: 0 24px 60px rgba(2, 8, 23, 0.58);
+  color: #f1f5f9;
+}
+
+.st-stage.blueprint .st-media-src {
+  background: #172540;
+  border-color: rgba(56, 189, 248, 0.36);
+  color: #bae6fd;
+}
+
+/* Floating Commentary & Quote Card */
+.st-quote-card {
+  position: absolute;
+  box-sizing: border-box;
+  max-width: 680px;
+  padding: 28px 34px;
+  border-radius: 22px;
+  background: #111827;
+  border: 2px solid rgba(148, 163, 184, 0.32);
+  border-left: 6px solid #38bdf8;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.48);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: #f8fafc;
+}
+
+.st-quote-card blockquote,
+.st-quote-card p,
+.st-quote-text {
+  margin: 0;
+  font: 600 28px/1.36 Fbody, sans-serif;
+  letter-spacing: -0.01em;
+  color: inherit;
+}
+
+.st-quote-meta,
+.st-quote-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.st-quote-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+}
+
+.st-quote-author {
+  font: 800 23px/1.2 Ftitle, sans-serif;
+  color: inherit;
+}
+
+.st-quote-source {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  font: 600 18px/1.2 Fbody, sans-serif;
+  color: #e2e8f0;
+}
+
+.st-stage.paper .st-quote-card {
+  background: #ffffff;
+  border-color: rgba(24, 24, 27, 0.14);
+  border-left-color: #16a34a;
+  box-shadow: 0 20px 52px rgba(24, 24, 27, 0.13);
+  color: #18181b;
+}
+
+.st-stage.paper .st-quote-avatar {
+  border-color: #16a34a;
+}
+
+.st-stage.paper .st-quote-source {
+  background: #f1efe9;
+  border-color: #d4d4d8;
+  color: #3f3f46;
+}
+
+.st-stage.blueprint .st-quote-card {
+  background: #0f1d35;
+  border-color: rgba(56, 189, 248, 0.34);
+  border-left-color: #38bdf8;
+  box-shadow: 0 24px 60px rgba(2, 8, 23, 0.58);
+  color: #f1f5f9;
+}
+
+.st-stage.blueprint .st-quote-avatar {
+  border-color: #38bdf8;
+}
+
+.st-stage.blueprint .st-quote-source {
+  background: #172540;
+  border-color: rgba(56, 189, 248, 0.36);
+  color: #bae6fd;
+}
+
+/* Kinetic Display Punch Typography (92px - 160px hero numbers & impact phrases) */
+.st-kinetic {
+  position: absolute;
+  font-family: Ftitle, Fnum, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 900;
+  font-size: 120px;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #f8fafc;
+  text-shadow: 0 18px 48px rgba(0, 0, 0, 0.62), 0 2px 8px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
+.st-kinetic.sm { font-size: 92px; }
+.st-kinetic.lg { font-size: 144px; }
+.st-kinetic.xl { font-size: 160px; }
+.st-kinetic.gold { color: #fde68a; }
+.st-kinetic.cyan { color: #7dd3fc; }
+.st-kinetic.crimson { color: #fda4af; }
+.st-kinetic.green { color: #86efac; }
+.st-kinetic.violet { color: #ddd6fe; }
+
+.st-stage.paper .st-kinetic {
+  color: #18181b;
+  text-shadow: 0 14px 36px rgba(24, 24, 27, 0.16);
+}
+
+.st-stage.paper .st-kinetic.gold { color: #b45309; }
+.st-stage.paper .st-kinetic.cyan { color: #0369a1; }
+.st-stage.paper .st-kinetic.crimson { color: #be123c; }
+.st-stage.paper .st-kinetic.green { color: #15803d; }
+.st-stage.paper .st-kinetic.violet { color: #6d28d9; }
+
+/* Documentary Press Clipping / Archival Headline Cutout (Vox / Johnny Harris style) */
+.st-clipping {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 24px 28px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #fdfbf7 0%, #f4efe4 100%);
+  border: 1px solid rgba(24, 24, 27, 0.24);
+  border-top: 4px solid #18181b;
+  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.46), 0 4px 14px rgba(0, 0, 0, 0.20);
+  color: #18181b;
+}
+
+.st-stage.paper .st-clipping {
+  box-shadow: 0 22px 50px rgba(24, 24, 27, 0.18), 0 4px 12px rgba(24, 24, 27, 0.10);
+}
+
+.st-clipping img,
+.st-clipping video {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.st-clipping-mast {
+  font: 800 16px/1.2 Fbody, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #52525b;
+  border-bottom: 1.5px solid rgba(24, 24, 27, 0.22);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.st-clipping h3,
+.st-clipping-head {
+  margin: 0 0 10px;
+  font: 800 34px/1.14 Georgia, Ftitle, serif;
+  letter-spacing: -0.02em;
+  color: #18181b;
+}
+
+.st-clipping p,
+.st-clipping-sub {
+  margin: 0;
+  font: 500 22px/1.38 Fbody, sans-serif;
+  color: #27272a;
+}
+
+/* Marker highlighter sweep (WCAG AA/AAA across dark cosmos, blueprint, paper, and clippings).
+   The marker is a background gradient, so highlightSweep animates background-size and no z-index layering is needed. */
+.st-highlight {
+  --hl-fill: rgba(217, 119, 6, 0.44);
+  --hl-line: rgba(251, 191, 36, 0.65);
+  position: relative;
+  display: inline-block;
+  padding: 0 6px;
+  margin: 0 -2px;
+  border-radius: 4px;
+  background-image: linear-gradient(to bottom, transparent 7%, var(--hl-fill) 7%, var(--hl-fill) calc(97% - 2px),
+                                    var(--hl-line) calc(97% - 2px), var(--hl-line) 97%, transparent 97%);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 100% 100%;
+}
+
+.st-highlight .st-hl-bar { display: none; }
+.st-highlight.crimson { --hl-fill: rgba(225, 29, 72, 0.44); --hl-line: rgba(251, 113, 133, 0.70); }
+.st-highlight.cyan { --hl-fill: rgba(2, 132, 199, 0.46); --hl-line: rgba(56, 189, 248, 0.70); }
+.st-highlight.green { --hl-fill: rgba(22, 163, 74, 0.44); --hl-line: rgba(74, 222, 128, 0.70); }
+.st-stage.paper .st-highlight, .st-clipping .st-highlight { --hl-fill: rgba(250, 204, 21, 0.52); --hl-line: rgba(217, 119, 6, 0.55); }
+.st-stage.paper .st-highlight.crimson, .st-clipping .st-highlight.crimson { --hl-fill: rgba(251, 113, 133, 0.34); --hl-line: rgba(225, 29, 72, 0.55); }
+.st-stage.paper .st-highlight.cyan, .st-clipping .st-highlight.cyan { --hl-fill: rgba(56, 189, 248, 0.32); --hl-line: rgba(2, 132, 199, 0.55); }
+.st-stage.paper .st-highlight.green, .st-clipping .st-highlight.green { --hl-fill: rgba(74, 222, 128, 0.36); --hl-line: rgba(22, 163, 74, 0.55); }
+
+/* Rubber-Stamp Cutout Frame (crimson default, gold, green, cyan) */
+.st-stamp {
+  position: absolute;
+  box-sizing: border-box;
+  display: inline-block;
+  padding: 12px 26px;
+  border-radius: 6px;
+  background: rgba(28, 6, 14, 0.92);
+  border: 4px solid #fb7185;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.52), inset 0 0 0 2px rgba(251, 113, 133, 0.28);
+  font: 900 30px/1.1 Ftitle, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffe4e6;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.st-stamp.gold {
+  background: rgba(28, 18, 4, 0.92);
+  border-color: #fbbf24;
+  color: #fef3c7;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.52), inset 0 0 0 2px rgba(251, 191, 36, 0.28);
+}
+
+.st-stamp.green {
+  background: rgba(5, 24, 15, 0.92);
+  border-color: #22c55e;
+  color: #dcfce7;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.52), inset 0 0 0 2px rgba(34, 197, 94, 0.28);
+}
+
+.st-stamp.cyan {
+  background: rgba(6, 20, 34, 0.92);
+  border-color: #38bdf8;
+  color: #e0f2fe;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.52), inset 0 0 0 2px rgba(56, 189, 248, 0.28);
+}
+
+.st-stage.paper .st-stamp,
+.st-clipping .st-stamp {
+  background: rgba(255, 241, 242, 0.96);
+  border-color: #be123c;
+  color: #9f1239;
+  box-shadow: 0 14px 32px rgba(159, 18, 57, 0.18), inset 0 0 0 2px rgba(190, 18, 60, 0.22);
+}
+
+.st-stage.paper .st-stamp.gold,
+.st-clipping .st-stamp.gold {
+  background: rgba(254, 252, 232, 0.96);
+  border-color: #b45309;
+  color: #92400e;
+  box-shadow: 0 14px 32px rgba(180, 83, 9, 0.16), inset 0 0 0 2px rgba(180, 83, 9, 0.22);
+}
+
+.st-stage.paper .st-stamp.green,
+.st-clipping .st-stamp.green {
+  background: rgba(240, 253, 244, 0.96);
+  border-color: #15803d;
+  color: #166534;
+  box-shadow: 0 14px 32px rgba(21, 128, 61, 0.16), inset 0 0 0 2px rgba(21, 128, 61, 0.22);
+}
+
+.st-stage.paper .st-stamp.cyan,
+.st-clipping .st-stamp.cyan {
+  background: rgba(240, 249, 255, 0.96);
+  border-color: #0369a1;
+  color: #075985;
+  box-shadow: 0 14px 32px rgba(3, 105, 161, 0.16), inset 0 0 0 2px rgba(3, 105, 161, 0.22);
+}
+
+/* Apple-Keynote 3D Perspective Hardware & Exploded Layer Rig */
+.st-3d-rig {
+  position: absolute;
+  perspective: 1400px;
+  transform-style: preserve-3d;
+}
+
+.st-3d-layer {
+  position: absolute;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.st-phone-shell {
+  position: relative;
+  box-sizing: border-box;
+  width: 356px;
+  height: 720px;
+  padding: 14px;
+  border-radius: 54px;
+  background: linear-gradient(145deg, #1e293b 0%, #090d16 55%, #111827 100%);
+  border: 3px solid rgba(148, 163, 184, 0.50);
+  box-shadow: 0 36px 90px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12), inset 0 2px 3px rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #f8fafc;
+}
+
+.st-phone-shell::before {
+  content: "";
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 104px;
+  height: 28px;
+  border-radius: 999px;
+  background: #020617;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  z-index: 6;
+  pointer-events: none;
+}
+
+.st-phone-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 52px;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.03) 28%, rgba(255, 255, 255, 0) 52%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.st-phone-screen,
+.st-phone-shell > img,
+.st-phone-shell > video {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  overflow: hidden;
+  object-fit: cover;
+  display: block;
+  background: #050814;
+}
+
+.st-metric {
+  font-family: Fnum, Ftitle, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.st-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 46%, #ffffff 0%, #fef08a 38%, rgba(56, 189, 248, 0) 78%);
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+}

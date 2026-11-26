@@ -24,3 +24,7 @@ themes/
 # git never descends into an excluded directory.
 .dsh/*
 !.dsh/skills/
+
+# Local scratch (gh CLI cache override, composer scratch space).
+.ghcache/
+.tmp-*/

@@ -1,0 +1,22 @@
+{
+  "background": "#FAF8F4",
+  "caption": {
+    "color": "#FFFFFF",
+    "box": "#18181BE6",
+    "border": "#FFFFFF1F",
+    "emphasis": "#2563EB"
+  },
+  "theme": {
+    "background": "#FAF8F4",
+    "surface": "#FFFFFF",
+    "surface_2": "#F1EFE9",
+    "border": "#18181B1A",
+    "text": "#18181B",
+    "muted": "#52525B",
+    "accent": "#2563EB",
+    "accent_2": "#1D4ED8",
+    "good": "#059669",
+    "warn": "#D97706",
+    "danger": "#DC2626"
+  }
+}

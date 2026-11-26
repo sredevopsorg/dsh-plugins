@@ -1,0 +1,39 @@
+#!/bin/bash
+# Run a video-explainer script in its own venv (numpy).
+# Override the location with VIDEO_EXPLAINER_VENV.
+#
+# DSH adaptation (documented in plugins/video-explainer/docs/UPSTREAM.md): this
+# launcher never installs anything on its own. Upstream created the venv and ran
+# an unpinned `pip install numpy` on first use; here a missing interpreter or a
+# missing dependency exits 1 with the exact commands, so an install only happens
+# after the user approves it. Extra packages are pinned in requirements.txt.
+V="${VIDEO_EXPLAINER_VENV:-$HOME/.cache/video-explainer/venv}"
+REQS="$(cd "$(dirname "$0")/.." && pwd)/requirements.txt"
+
+if [ ! -x "$V/bin/python" ]; then
+  {
+    echo "error: the video-explainer venv is missing: $V"
+    echo "install it (ask the user first):"
+    if command -v uv >/dev/null; then
+      echo "  uv venv -p 3.12 \"$V\" && uv pip install -r \"$REQS\" -p \"$V/bin/python\""
+    else
+      echo "  python3 -m venv \"$V\" && \"$V/bin/pip\" install --disable-pip-version-check -r \"$REQS\""
+    fi
+  } >&2
+  exit 1
+fi
+
+if ! "$V/bin/python" -c "import numpy" 2>/dev/null; then
+  {
+    echo "error: numpy is not installed in $V"
+    echo "install the pinned dependencies (ask the user first):"
+    if command -v uv >/dev/null; then
+      echo "  uv pip install -r \"$REQS\" -p \"$V/bin/python\""
+    else
+      echo "  \"$V/bin/pip\" install --disable-pip-version-check -r \"$REQS\""
+    fi
+  } >&2
+  exit 1
+fi
+
+exec "$V/bin/python" -B "$@"

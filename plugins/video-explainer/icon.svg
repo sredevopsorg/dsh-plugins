@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Video Explainer">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#1b1533"/>
+  <rect x="12" y="16" width="34" height="24" rx="5" fill="#f4f0ff" opacity="0.92"/>
+  <path d="M46 24l7.5-4.2A1.6 1.6 0 0 1 56 21.2v13.6a1.6 1.6 0 0 1-2.5 1.4L46 32z" fill="#8b7cf6"/>
+  <path d="M22.5 22.5l10 5.7-10 5.7z" fill="#1b1533"/>
+  <path d="M12 48h13M12 53h22" stroke="#8b7cf6" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="47" cy="47" r="7" fill="none" stroke="#f9c74f" stroke-width="3"/>
+  <path d="M47 43.5v7M43.5 47h7" stroke="#f9c74f" stroke-width="3" stroke-linecap="round"/>
+</svg>
