@@ -24,9 +24,23 @@ def _strip_html(raw):
     return re.sub(r"\s+", " ", txt).strip()
 
 
+WIKI_HOSTS = ("wikimedia.org", "wikipedia.org")
+
+
 def _is_wiki_url(url):
-    host = urllib.parse.urlparse(url).netloc.lower()
-    return host.endswith("wikimedia.org") or host.endswith("wikipedia.org")
+    """True only for an exact Wikimedia/Wikipedia hostname, never a lookalike.
+
+    Matching the whole `netloc` would accept `en.wikipedia.org.evil.example` and
+    `evil.user@en.wikipedia.org`; the parsed hostname, compared label by label,
+    cannot. `urlparse` raises on a malformed port, which is treated as non-wiki.
+    """
+    try:
+        host = (urllib.parse.urlsplit(url).hostname or "").rstrip(".").lower()
+    except ValueError:
+        return False
+    if host == "":
+        return False
+    return any(host == wiki or host.endswith("." + wiki) for wiki in WIKI_HOSTS)
 
 
 def _detect_project_root(out_path):
@@ -232,7 +246,7 @@ def cmd_image(args):
         die(f"output image must end in .jpg, .jpeg, or .png: {args.out}")
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
-    credit = (args.credit or "").strip()
+    credit = _safe_credit(args.credit)
     resolved_url = src
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -242,7 +256,7 @@ def cmd_image(args):
             _download_bytes(img_url, raw_path, expect_media=True)
             resolved_url = page_url
             if not credit:
-                credit = auto_credit
+                credit = _safe_credit(auto_credit)
         elif src.lower().startswith(("http://", "https://")):
             _download_bytes(src, raw_path, expect_media=True)
         else:
@@ -271,15 +285,42 @@ def cmd_image(args):
             ])
 
     w, h, _ = probe(out)
-    record_media_source(out, {
+    manifest = record_media_source(out, {
         "kind": "image",
         "url": resolved_url,
         "credit": credit,
         "width": w,
         "height": h,
     })
-    credit_note = f" [{credit}]" if credit else ""
-    print(f"Saved image {out} ({w}x{h}){credit_note}")
+    # Attribution is third-party text (a `--credit` argument or Wikimedia's own
+    # artist/license metadata), so it is written to the project manifest and
+    # referenced by location here rather than echoed to the console
+    # (py/clear-text-logging-sensitive-data).
+    print(f"Saved image {_name_for_display(out)} ({w}x{h})"
+          + (f"; credit recorded in {_name_for_display(manifest)}" if manifest else ""))
+
+
+def _name_for_display(value):
+    """The final path component of a user-supplied path, safe to print or log."""
+    name = os.path.basename(str(value))
+    return "".join(ch for ch in name if ch.isalnum() or ch in "._-")[:120]
+
+
+# Attribution is free text: it comes from `--credit` or from Wikimedia's own
+# artist/license metadata. Only these characters survive into anything printed.
+CREDIT_SAFE = set(" abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,-_/()'&:+")
+
+
+def _safe_credit(credit):
+    """`credit` reduced to plain attribution text.
+
+    Wikimedia's artist field is third-party data and `--credit` is caller input;
+    neither is a place for control characters, ANSI escapes, or terminal
+    hyperlinks in the output this script prints (py/clear-text-logging-sensitive-data
+    flags the raw value, and sanitizing it keeps console output predictable).
+    """
+    text = "".join(ch for ch in str(credit or "") if ch in CREDIT_SAFE).strip()
+    return " ".join(text.split())[:120]
 
 
 def _find_ytdlp():
@@ -350,7 +391,7 @@ def cmd_clip(args):
         die("--duration must be > 0")
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
-    credit = (args.credit or "").strip()
+    credit = _safe_credit(args.credit)
     resolved_url = src
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -362,7 +403,7 @@ def cmd_clip(args):
             _download_bytes(vid_url, raw_path, expect_media=True)
             resolved_url = page_url
             if not credit:
-                credit = auto_credit
+                credit = _safe_credit(auto_credit)
         elif src.lower().startswith(("http://", "https://")):
             url_path = urllib.parse.urlparse(src).path.lower()
             if url_path.endswith(DIRECT_VIDEO_EXTS):
@@ -403,7 +444,7 @@ def cmd_clip(args):
         run(ff)
 
     w, h, dur = probe(out)
-    record_media_source(out, {
+    manifest = record_media_source(out, {
         "kind": "clip",
         "url": resolved_url,
         "credit": credit,
@@ -411,8 +452,10 @@ def cmd_clip(args):
         "height": h,
         "duration": round(dur, 3),
     })
-    credit_note = f" [{credit}]" if credit else ""
-    print(f"Saved clip {out} ({w}x{h}, {dur:.2f}s @ {FPS}fps){credit_note}")
+    # Same rule as the image path: the credit lives in the manifest, not in the
+    # console line.
+    print(f"Saved clip {_name_for_display(out)} ({w}x{h}, {dur:.2f}s @ {FPS}fps)"
+          + (f"; credit recorded in {_name_for_display(manifest)}" if manifest else ""))
 
 
 def main():

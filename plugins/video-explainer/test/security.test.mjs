@@ -108,6 +108,49 @@ test('the review server is loopback-only, host-pinned, and scoped to its own roo
   assert.doesNotMatch(page, /directory=root, \*\*k/)
 })
 
+test('the Wikimedia hostname check rejects lookalike domains', async () => {
+  // Matching the whole netloc would accept `en.wikipedia.org.evil.example` or
+  // `wikipedia.org.attacker.tld` and send the request (and its User-Agent) there.
+  // CodeQL reported this as py/incomplete-url-substring-sanitization.
+  const media = all.get('media.py')
+  assert.match(media, /urllib\.parse\.urlsplit\(url\)\.hostname/)
+  assert.doesNotMatch(media, /netloc\.lower\(\)\s*\n?\s*return host\.endswith/)
+  assert.match(media, /WIKI_HOSTS/)
+})
+
+test('review frames stay inside their own directory', async () => {
+  // The frame path is built from the reviewer's timestamp; it must never carry
+  // reviewer text and must be re-checked against the frames root
+  // (py/path-injection).
+  const page = all.get('review_page.py')
+  const body = page.slice(page.indexOf('def save_frames('), page.indexOf('def notes_markdown('))
+  assert.match(body, /os\.path\.realpath\(out_dir\)/, 'save_frames must canonicalize its output directory')
+  assert.match(body, /os\.path\.dirname\(path\) != root/, 'save_frames must confine each path to that directory')
+  assert.doesNotMatch(body, /c\['note'\]|c\["note"\]/, 'the frame name must not include reviewer text')
+})
+
+test('media.py keeps attribution out of the console line', () => {
+  // CodeQL's py/clear-text-logging-sensitive-data flags any printed value that
+  // derives from a source it models as sensitive, and a sanitizer does not
+  // break that path (verified by running the query against this tree). The
+  // credit is therefore written to the project manifest and the console line
+  // only points at it, which keeps third-party attribution from being echoed.
+  const media = all.get('media.py')
+  assert.match(media, /def _name_for_display\(/)
+  assert.match(media, /def _safe_credit\(/)
+  assert.doesNotMatch(media, /lgtm\[/, 'no blanket suppression comments')
+  assert.doesNotMatch(media, /print\(f"Saved (?:image|clip) \{out\}/, 'never print the raw path')
+  const printed = media.split('\n').filter(entry => /print\(f"Saved/.test(entry))
+  assert.equal(printed.length, 2, 'both save messages are checked')
+  for (const line of printed) {
+    assert.match(line, /_name_for_display\(out\)/, `print a sanitized path: ${line.trim()}`)
+    assert.doesNotMatch(line, /credit_note/, `do not echo the credit: ${line.trim()}`)
+  }
+  // Attribution must still reach the manifest that the skill reads.
+  assert.match(media, /record_media_source\(out, \{\n\s+"kind": "image",[\s\S]*?"credit": credit/)
+  assert.match(media, /credit recorded in/)
+})
+
 test('the shell capture reports its pinned npx fallback instead of hiding it', () => {
   const capture = all.get('capture.py')
   assert.ok(capture, 'scripts/capture.py must ship')

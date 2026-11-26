@@ -298,10 +298,17 @@ def save_frames(data, video, out_dir):
     for f in os.listdir(out_dir):
         os.remove(os.path.join(out_dir, f))
     frames = {}
+    root = os.path.realpath(out_dir)
     for i, c in enumerate(data.get("comments", [])):
-        path = os.path.join(out_dir, f"{i + 1:02d}-{c['t']:.2f}.jpg")
-        r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{c['t']:.3f}", "-i", video, "-frames:v", "1",
-                            "-vf", "scale=540:-2", "-q:v", "4", path], capture_output=True)
+        # The name never carries reviewer text: only the loop index and the
+        # numeric timestamp, reformatted from floats. It is then re-checked
+        # against the frames directory so no value can escape it.
+        name = f"{i + 1:02d}-{float(c['t']):.2f}.jpg"
+        path = os.path.realpath(os.path.join(root, name))
+        if os.path.dirname(path) != root:
+            continue
+        r = subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{float(c['t']):.3f}", "-i", video,
+                            "-frames:v", "1", "-vf", "scale=540:-2", "-q:v", "4", path], capture_output=True)
         if r.returncode == 0 and os.path.exists(path):
             frames[i] = path
     return frames
