@@ -26,6 +26,7 @@ plugin package, so the paths above are package-internal.
 
 | Path | Upstream | License |
 |---|---|---|
+| [`plugins/video-explainer`](plugins/video-explainer/README.md) | Port of the Video Explainer agent skill — https://github.com/petergyang/video-explainer (upstream commit `be2f729`). The port keeps the upstream MIT license and copyright notice in `plugins/video-explainer/LICENSE`, packages the skill as a DSH bundle, adds the `video_explainer_setup` and `video_explainer_render` tools and the `video-explainer` agent preset, and applies the security fixes listed in `plugins/video-explainer/docs/UPSTREAM.md` (a read-only preflight instead of an auto-installing setup, pinned Python dependencies, a scoped loopback review server). The bundled Inter font ships under the SIL Open Font License (`plugins/video-explainer/skills/video-explainer/fonts/OFL.txt`). | MIT (SIL OFL 1.1 for the Inter font) |
 | [`plugins/superagent`](plugins/superagent/README.md) | Fork of the DeepSeek Harness `dsh-superagent` research prototype — https://github.com/deepseek-ai/dsh-superagent-prototype (upstream commit `8c32a9d`). The fork keeps the upstream MIT license, renames the package to `@sredevopsorg/dsh-superagent`, adds repository packaging, and commits the build output so a Git install needs no toolchain. Upstream copyright remains with the DeepSeek Harness Team. | MIT |
 
 The `superagent` plugin is a fork, not a redistribution of the prototype by the
@@ -34,4 +35,4 @@ upstream README states. The upstream `LICENSE` is kept in the plugin directory.
 
 > Copyright for the upstream material remains with its authors. Nothing in this
 > repository's MIT license grants rights to third-party trademarks such as
-> "Supabase", "Ghost", "Kubernetes", "OpenShift", or "DeepSeek".
+> "Supabase", "Ghost", "Kubernetes", "OpenShift", "Video Explainer", or "DeepSeek".

@@ -1,0 +1,12 @@
+# Pinned runtime dependencies for the video-explainer pipeline scripts.
+#
+# `scripts/py` refuses to install these automatically; install them into the
+# venv it points at only after the user agrees:
+#
+#   VIDEO_EXPLAINER_VENV=${VIDEO_EXPLAINER_VENV:-$HOME/.cache/video-explainer/venv}
+#   uv venv -p 3.12 "$VIDEO_EXPLAINER_VENV"
+#   uv pip install -r requirements.txt -p "$VIDEO_EXPLAINER_VENV/bin/python"
+#
+# Every script imports numpy; nothing else is required for motion, illustrated,
+# or 3D rendering. Local narration additionally needs requirements-voice.txt.
+numpy==2.3.4

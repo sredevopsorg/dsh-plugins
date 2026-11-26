@@ -1,0 +1,11 @@
+# Optional local narration (Kokoro TTS) and word alignment for `setup.sh --voice`.
+#
+# Same rule as requirements.txt: `scripts/py` never installs these by itself.
+# Install them into the same venv only after the user agrees:
+#
+#   uv pip install -r requirements-voice.txt -p "$VIDEO_EXPLAINER_VENV/bin/python"
+#
+# Parakeet alignment is installed by HyperFrames (`npx -y hyperframes@0.9.79
+# models install parakeet`) and is not a Python package.
+kokoro-onnx==0.4.9
+soundfile==0.13.1

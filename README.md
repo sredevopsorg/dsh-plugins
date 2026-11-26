@@ -15,6 +15,7 @@ Each directory under [`plugins/`](plugins/) is a self-contained Cordis plugin pa
 | [`sredevops-writer`](plugins/sredevops-writer/README.md) | bundle + agent preset | Editorial agent preset for sredevops.org |
 | [`subagent-opencode`](plugins/subagent-opencode/README.md) | bundle + subagent provider | Delegates one-shot tasks to OpenCode over ACP |
 | [`superagent`](plugins/superagent/README.md) | bundle + web panel | Proactive agent that runs GitHub tickets in DSH sessions |
+| [`video-explainer`](plugins/video-explainer/README.md) | bundle + skill + agent preset | Turns a topic, doc, codebase, or URL into a ~1-minute explainer video (Motion, Illustrated, or 3D) |
 
 ### OpenCode bundles
 
@@ -72,6 +73,7 @@ dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#sredevops-writer-v0.1.1&path:/plugins/sredevops-writer"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.4.0&path:/plugins/subagent-opencode"
 dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#video-explainer-v0.1.0&path:/plugins/video-explainer"
 ```
 
 For local development, install a checkout instead:
@@ -92,7 +94,8 @@ plugins/
 ├── skills/
 ├── sredevops-writer/
 ├── subagent-opencode/
-└── superagent/
+├── superagent/
+└── video-explainer/
 ```
 
 Each plugin ships its own `package.json`, `cordis.patch.yml`, entry point, tests, locale, and `README.md`. Full per-plugin docs live under each `plugins/<name>/` directory.
