@@ -434,6 +434,48 @@
           }
         }
       ]
+    },
+    {
+      "name": "@sredevopsorg/dsh-video-explainer",
+      "title": "Video Explainer",
+      "description": "Turn any topic, article, codebase, or URL into a ~1-minute explainer video in Motion, Illustrated, or 3D style, with captions, web media, and a frame-pinned review page.",
+      "icon": "plugins/video-explainer/icon.svg",
+      "author": "sredevopsorg",
+      "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/video-explainer#readme",
+      "repository": {
+        "url": "https://github.com/sredevopsorg/dsh-plugins",
+        "directory": "plugins/video-explainer"
+      },
+      "metadata": {
+        "keywords": [
+          "dsh",
+          "dsh-plugin",
+          "dsh-bundle",
+          "video",
+          "video-explainer",
+          "explainer",
+          "animation",
+          "hyperframes",
+          "motion-graphics",
+          "ffmpeg",
+          "skill"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1795674397,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "7319349195be7ad4cc19fb5fcf7e989ed88273cb",
+            "path": "plugins/video-explainer"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        }
+      ]
     }
   ]
 }
