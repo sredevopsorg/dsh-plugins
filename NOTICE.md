@@ -8,8 +8,6 @@ reproduced below. Full license texts ship with the upstream projects.
 
 | Path | Upstream | License |
 |---|---|---|
-| [`plugins/skills/skills/supabase`](plugins/skills/skills/supabase/SKILL.md) | Supabase agent skills — https://github.com/supabase/agent-skills | MIT |
-| [`plugins/skills/skills/supabase-postgres-best-practices`](plugins/skills/skills/supabase-postgres-best-practices/SKILL.md) | Supabase agent skills (Postgres best practices, v1.1.1) — https://github.com/supabase/agent-skills | MIT |
 | [`plugins/skills/skills/ghost-theme-modern-frontend`](plugins/skills/skills/ghost-theme-modern-frontend/SKILL.md) | Guidance grounded in the MIT-licensed community theme https://github.com/christopher-b/vapour and the official docs at https://docs.ghost.org | MIT |
 | [`plugins/skills/skills/helm-chart-development`](plugins/skills/skills/helm-chart-development/SKILL.md) | Guidance grounded in the official Helm docs — https://helm.sh/docs/chart_template_guide/ (source: https://github.com/helm/helm-www) | CC-BY-4.0 |
 | [`plugins/skills/skills/github-actions-security-audit`](plugins/skills/skills/github-actions-security-audit/SKILL.md) | Guidance grounded in GitHub's Secure use reference — https://docs.github.com/en/actions/reference/security/secure-use (source: https://github.com/github/docs) | CC-BY-4.0 |
@@ -17,10 +15,10 @@ reproduced below. Full license texts ship with the upstream projects.
 | [`plugins/skills/skills/kustomize`](plugins/skills/skills/kustomize/SKILL.md) | Guidance grounded in the Kustomize project documentation — https://kustomize.io/ (source: https://github.com/kubernetes-sigs/kustomize) and the Kubernetes tasks https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/ and https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kustomize/ (source: https://github.com/kubernetes/website) | Apache-2.0 (Kustomize docs); CC-BY-4.0 (Kubernetes docs) |
 
 Each derived `SKILL.md` preserves its upstream `metadata` (author, version,
-organization). The Supabase skills carry fields authored by Supabase; they are
-reproduced here unmodified apart from repository-local path handling. Every
-skill now ships inside the installable [`plugins/skills`](plugins/skills/README.md)
-plugin package, so the paths above are package-internal.
+organization). They are reproduced here unmodified apart from repository-local
+path handling. Every skill now ships inside the installable
+[`plugins/skills`](plugins/skills/README.md) plugin package, so the paths above
+are package-internal.
 
 ## Plugins
 
@@ -35,4 +33,4 @@ upstream README states. The upstream `LICENSE` is kept in the plugin directory.
 
 > Copyright for the upstream material remains with its authors. Nothing in this
 > repository's MIT license grants rights to third-party trademarks such as
-> "Supabase", "Ghost", "Kubernetes", "OpenShift", "Video Explainer", or "DeepSeek".
+> "Ghost", "Kubernetes", "OpenShift", "Video Explainer", or "DeepSeek".

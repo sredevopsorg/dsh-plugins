@@ -50,6 +50,8 @@ window.__ModuleLoader__.load({
       'editor.back': 'Back to files',
       'editor.save': 'Save file',
       'editor.saving': 'Saving…',
+      'editor.wrap': 'Wrap lines',
+      'editor.unwrap': 'Unwrap lines',
       'editor.saved': 'File saved.',
       'editor.reload': 'Reload from disk',
       'editor.discard': 'Discard changes',
@@ -104,6 +106,8 @@ window.__ModuleLoader__.load({
       'editor.back': 'Volver a los archivos',
       'editor.save': 'Guardar archivo',
       'editor.saving': 'Guardando…',
+      'editor.wrap': 'Ajustar líneas',
+      'editor.unwrap': 'No ajustar líneas',
       'editor.saved': 'Archivo guardado.',
       'editor.reload': 'Recargar desde el disco',
       'editor.discard': 'Descartar cambios',
@@ -259,6 +263,7 @@ window.__ModuleLoader__.load({
     const UpIcon = makeIcon(['M12 19V5', 'M5 12l7-7 7 7']);
     const RefreshIcon = makeIcon(['M20 12a8 8 0 1 1-2.3-5.6', 'M20 4v5h-5']);
     const SaveIcon = makeIcon(['M5 4h11l3 3v13H5z', 'M8 4v6h7V4', 'M8 14h8v6H8z']);
+    const WrapIcon = makeIcon(['M4 6h16', 'M4 12h12', 'M4 18h16', 'M17 10l3 2-3 2']);
     const DiscardIcon = makeIcon(['M5 7h14', 'M9 7V4h6v3', 'M7 7l1 13h8l1-13']);
     const FolderIcon = makeIcon(['M3 7h6l2 2h10v10H3z']);
     const FileIcon = makeIcon(['M6 3h8l4 4v14H6z', 'M14 3v4h4']);
@@ -351,6 +356,7 @@ window.__ModuleLoader__.load({
   opacity: 0.92;
 }
 .dsh-code-editor-button.is-danger { color: var(--dsw-alias-state-error-primary); }
+.dsh-code-editor-button.is-active { color: var(--dsw-alias-brand-primary); }
 .dsh-code-editor-button.is-icon { padding: 0; width: 28px; }
 .dsh-code-editor-breadcrumb {
   display: flex;
@@ -590,6 +596,7 @@ window.__ModuleLoader__.load({
         const [cursor, setCursor] = useState({ line: 1, column: 1 });
         const [scrollTop, setScrollTop] = useState(0);
         const [viewportHeight, setViewportHeight] = useState(240);
+        const [wrap, setWrap] = useState(false);
 
         const fileRef = useRef(null);
         const savingRef = useRef(false);
@@ -1287,6 +1294,18 @@ window.__ModuleLoader__.load({
                 'button',
                 {
                   type: 'button',
+                  className: `dsh-code-editor-button is-icon${wrap ? ' is-active' : ''}`,
+                  title: wrap ? tr('editor.unwrap') : tr('editor.wrap'),
+                  'aria-label': wrap ? tr('editor.unwrap') : tr('editor.wrap'),
+                  'aria-pressed': wrap,
+                  onClick: () => setWrap((w) => !w),
+                },
+                h(WrapIcon),
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
                   className: 'dsh-code-editor-button is-primary',
                   title: tr('editor.save'),
                   onClick: () => save(false),
@@ -1362,7 +1381,8 @@ window.__ModuleLoader__.load({
               className: 'dsh-code-editor-textarea',
               value: file.text,
               spellCheck: false,
-              wrap: 'off',
+              wrap: wrap ? 'soft' : 'off',
+              style: { whiteSpace: wrap ? 'pre-wrap' : 'pre' },
               autoCapitalize: 'off',
               autoCorrect: 'off',
               'aria-label': `${baseName(file.path)} — ${tr('editor.lineColumn', { line: cursor.line, column: cursor.column })}`,

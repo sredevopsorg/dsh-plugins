@@ -38,8 +38,6 @@ catalog is rebuilt at startup.
 |---|---|
 | [`software-architecture`](skills/software-architecture/SKILL.md) | Choosing the simplest sufficient design, patterns to apply or skip, engineering practices, tool/skill selection |
 | [`fullstack-development`](skills/fullstack-development/SKILL.md) | Container-based Python and Node.js/TypeScript backends, frontends, monorepos, Docker, e2e testing |
-| [`supabase`](skills/supabase/SKILL.md) | Anything touching Supabase: DB, Auth, Edge Functions, Realtime, Storage, CLI, MCP, logs, debugging |
-| [`supabase-postgres-best-practices`](skills/supabase-postgres-best-practices/SKILL.md) | Postgres schema, migrations, RLS, indexes, locking, query plans — load *before* touching a database |
 | [`ghost-theme-development`](skills/ghost-theme-development/SKILL.md) | Authoring Ghost Handlebars themes: templates, contexts, helpers, settings, routing, GScan |
 | [`ghost-theme-modern-frontend`](skills/ghost-theme-modern-frontend/SKILL.md) | Wiring a Ghost theme to Vite, Tailwind CSS, and React/Vue/Svelte islands |
 | [`helm-chart-development`](skills/helm-chart-development/SKILL.md) | Creating, editing and improving Helm charts: templates, values.yaml, helpers, hooks, CRDs, subcharts |
@@ -141,5 +139,5 @@ npm pack --dry-run --json                            # all SKILL.md + references
 dsh --profile web --dump-config                      # composes without booting
 ```
 
-The provider test asserts the package lists all 10 skills, that each parsed name matches
+The provider test asserts the package lists all 8 skills, that each parsed name matches
 its directory, that each body loads, and that referenced resources are packaged.

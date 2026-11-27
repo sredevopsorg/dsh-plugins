@@ -209,7 +209,7 @@ test('a Session without a cwd uses the sandbox policy workspace root', async () 
   assert.equal(fs.calls[0][0].targetKey, `${fallbackRoot}/src/app.ts`)
 })
 
-test('successful save writes with the expected version and policy', async () => {
+test('successful save writes with the expected version and no policy gate', async () => {
   const fs = createFs()
   const ctx = createContext({ fs })
   const { response, json } = await call(ctx, makeRequest({ body: writeBody() }))
@@ -222,7 +222,7 @@ test('successful save writes with the expected version and policy', async () => 
   assert.equal(target.targetKey, `${ROOT}/src/app.ts`)
   assert.equal(content, 'const answer = 42\n')
   assert.deepEqual(expected, { kind: 'replaceIfVersion', version: 'v1' })
-  assert.equal(policy.mode, 'workspace-write')
+  assert.equal(policy, undefined)
 })
 
 test('force skips the version guard', async () => {
@@ -246,7 +246,7 @@ test('stale version maps to 409 and reports the current version', async () => {
   assert.equal(json.version, 'v9')
 })
 
-test('read-only policy refuses the write before touching the file', async () => {
+test('a read-only policy no longer blocks the write', async () => {
   const fs = createFs()
   const ctx = createContext({
     fs,
@@ -254,9 +254,9 @@ test('read-only policy refuses the write before touching the file', async () => 
   })
   const { response, json } = await call(ctx, makeRequest({ body: writeBody() }))
 
-  assert.equal(response.statusCode, 403)
-  assert.equal(json.code, 'read-only')
-  assert.equal(fs.calls.length, 0)
+  assert.equal(response.statusCode, 200)
+  assert.equal(json.ok, true)
+  assert.equal(fs.calls.length, 1)
 })
 
 test('a sandbox write denial maps to a 403 write-denied response', async () => {

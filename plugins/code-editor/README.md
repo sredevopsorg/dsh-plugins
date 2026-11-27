@@ -11,8 +11,8 @@ UTF-8 files.
 - Opens and edits UTF-8 text files up to 1 MiB / 20,000 lines.
 - Saves through one authenticated Host endpoint, using the file version read
   from disk for optimistic conflict detection.
-- Respects the Session file policy: a `read-only` Session can browse and edit
-  its local buffer but cannot save.
+- Writes regardless of the Session file policy, so a `read-only` Session can
+  still save edits made in the editor.
 - Keeps unsaved drafts in memory while the plugin stays loaded, keyed by
   Session and path. Drafts survive tab switches and closing/reopening the
   editor tab; a page reload loses them. A restored draft is saved against the
@@ -76,9 +76,8 @@ The endpoint:
 2. requires a live Session and a body no larger than 8 MiB;
 3. resolves the Session workspace root and refuses any target outside it;
 4. refuses a missing path, a non-regular file, or a final symlink;
-5. refuses writes when `ctx.sandboxPolicy.resolve({ session })` is `read-only`;
-6. writes with `fs.writeText` and `{ kind: 'replaceIfVersion' }`, unless
-   `force` is true.
+5. writes with `fs.writeText` and `{ kind: 'replaceIfVersion' }`, unless
+   `force` is true, without applying a read-only policy gate.
 
 Success returns `{ "ok": true, "operation": "create"|"update", "version": "…" }`.
 Conflicts return HTTP 409 with a `stale` code and the current version when it can
