@@ -25,7 +25,7 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 ```
 
 - `github:` selects the GitHub shorthand.
-- `<plugin-directory>-v<version>` is the release tag, e.g. `code-editor-v0.1.0`.
+- `<plugin-directory>-v<version>` is the release tag, e.g. `code-editor-v0.2.0`.
 - `&path:/plugins/<plugin-directory>` tells pnpm to pack only that package from
   the monorepo (supported since pnpm 9).
 - Quote the whole spec: the shell must not interpret `&`.
@@ -51,8 +51,8 @@ github:sredevopsorg/dsh-plugins#<plugin-directory>-v<version>&path:/plugins/<plu
 
 | Plugin | Tag | Command |
 |---|---|---|
-| `code-editor` | `code-editor-v0.1.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"` |
-| `skills` | `skills-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.2.0&path:/plugins/skills"` |
+| `code-editor` | `code-editor-v0.2.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.2.0&path:/plugins/code-editor"` |
+| `skills` | `skills-v0.3.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#skills-v0.3.0&path:/plugins/skills"` |
 | `superagent` | `superagent-v0.1.2` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#superagent-v0.1.2&path:/plugins/superagent"` |
 | `subagent-opencode` | `subagent-opencode-v0.3.0` | `dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#subagent-opencode-v0.3.0&path:/plugins/subagent-opencode"` |
 
@@ -66,14 +66,14 @@ If your environment does not accept the `github:` shorthand, spell out the Git
 URL — pnpm treats both forms as the same dependency:
 
 ```bash
-dsh plugin --profile web add "git+https://github.com/sredevopsorg/dsh-plugins.git#code-editor-v0.1.0&path:/plugins/code-editor"
+dsh plugin --profile web add "git+https://github.com/sredevopsorg/dsh-plugins.git#code-editor-v0.2.0&path:/plugins/code-editor"
 ```
 
 ### Other refs
 
 | Ref | Example fragment | Use |
 |---|---|---|
-| Release tag | `#code-editor-v0.1.0&path:/plugins/code-editor` | Reproducible install (recommended) |
+| Release tag | `#code-editor-v0.2.0&path:/plugins/code-editor` | Reproducible install (recommended) |
 | Commit | `#<40-hex-commit>&path:/plugins/code-editor` | Reproducible install before a tag exists |
 | Branch | `#main&path:/plugins/code-editor` | Latest unreleased code; may change without notice |
 
@@ -86,7 +86,7 @@ In a Web session, `plugin_manager` with `install_bundle`:
 ```json
 {
   "action": "install_bundle",
-  "target": "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
+  "target": "github:sredevopsorg/dsh-plugins#code-editor-v0.2.0&path:/plugins/code-editor"
 }
 ```
 
@@ -114,7 +114,7 @@ See the plugin README for its full verification checklist.
 Install the newer tag over the existing package:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.2.0&path:/plugins/code-editor"
 ```
 
 If the bundle is running and cannot be replaced in place, DSH reports
@@ -150,7 +150,7 @@ Release tags are created automatically when a version bump merges to `main`:
 <plugin-directory>-v<package-version>
 ```
 
-Examples: `code-editor-v0.1.0`, `skills-v0.2.0`, `superagent-v0.1.2`.
+Examples: `code-editor-v0.2.0`, `skills-v0.3.0`, `superagent-v0.1.2`.
 
 [`.github/workflows/version-plugins.yml`](../.github/workflows/version-plugins.yml)
 runs on every push to `main`, tags each plugin whose `<dir>-v<version>` tag does

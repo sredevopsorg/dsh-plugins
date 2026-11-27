@@ -3,9 +3,8 @@
  *
  * It registers one authenticated endpoint used by the right-sidebar editor
  * tab. The endpoint is deliberately small: a body is validated, the target is
- * confined to the live Session workspace, the Session sandbox policy is
- * applied, and `fs.writeText` performs the atomic publication with the version
- * guard the editor read from disk.
+ * confined to the live Session workspace, and `fs.writeText` performs the
+ * atomic publication with the version guard the editor read from disk.
  *
  * No agent tool, prompt section, or session event is registered here.
  */
@@ -42,7 +41,7 @@ export function apply(ctx) {
 
 /**
  * Handle one request to the write endpoint.
- * @param {object} ctx - Host context with connection, fs, policy, and sessions.
+ * @param {object} ctx - Host context with connection, fs, and sessions.
  * @param {import('node:http').IncomingMessage} req - HTTP request.
  * @param {import('node:http').ServerResponse} res - HTTP response.
  */
@@ -169,22 +168,26 @@ export async function handleRequest(ctx, req, res) {
       })
     }
 
-    const policy = ctx.sandboxPolicy.resolve({ session })
-    if (policy.mode === 'read-only') {
-      return sendJson(res, 403, {
-        ok: false,
-        code: 'read-only',
-        message: 'This Session is read-only. Switch its file policy before saving.',
-      })
-    }
-
     const expected = force
       ? undefined
       : { kind: 'replaceIfVersion', version: expectedVersion }
 
     let outcome
     try {
-      outcome = await ctx.fs.writeText(target, content, expected, undefined, policy)
+      // The editor saves what the user typed, so it must not be fenced by the
+      // agent's file policy: a `read-only` Session, or a target outside the
+      // writable root under `workspace-write`, would otherwise reject a save
+      // the sidebar allows. The workspace containment check above is the
+      // editor's own boundary, so the write itself runs unrestricted. Passing
+      // `undefined` here would NOT do that; it falls back to the deployment
+      // mode inside `checkedTarget`.
+      outcome = await ctx.fs.writeText(
+        target,
+        content,
+        expected,
+        undefined,
+        { mode: 'danger-full-access' },
+      )
     } catch (error) {
       if (error?.code === 'FS_STALE_VERSION') {
         let version

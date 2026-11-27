@@ -46,7 +46,7 @@ test("the plugin is a bundled skill provider with the repo packaging contract", 
 
 test("every packaged skill parses with the filesystem-provider frontmatter contract", async () => {
   const directories = await skillDirectories();
-  assert.ok(directories.length >= 10, "this package ships the repository's skills");
+  assert.ok(directories.length >= 8, "this package ships the repository's skills");
   assert.ok(directories.includes("kustomize"), "this package ships the kustomize skill");
   for (const directory of directories) {
     const raw = await readFile(join(skillsDir, directory, "SKILL.md"), "utf8");
@@ -100,8 +100,6 @@ test("resources referenced by a skill live inside its packaged resource base", a
     "helm-chart-development": ["references/template-language.md", "scripts/verify-chart.mjs"],
     "kubernetes-kubectl-operations": ["references/inspect-and-debug.md", "scripts/verify-kube-access.sh"],
     "kustomize": ["references/patches-and-transforms.md", "scripts/verify-kustomize.mjs"],
-    "supabase": ["references/skill-feedback.md", "assets/feedback-issue-template.md"],
-    "supabase-postgres-best-practices": ["references/security-rls-basics.md"],
   };
   for (const [skillName, resources] of Object.entries(expectations)) {
     const root = join(skillsDir, skillName);

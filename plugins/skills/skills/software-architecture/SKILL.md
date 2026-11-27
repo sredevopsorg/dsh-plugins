@@ -102,7 +102,7 @@ The filesystem skill provider scans these roots in rank order (a directory bundl
 | 100 | project-dsh | `<projectRoot>/.dsh/skills` |
 | 200 | project-agents | `<projectRoot>/.agents/skills` |
 | 300 | custom | `customSkillDirs` configured on the preset |
-| 400 | user-dsh | `<dshHome>/skills` (harness-wide: the architecture, fullstack, and Supabase skills live here) |
+| 400 | user-dsh | `<dshHome>/skills` (harness-wide: the architecture and fullstack skills live here) |
 | 500 | user-agents | `<agentsHome>/skills` |
 
 Frontmatter requires `name` and `description`; optional `whenToUse`, `metadata`, `disable-model-invocation`, and `user-invocable`. The catalog is re-read, so a new or edited skill is picked up without a restart. To add a repeatable procedure for this agent, author a skill under one of those roots rather than repeating it in every prompt.
@@ -110,19 +110,17 @@ Frontmatter requires `name` and `description`; optional `whenToUse`, `metadata`,
 ### MCP servers: the row shape and prerequisites
 
 ```yaml
-- id: mcp-supabase
+- id: mcp-example
   name: '@deepseek-ai/dsh-mcp-client'
   config:
-    serverName: supabase
+    serverName: example
     transport: streamable-http
-    url: https://mcp.supabase.com/mcp?read_only=true&features=docs,account,database,debugging,development,functions
+    url: https://mcp.example.com/mcp
     headers:
-      Authorization: !!js '`Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`'
+      Authorization: !!js '`Bearer ${process.env.MCP_ACCESS_TOKEN}`'
 ```
 
 `transport` is `stdio` (with `command`/`args`/`env`) or `streamable-http` (with `url`/`headers`). `@deepseek-ai/dsh-mcp-client` is installed in this profile, so a row activates as soon as its own upstream is reachable; each row still needs that upstream (a URL, or a command that exists) and its credentials. DSH starts a stdio server but never runs a package manager, so the executable must already be installed. A connection failure does not fail the mount (`failOnStartupError` defaults to false) — the error is logged and the client retries with backoff. See `docs/user/guide/mcp-memory.md` for the canonical opt-in pattern.
-
-**Supabase is already wired.** The `mcp-supabase` row in this preset's composition attaches the hosted Supabase MCP server, and the `supabase` and `supabase-postgres-best-practices` skills are bundled beside this one. Use those skills for how to work with Supabase; use the MCP tools (prefixed `mcp__supabase__`) for live project access. The row is read-only by default and needs `SUPABASE_ACCESS_TOKEN` set before dsh starts; dropping `read_only=true` from its URL enables writes, and appending `&project_ref=<ref>` scopes it to one project.
 
 ### Plugins
 

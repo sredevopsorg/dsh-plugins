@@ -10,6 +10,27 @@ const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 const manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8'))
 const patch = await readFile(join(packageRoot, 'cordis.patch.yml'), 'utf8')
 
+// `npm pack --json` emits one JSON document: an array on npm 10/11 and an
+// object keyed by package name on npm 12. Find the first value-shaped
+// character and let JSON.parse own the boundary, so trailing log lines (which
+// npm can append even with --json) never leak into the payload.
+function parsePackReport(stdout) {
+  const starts = [stdout.indexOf('['), stdout.indexOf('{')].filter(index => index !== -1)
+  assert.ok(starts.length > 0, `npm pack --json printed no JSON:\n${stdout.slice(0, 400)}`)
+  const start = Math.min(...starts)
+  for (let end = stdout.length; end > start; end -= 1) {
+    const slice = stdout.slice(start, end)
+    if (!slice.endsWith(']') && !slice.endsWith('}')) continue
+    try {
+      const value = JSON.parse(slice)
+      if (value !== null && typeof value === 'object') return value
+    } catch {
+      // Not a complete document yet: keep shrinking toward the last one.
+    }
+  }
+  assert.fail(`npm pack --json printed an unparseable document:\n${stdout.slice(0, 400)}`)
+}
+
 test('the package declares the repository packaging contract', () => {
   assert.equal(manifest.name, '@sredevopsorg/dsh-video-explainer')
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/)
@@ -74,7 +95,6 @@ test('the packaged scripts, skill, and font ship in the npm tarball', async () =
   // provider scans. This is the regression test for the font that
   // styles/*.json references.
   let packed
-  let parsed
   try {
     // A private cache: npm's default cache may be outside the sandbox.
     const cache = join(tmpdir(), 'dsh-video-explainer-npm-cache')
@@ -90,10 +110,10 @@ test('the packaged scripts, skill, and font ship in the npm tarball', async () =
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
-    // npm 10/11 print an array; npm 12 prints an object keyed by package name.
-    const first = stdout.indexOf('[') !== -1 && stdout.indexOf('{') === -1 ? stdout.indexOf('[') : stdout.indexOf('{')
-    const json = stdout.slice(first)
-    const shape = JSON.parse(json.endsWith(']') ? json.slice(0, json.lastIndexOf(']') + 1) : json)
+    // npm 10/11 print an array; npm 12 prints a lone object keyed by package
+    // name. Both are one JSON document, but npm may still append log noise to
+    // stdout, so parse by JSON value boundaries instead of guessing the brace.
+    const shape = parsePackReport(stdout)
     const entry = Array.isArray(shape) ? shape[0] : Object.values(shape)[0]
     packed = new Set(entry.files.map(file => file.path))
   } catch (error) {

@@ -58,8 +58,10 @@ const packageManifestFile = path.join(packageDir, "package.json");
 /** Catalog render cap from @deepseek-ai/dsh-tool-skill. */
 const DESCRIPTION_CAP = 500;
 
-/** Directories never scanned for stray skills. */
-const IGNORED_DIRS = new Set([".git", ".dsh", "node_modules", "dist", "build", "themes"]);
+/** Directories never scanned for stray skills. `.opencode` is a standalone
+ * OpenCode port with its own layout (see `.opencode/README.md`), not a DSH
+ * packaged skill. */
+const IGNORED_DIRS = new Set([".git", ".dsh", ".opencode", "node_modules", "dist", "build", "themes"]);
 
 const KEBAB_CASE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BOOLEAN_KEYS = ["disable-model-invocation", "user-invocable"];

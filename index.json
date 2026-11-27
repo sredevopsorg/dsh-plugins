@@ -167,7 +167,7 @@
     {
       "name": "@sredevopsorg/dsh-skills",
       "title": "Skills",
-      "description": "All sredevopsorg agent skills as one plugin: architecture, fullstack, Supabase/Postgres, Ghost themes, Helm, Kubernetes, Kustomize, and GitHub Actions security.",
+      "description": "All sredevopsorg agent skills as one plugin: architecture, fullstack, Postgres, Ghost themes, Helm, Kubernetes, Kustomize, and GitHub Actions security.",
       "icon": "plugins/skills/icon.svg",
       "author": "sredevopsorg",
       "homepage": "https://github.com/sredevopsorg/dsh-plugins/tree/main/plugins/skills#readme",
@@ -184,7 +184,6 @@
           "agent-skills",
           "software-architecture",
           "fullstack",
-          "supabase",
           "postgres",
           "ghost",
           "helm",

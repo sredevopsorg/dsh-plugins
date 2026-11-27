@@ -46,7 +46,6 @@ Use this skill for hands-on implementation and review of container-based Python 
 - **BFF** — when the browser needs several services or a trimmed shape, add a backend-for-frontend rather than chaining calls in the client.
 - **Monorepo layout** — `apps/*` for deployables, `packages/*` for shared libraries; one lockfile, one task runner (Turborepo/Nx), and explicit `exports` in each package.
 - **Local development** — one command to bring up the stack (Docker Compose with the database and dependencies, apps run natively for fast reload); a seeded database and documented env vars in `.env.example`.
-- **Supabase as the backend** — when the project uses Supabase (Postgres + Auth + Storage + Edge Functions + Realtime), load the `supabase` skill before writing client or server code and `supabase-postgres-best-practices` before touching anything in the database; the live project is reachable through the `mcp__supabase__*` tools. Never put the service-role key in a browser bundle — use the publishable/anon key plus Row-Level Security, and treat RLS policies as part of the schema review.
 
 ## 5. Containers and deployment
 

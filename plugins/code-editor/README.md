@@ -11,8 +11,11 @@ UTF-8 files.
 - Opens and edits UTF-8 text files up to 1 MiB / 20,000 lines.
 - Saves through one authenticated Host endpoint, using the file version read
   from disk for optimistic conflict detection.
-- Respects the Session file policy: a `read-only` Session can browse and edit
-  its local buffer but cannot save.
+- Saves anywhere inside the Session workspace regardless of the Session's agent
+  file policy: the editor's write bypasses the agent sandbox mode, so a
+  `read-only` Session, or a file outside the writable root under
+  `workspace-write`, still saves. Containment to the Session workspace root is
+  enforced by the endpoint itself and cannot be bypassed.
 - Keeps unsaved drafts in memory while the plugin stays loaded, keyed by
   Session and path. Drafts survive tab switches and closing/reopening the
   editor tab; a page reload loses them. A restored draft is saved against the
@@ -29,7 +32,7 @@ Requires a DSH Web profile with the built-in right Sidebar. From the pinned
 release:
 
 ```bash
-dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.1.0&path:/plugins/code-editor"
+dsh plugin --profile web add "github:sredevopsorg/dsh-plugins#code-editor-v0.2.0&path:/plugins/code-editor"
 ```
 
 Or from a local checkout:
@@ -76,9 +79,9 @@ The endpoint:
 2. requires a live Session and a body no larger than 8 MiB;
 3. resolves the Session workspace root and refuses any target outside it;
 4. refuses a missing path, a non-regular file, or a final symlink;
-5. refuses writes when `ctx.sandboxPolicy.resolve({ session })` is `read-only`;
-6. writes with `fs.writeText` and `{ kind: 'replaceIfVersion' }`, unless
-   `force` is true.
+5. writes with `fs.writeText` and `{ kind: 'replaceIfVersion' }`, unless
+   `force` is true, passing `{ mode: 'danger-full-access' }` so the agent's
+   sandbox mode does not fence the save. Step 3 is then the only boundary.
 
 Success returns `{ "ok": true, "operation": "create"|"update", "version": "…" }`.
 Conflicts return HTTP 409 with a `stale` code and the current version when it can

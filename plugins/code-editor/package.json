@@ -1,6 +1,6 @@
 {
   "name": "@sredevopsorg/dsh-code-editor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Workspace code editor for the DSH Web GUI right sidebar: browse directories, edit UTF-8 files, save with sandbox and conflict protection.",
   "license": "MIT",
   "repository": {

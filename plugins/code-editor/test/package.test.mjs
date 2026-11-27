@@ -11,7 +11,9 @@ const patch = readFileSync(path.join(PACKAGE_DIR, 'cordis.patch.yml'), 'utf8')
 
 test('the package manifest follows the repository plugin contract', () => {
   assert.equal(manifest.name, '@sredevopsorg/dsh-code-editor')
-  assert.equal(manifest.version, '0.1.0')
+  // Release bumps must not require editing this contract; the release tag
+  // script is what pins the exact version.
+  assert.match(manifest.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/)
   assert.equal(manifest.private, undefined)
   assert.equal(manifest.license, 'MIT')
   assert.equal(manifest.type, 'module')
