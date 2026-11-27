@@ -109,6 +109,19 @@
       },
       "versions": [
         {
+          "version": "0.2.0",
+          "publishTimestamp": 1795757434,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "633d804aa83a24f679dbb4e4bca1261925bb05fc",
+            "path": "plugins/code-editor"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        },
+        {
           "version": "0.1.0",
           "publishTimestamp": 1794092613,
           "source": {
@@ -194,6 +207,19 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.3.0",
+          "publishTimestamp": 1795757434,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/sredevopsorg/dsh-plugins",
+            "commit": "633d804aa83a24f679dbb4e4bca1261925bb05fc",
+            "path": "plugins/skills"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.2"
+          }
+        },
         {
           "version": "0.2.0",
           "publishTimestamp": 1794182503,
