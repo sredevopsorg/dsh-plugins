@@ -174,7 +174,20 @@ export async function handleRequest(ctx, req, res) {
 
     let outcome
     try {
-      outcome = await ctx.fs.writeText(target, content, expected, undefined)
+      // The editor saves what the user typed, so it must not be fenced by the
+      // agent's file policy: a `read-only` Session, or a target outside the
+      // writable root under `workspace-write`, would otherwise reject a save
+      // the sidebar allows. The workspace containment check above is the
+      // editor's own boundary, so the write itself runs unrestricted. Passing
+      // `undefined` here would NOT do that; it falls back to the deployment
+      // mode inside `checkedTarget`.
+      outcome = await ctx.fs.writeText(
+        target,
+        content,
+        expected,
+        undefined,
+        { mode: 'danger-full-access' },
+      )
     } catch (error) {
       if (error?.code === 'FS_STALE_VERSION') {
         let version

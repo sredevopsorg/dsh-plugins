@@ -61,7 +61,6 @@ window.__ModuleLoader__.load({
       'editor.conflict': 'The file changed on disk. Reload it or overwrite the newer content.',
       'editor.conflict.reload': 'Reload from disk',
       'editor.conflict.overwrite': 'Overwrite',
-      'editor.readOnly': 'This Session is read-only. Change its file policy before saving.',
       'editor.authFailed': 'The browser session expired. Reload the page to continue.',
       'editor.sessionInactive': 'The Session is not active. Open the Session before saving.',
       'editor.saveFailed': 'The file could not be saved. {message}',
@@ -117,7 +116,6 @@ window.__ModuleLoader__.load({
       'editor.conflict': 'El archivo cambió en el disco. Recárgalo o sobrescribe el contenido más reciente.',
       'editor.conflict.reload': 'Recargar desde el disco',
       'editor.conflict.overwrite': 'Sobrescribir',
-      'editor.readOnly': 'Esta sesión es de solo lectura. Cambia su política de archivos antes de guardar.',
       'editor.authFailed': 'La sesión del navegador expiró. Recarga la página para continuar.',
       'editor.sessionInactive': 'La sesión no está activa. Abre la sesión antes de guardar.',
       'editor.saveFailed': 'No se pudo guardar el archivo. {message}',
@@ -911,10 +909,6 @@ window.__ModuleLoader__.load({
               if (response.status === 409) {
                 setConflict({ version: payload?.version });
                 setNotice({ kind: 'error', text: tr('editor.conflict') });
-                return;
-              }
-              if (payload?.code === 'read-only') {
-                setNotice({ kind: 'error', text: tr('editor.readOnly') });
                 return;
               }
               if (payload?.code === 'session-not-found') {

@@ -209,7 +209,7 @@ test('a Session without a cwd uses the sandbox policy workspace root', async () 
   assert.equal(fs.calls[0][0].targetKey, `${fallbackRoot}/src/app.ts`)
 })
 
-test('successful save writes with the expected version and no policy gate', async () => {
+test('successful save writes with the expected version and an explicit unscoped policy', async () => {
   const fs = createFs()
   const ctx = createContext({ fs })
   const { response, json } = await call(ctx, makeRequest({ body: writeBody() }))
@@ -222,7 +222,9 @@ test('successful save writes with the expected version and no policy gate', asyn
   assert.equal(target.targetKey, `${ROOT}/src/app.ts`)
   assert.equal(content, 'const answer = 42\n')
   assert.deepEqual(expected, { kind: 'replaceIfVersion', version: 'v1' })
-  assert.equal(policy, undefined)
+  // An omitted policy falls back to the deployment sandbox mode inside
+  // checkedTarget, which would fence the save; the editor must pass one.
+  assert.deepEqual(policy, { mode: 'danger-full-access' })
 })
 
 test('force skips the version guard', async () => {
@@ -246,17 +248,22 @@ test('stale version maps to 409 and reports the current version', async () => {
   assert.equal(json.version, 'v9')
 })
 
-test('a read-only policy no longer blocks the write', async () => {
-  const fs = createFs()
-  const ctx = createContext({
-    fs,
-    policy: { mode: 'read-only', workspaceRoot: ROOT },
-  })
-  const { response, json } = await call(ctx, makeRequest({ body: writeBody() }))
+test('a read-only or workspace fenced policy does not block the write', async () => {
+  for (const mode of ['read-only', 'workspace-write']) {
+    const fs = createFs()
+    const ctx = createContext({
+      fs,
+      policy: { mode, workspaceRoot: ROOT },
+    })
+    const { response, json } = await call(ctx, makeRequest({ body: writeBody() }))
 
-  assert.equal(response.statusCode, 200)
-  assert.equal(json.ok, true)
-  assert.equal(fs.calls.length, 1)
+    assert.equal(response.statusCode, 200)
+    assert.equal(json.ok, true)
+    assert.equal(fs.calls.length, 1)
+    // The deployment mode must never be what the FS layer enforces; the
+    // workspace containment check in the endpoint is the only boundary.
+    assert.deepEqual(fs.calls[0][4], { mode: 'danger-full-access' })
+  }
 })
 
 test('a sandbox write denial maps to a 403 write-denied response', async () => {
